@@ -1,10 +1,13 @@
 from fastapi import FastAPI
-from server.config.db import engine, Base
-
-# Create tables on startup (simplest way without migrations for now)
-Base.metadata.create_all(bind=engine)
+from config.db import engine, Base
+from db.models import matches, teams
 
 app = FastAPI(title="World Cup Dashboard API")
+
+@app.on_event("startup")
+def create_tables():
+    # Simple startup table creation until migrations are added.
+    Base.metadata.create_all(bind=engine)
 
 @app.get("/")
 def read_root():

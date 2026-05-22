@@ -2,9 +2,9 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from backend.pipeline.sources.teams import TeamsSource
-from backend.pipeline.transformations.teams import TeamsTransformations
-from backend.pipeline.load.teams import TeamsLoader
+from pipeline.sources.teams import TeamsSource
+from pipeline.transformations.teams import TeamsTransformations
+from pipeline.load.teams import TeamsLoader
 
 default_args = {
     'owner': 'airflow',
