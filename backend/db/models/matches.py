@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
-from config.db import Base
+from backend.config.db import Base
 
 class Match(Base):
     __tablename__ = "matches"
