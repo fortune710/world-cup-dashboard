@@ -1,6 +1,6 @@
-from backend.config.db import SessionLocal
-from backend.db.controllers.teams import upsert_team
-from backend.db.controllers.matches import upsert_match
+from config.db import SessionLocal
+from db.controllers.teams import upsert_team
+from db.controllers.matches import upsert_match
 
 class TeamsLoader:
     """

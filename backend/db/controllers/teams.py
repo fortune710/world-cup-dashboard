@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from backend.db.models.teams import Team
+from db.models.teams import Team
 
 def upsert_team(db: Session, team_data: dict):
     db_team = db.query(Team).filter(Team.id == team_data['id']).first()
