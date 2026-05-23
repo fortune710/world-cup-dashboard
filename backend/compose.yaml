@@ -25,7 +25,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
     ports:
       - "8000:8000"
@@ -39,15 +39,17 @@ services:
     command: webserver
     restart: always
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW_LOAD_EXAMPLES:-False}
-      - PYTHONPATH=/opt/airflow
+      - PYTHONPATH=/opt/airflow/backend
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
+      - AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT=120
       - _PIP_ADDITIONAL_REQUIREMENTS=requests sqlalchemy psycopg2-binary
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
@@ -66,14 +68,14 @@ services:
     command: scheduler
     restart: always
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW_LOAD_EXAMPLES:-False}
-      - PYTHONPATH=/opt/airflow
+      - PYTHONPATH=/opt/airflow/backend
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - _PIP_ADDITIONAL_REQUIREMENTS=requests sqlalchemy psycopg2-binary
     volumes:
@@ -89,19 +91,19 @@ services:
     image: ${AIRFLOW_IMAGE:-apache/airflow:latest-python3.11}
     container_name: airflow_init
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
     entrypoint: /bin/bash
     command:
       - -c
       - |
-        airflow db init &&
+        airflow db upgrade &&
         airflow users create \
           --username ${AIRFLOW_ADMIN_USER} \
           --firstname Fortune \
           --lastname Alebiosu \
           --role Admin \
           --email fortunealebiosu710@gmail.com \
-          --password ${AIRFLOW_ADMIN_PASSWORD}
+          --password ${AIRFLOW_ADMIN_PASSWORD} || true
     depends_on:
       db:
         condition: service_healthy
