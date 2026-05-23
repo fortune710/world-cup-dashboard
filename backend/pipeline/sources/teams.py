@@ -1,4 +1,5 @@
 import requests
+import os
 
 class TeamsSource:
     """
@@ -7,6 +8,7 @@ class TeamsSource:
     """
     
     BASE_URL = "https://api.wc2026api.com"
+    API_KEY = os.getenv("WC2026_API_KEY")
 
     def get_teams(self):
         """
@@ -20,7 +22,7 @@ class TeamsSource:
                 - flag_url (string, nullable)
                 - group_name (string)
         """
-        response = requests.get(f"{self.BASE_URL}/teams")
+        response = requests.get(f"{self.BASE_URL}/teams", headers={"Authorization": f"Bearer {self.API_KEY}"})
         response.raise_for_status()
         return response.json()
 

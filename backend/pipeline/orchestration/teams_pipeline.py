@@ -2,14 +2,14 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from backend.pipeline.sources.teams import TeamsSource
-from backend.pipeline.transformations.teams import TeamsTransformations
-from backend.pipeline.load.teams import TeamsLoader
+from pipeline.sources.teams import TeamsSource
+from pipeline.transformations.teams import TeamsTransformations
+from pipeline.load.teams import TeamsLoader
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 1, 1),
+    'start_date': datetime(2026, 5, 21),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -36,7 +36,7 @@ with DAG(
     'world_cup_teams_pipeline',
     default_args=default_args,
     description='ETL pipeline for World Cup teams',
-    schedule_interval=timedelta(days=1),
+    schedule=timedelta(days=7),
     catchup=False
 ) as dag:
 
