@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean, SmallInteger
 from config.db import Base
 
 class Team(Base):
@@ -9,3 +9,15 @@ class Team(Base):
     code = Column(String, unique=True, index=True)
     logo_url = Column(String, nullable=True)
     group = Column(String, nullable=True)
+    fifa_ranking = Column(SmallInteger, nullable=True)
+    sofascore_id = Column(Integer, nullable=True, unique=True, index=True)
+    goals_for = Column(SmallInteger, default=0)
+    goals_against = Column(SmallInteger, default=0)
+    position = Column(SmallInteger, default=0)
+    points = Column(SmallInteger, default=0)
+    matches_played = Column(SmallInteger, default=0)
+    matches_won = Column(SmallInteger, default=0)
+    matches_drawn = Column(SmallInteger, default=0)
+    matches_lost = Column(SmallInteger, default=0)
+    players_indexed = Column(Boolean, default=False, index=True)
+
