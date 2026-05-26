@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "coding-standards": {
+      "source": "affaan-m/everything-claude-code",
+      "sourceType": "github",
+      "skillPath": "skills/coding-standards/SKILL.md",
+      "computedHash": "ebb4d173fb97f0189986097bcf0c4c4bfa64f0dd713ec094947ccf7b549efbe4"
+    }
+  }
+}
