@@ -2,14 +2,14 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from backend.pipeline.sources.teams import TeamsSource
-from backend.pipeline.transformations.teams import TeamsTransformations
-from backend.pipeline.load.teams import TeamsLoader
+from pipeline.sources.matches import MatchesSource
+from pipeline.transformations.matches import MatchesTransformations
+from pipeline.load.matches import MatchesLoader
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2024, 1, 1),
+    'start_date': datetime(2026, 1, 1),
     'email_on_failure': False,
     'email_on_retry': False,
     'retries': 1,
@@ -17,26 +17,26 @@ default_args = {
 }
 
 def extract_matches(**context):
-    source = TeamsSource()
+    source = MatchesSource()
     matches = source.get_matches()
     return matches
 
 def transform_matches(**context):
     raw_matches = context['ti'].xcom_pull(task_ids='extract_matches')
-    transform = TeamsTransformations()
+    transform = MatchesTransformations()
     transformed_matches = transform.transform_match_data(raw_matches)
     return transformed_matches
 
 def load_matches(**context):
     transformed_matches = context['ti'].xcom_pull(task_ids='transform_matches')
-    loader = TeamsLoader()
+    loader = MatchesLoader()
     loader.load_matches(transformed_matches)
 
 with DAG(
     'world_cup_matches_pipeline',
     default_args=default_args,
     description='ETL pipeline for World Cup matches',
-    schedule_interval=timedelta(hours=6),
+    schedule=timedelta(hours=6),
     catchup=False
 ) as dag:
 

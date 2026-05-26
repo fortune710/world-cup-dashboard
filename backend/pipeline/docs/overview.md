@@ -60,6 +60,26 @@ The system runs on the standard `compose.yaml` specification, including:
 - **Airflow Init**: One-time database initialization and admin user creation.
 - **Web API**: The FastAPI backend application.
 
+## Database Migrations
+We use **Alembic** for handling database schema changes. To apply migrations, run the following command from the `backend` directory:
+
+```bash
+# Using the helper script
+bash scripts/migrate.sh
+
+# Or using alembic directly
+alembic upgrade head
+```
+
+New migrations can be generated automatically after model changes:
+```bash
+# Using the helper script
+bash scripts/generate_migration.sh "description of changes"
+
+# Or using alembic directly
+alembic revision --autogenerate -m "description of changes"
+```
+
 ### Default Credentials
 - **Airflow UI**: `admin` / `admin`
 - **Postgres**: Defined in `.env`

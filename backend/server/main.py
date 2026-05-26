@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from server.config.db import engine, Base
+from config.db import engine, Base
+import db.models
 
 # Create tables on startup (simplest way without migrations for now)
 Base.metadata.create_all(bind=engine)

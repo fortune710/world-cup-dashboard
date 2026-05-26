@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import logging
+import asyncio
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
@@ -20,42 +21,43 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-def extract_teams(**context):
-    logger.info({"message": "Starting teams extraction"})
+def extract_team_details(**context):
+    logger.info({"message": "Starting team details extraction"})
     source = TeamsSource()
     try:
-        teams = source.get_teams()
-        logger.info({"message": "Successfully extracted teams", "count": len(teams)})
+        loop = asyncio.get_event_loop()
+        teams = loop.run_until_complete(source.get_teams_details())
+        logger.info({"message": "Successfully extracted team details", "count": len(teams)})
         return teams
     except Exception as e:
         logger.error({
-            "message": "Failed to extract teams", 
+            "message": "Failed to extract team details", 
             "error": {"message": str(e), "type": type(e).__name__}
         })
         raise
 
-def transform_teams(**context):
-    logger.info({"message": "Starting teams transformation"})
-    raw_teams = context['ti'].xcom_pull(task_ids='extract_teams')
+def transform_team_details(**context):
+    logger.info({"message": "Starting team details transformation"})
+    raw_teams = context['ti'].xcom_pull(task_ids='extract_team_details')
     if not raw_teams:
         logger.warning({"message": "No raw teams data found for transformation", "count": 0})
         return []
-
+    
     transform = TeamsTransformations()
     try:
-        transformed_teams = transform.transform_team_data(raw_teams)
-        logger.info({"message": "Successfully transformed teams", "count": len(transformed_teams)})
+        transformed_teams = transform.transform_team_details(raw_teams)
+        logger.info({"message": "Successfully transformed team details", "count": len(transformed_teams)})
         return transformed_teams
     except Exception as e:
         logger.error({
-            "message": "Failed to transform teams", 
+            "message": "Failed to transform team details", 
             "error": {"message": str(e), "type": type(e).__name__}
         })
         raise
 
-def load_teams(**context):
-    logger.info({"message": "Starting teams load"})
-    transformed_teams = context['ti'].xcom_pull(task_ids='transform_teams')
+def load_team_details(**context):
+    logger.info({"message": "Starting team details load"})
+    transformed_teams = context['ti'].xcom_pull(task_ids='transform_team_details')
     if not transformed_teams:
         logger.warning({"message": "No transformed teams data found for loading", "count": 0})
         return
@@ -63,35 +65,35 @@ def load_teams(**context):
     loader = TeamsLoader()
     try:
         loader.load_teams(transformed_teams)
-        logger.info({"message": "Successfully loaded teams into the database", "count": len(transformed_teams)})
+        logger.info({"message": "Successfully loaded team details entries", "count": len(transformed_teams)})
     except Exception as e:
         logger.error({
-            "message": "Failed to load teams", 
+            "message": "Failed to load team details", 
             "error": {"message": str(e), "type": type(e).__name__}
         })
         raise
 
 with DAG(
-    'world_cup_teams_pipeline',
+    'world_cup_team_details_pipeline',
     default_args=default_args,
-    description='ETL pipeline for World Cup teams',
-    schedule=timedelta(days=7),
+    description='ETL pipeline for World Cup team details (standings)',
+    schedule=timedelta(days=1),
     catchup=False
 ) as dag:
 
     task_extract = PythonOperator(
-        task_id='extract_teams',
-        python_callable=extract_teams,
+        task_id='extract_team_details',
+        python_callable=extract_team_details,
     )
 
     task_transform = PythonOperator(
-        task_id='transform_teams',
-        python_callable=transform_teams,
+        task_id='transform_team_details',
+        python_callable=transform_team_details,
     )
 
     task_load = PythonOperator(
-        task_id='load_teams',
-        python_callable=load_teams,
+        task_id='load_team_details',
+        python_callable=load_team_details,
     )
 
     task_extract >> task_transform >> task_load
