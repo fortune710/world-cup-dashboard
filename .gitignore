@@ -3,3 +3,8 @@
 node_modules
 .venv
 .vscode
+
+__pycache__
+.pytest_cache
+
+*debug*.py

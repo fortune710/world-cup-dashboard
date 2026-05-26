@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from backend.db.models.matches import Match
+from db.models.matches import Match
 from datetime import datetime
 
 def upsert_match(db: Session, match_data: dict):

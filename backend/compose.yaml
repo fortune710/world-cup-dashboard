@@ -17,6 +17,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+  airflow-db-bootstrap:
+    image: postgres:latest
+    container_name: airflow_db_bootstrap
+    restart: "no"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - AIRFLOW_POSTGRES_DB=${AIRFLOW_POSTGRES_DB:-airflow_db}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        set -e
+        until pg_isready -h "$${POSTGRES_HOST}" -p "$${POSTGRES_PORT}" -U "$${POSTGRES_USER}" -d postgres; do
+          sleep 2
+        done
+        if ! PGPASSWORD="$${POSTGRES_PASSWORD}" psql -h "$${POSTGRES_HOST}" -p "$${POSTGRES_PORT}" -U "$${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$${AIRFLOW_POSTGRES_DB}'" | grep -q 1; then
+          PGPASSWORD="$${POSTGRES_PASSWORD}" createdb -h "$${POSTGRES_HOST}" -p "$${POSTGRES_PORT}" -U "$${POSTGRES_USER}" "$${AIRFLOW_POSTGRES_DB}"
+        fi
+        echo "Airflow database ready: $${AIRFLOW_POSTGRES_DB}"
+    depends_on:
+      db:
+        condition: service_healthy
+
   web:
     build: .
     container_name: world_cup_api
@@ -25,7 +51,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
     ports:
       - "8000:8000"
@@ -34,21 +60,27 @@ services:
         condition: service_healthy
 
   airflow-webserver:
-    image: ${AIRFLOW_IMAGE:-apache/airflow:latest-python3.11}
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: world-cup-airflow:local
     container_name: airflow_webserver
     command: webserver
     restart: always
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${AIRFLOW_POSTGRES_DB:-airflow_db}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW_LOAD_EXAMPLES:-False}
-      - PYTHONPATH=/opt/airflow
+      - PYTHONPATH=/opt/airflow/backend
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - _PIP_ADDITIONAL_REQUIREMENTS=requests sqlalchemy psycopg2-binary
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
+      - AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT=120
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -59,23 +91,29 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      airflow-db-bootstrap:
+        condition: service_completed_successfully
 
   airflow-scheduler:
-    image: ${AIRFLOW_IMAGE:-apache/airflow:latest-python3.11}
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: world-cup-airflow:local
     container_name: airflow_scheduler
     command: scheduler
     restart: always
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${AIRFLOW_POSTGRES_DB:-airflow_db}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW_LOAD_EXAMPLES:-False}
-      - PYTHONPATH=/opt/airflow
+      - PYTHONPATH=/opt/airflow/backend
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_HOST=db
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - _PIP_ADDITIONAL_REQUIREMENTS=requests sqlalchemy psycopg2-binary
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -84,27 +122,34 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      airflow-db-bootstrap:
+        condition: service_completed_successfully
 
   airflow-init:
-    image: ${AIRFLOW_IMAGE:-apache/airflow:latest-python3.11}
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    image: world-cup-airflow:local
     container_name: airflow_init
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${AIRFLOW_POSTGRES_DB:-airflow_db}
     entrypoint: /bin/bash
     command:
       - -c
       - |
-        airflow db init &&
+        airflow db upgrade &&
         airflow users create \
           --username ${AIRFLOW_ADMIN_USER} \
           --firstname Fortune \
           --lastname Alebiosu \
           --role Admin \
           --email fortunealebiosu710@gmail.com \
-          --password ${AIRFLOW_ADMIN_PASSWORD}
+          --password ${AIRFLOW_ADMIN_PASSWORD} || true
     depends_on:
       db:
         condition: service_healthy
+      airflow-db-bootstrap:
+        condition: service_completed_successfully
 
 volumes:
   postgres_data:
