@@ -1,10 +1,14 @@
 from datetime import datetime, timedelta
+import logging
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 from pipeline.sources.teams import TeamsSource
 from pipeline.transformations.teams import TeamsTransformations
 from pipeline.load.teams import TeamsLoader
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 default_args = {
     'owner': 'airflow',
@@ -17,20 +21,55 @@ default_args = {
 }
 
 def extract_teams(**context):
+    logger.info({"message": "Starting teams extraction"})
     source = TeamsSource()
-    teams = source.get_teams()
-    return teams
+    try:
+        teams = source.get_teams()
+        logger.info({"message": "Successfully extracted teams", "count": len(teams)})
+        return teams
+    except Exception as e:
+        logger.error({
+            "message": "Failed to extract teams", 
+            "error": {"message": str(e), "type": type(e).__name__}
+        })
+        raise
 
 def transform_teams(**context):
+    logger.info({"message": "Starting teams transformation"})
     raw_teams = context['ti'].xcom_pull(task_ids='extract_teams')
+    if not raw_teams:
+        logger.warning({"message": "No raw teams data found for transformation", "count": 0})
+        return []
+
     transform = TeamsTransformations()
-    transformed_teams = transform.transform_team_data(raw_teams)
-    return transformed_teams
+    try:
+        transformed_teams = transform.transform_team_data(raw_teams)
+        logger.info({"message": "Successfully transformed teams", "count": len(transformed_teams)})
+        return transformed_teams
+    except Exception as e:
+        logger.error({
+            "message": "Failed to transform teams", 
+            "error": {"message": str(e), "type": type(e).__name__}
+        })
+        raise
 
 def load_teams(**context):
+    logger.info({"message": "Starting teams load"})
     transformed_teams = context['ti'].xcom_pull(task_ids='transform_teams')
+    if not transformed_teams:
+        logger.warning({"message": "No transformed teams data found for loading", "count": 0})
+        return
+    
     loader = TeamsLoader()
-    loader.load_teams(transformed_teams)
+    try:
+        loader.load_teams(transformed_teams)
+        logger.info({"message": "Successfully loaded teams into the database", "count": len(transformed_teams)})
+    except Exception as e:
+        logger.error({
+            "message": "Failed to load teams", 
+            "error": {"message": str(e), "type": type(e).__name__}
+        })
+        raise
 
 with DAG(
     'world_cup_teams_pipeline',
