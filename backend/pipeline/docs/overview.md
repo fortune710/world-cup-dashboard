@@ -4,19 +4,17 @@ This pipeline is designed to extract, transform, and load World Cup 2026 data fr
 
 ## Architecture
 
-1.  **Source Layer (`backend/pipeline/sources/teams.py`)**:
-    -   Communicates with `https://api.wc2026api.com`.
-    -   `get_teams()`: Fetches information about all 48 teams.
-    -   `get_matches()`: Fetches all match schedules and data.
+1.  **Source Layer (`backend/pipeline/sources/`)**:
+    -   **`teams.py`**: Contains `TeamsSource` class for fetching team assignments.
+    -   **`matches.py`**: Contains `MatchesSource` class for fetching the full match schedule and live status.
 
-2.  **Transformation Layer (`backend/pipeline/transformations/teams.py`)**:
-    -   Processes raw JSON data from the API.
-    -   Maps API keys to internal database schema (e.g., `flag_url` -> `logo_url`).
-    -   Handles default values and removes unnecessary fields.
+2.  **Transformation Layer (`backend/pipeline/transformations/`)**:
+    -   **`teams.py`**: Processes raw team data, mapping logos and groups.
+    -   **`matches.py`**: Processes match data, handling foreign key consistency and cleanup.
 
-3.  **Load Layer (`backend/pipeline/load/teams.py`)**:
-    -   Uses SQLAlchemy models to push data into Postgres.
-    -   Implements "upsert" logic to prevent duplicate entries while keeping data updated.
+3.  **Load Layer (`backend/pipeline/load/`)**:
+    -   **`teams.py`**: Loads processed team data into the Postgres database.
+    -   **`matches.py`**: Loads processed match data into the Postgres database.
 
 4.  **Orchestration Layer (`backend/pipeline/orchestration/`)**:
     -   **`teams_pipeline.py`**: ETL DAG for team data.
@@ -27,8 +25,8 @@ This pipeline is designed to extract, transform, and load World Cup 2026 data fr
         -   `load`: Pulls transformed data and saves it to the PostgreSQL database.
 
 5.  **Database Layer (`backend/db/`)**:
-    -   **Models**: `Team` and `Match` objects defining the schema.
-    -   **Controllers**: Functions to handle database operations (upserts).
+    -   **`models/`**: SQLAlchemy models (`teams.py`, `matches.py`) defining the database schema and relationships (e.g., Foreign Keys).
+    -   **`controllers/`**: Data Access Objects (DAOs) containing the logic for upserting and querying teams and matches, ensuring database integrity.
 
 ## Database Schema Definitions
 
