@@ -1,0 +1,48 @@
+import unittest
+from pipeline.transformations.players import PlayersTransformations
+
+class TestStatsTransformation(unittest.TestCase):
+    def setUp(self):
+        self.transformer = PlayersTransformations()
+        self.mock_stats = {
+            "statistics": {
+                "rating": 7.5,
+                "goals": 2,
+                "assists": 1,
+                "totalPasses": 50,
+                "accuratePasses": 45
+            }
+        }
+        self.mock_info = {
+            "player": {
+                "id": 123,
+                "name": "Test Player",
+                "dateOfBirthTimestamp": 878256000,
+                "position": "F",
+                "weight": 75,
+                "height": 180,
+                "preferredFoot": "Right",
+                "country": {"alpha3": "ENG"},
+                "proposedMarketValue": 50000000,
+                "team": {"name": "Test FC"}
+            }
+        }
+
+    def test_transform_player_info_with_stats(self):
+        result = self.transformer.transform_player_info(self.mock_info, self.mock_stats)
+        self.assertEqual(result["rating"], 7.5)
+        self.assertEqual(result["stats_json"]["goals"], 2)
+        self.assertEqual(result["name"], "Test Player")
+
+    def test_transform_player_stats_only(self):
+        rating, stats = self.transformer.transform_player_stats(self.mock_stats)
+        self.assertEqual(rating, 7.5)
+        self.assertEqual(stats["assists"], 1)
+
+    def test_transform_invalid_stats(self):
+        rating, stats = self.transformer.transform_player_stats({})
+        self.assertIsNone(rating)
+        self.assertIsNone(stats)
+
+if __name__ == '__main__':
+    unittest.main()
