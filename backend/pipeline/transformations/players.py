@@ -1,3 +1,4 @@
+from typing import Any
 from datetime import datetime
 import enum
 
@@ -10,11 +11,6 @@ class PlayersTransformations:
         
         # Convert timestamp to date
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
-        
-        # Extract rating from stats if available
-        rating = None
-        if player_stats and "statistics" in player_stats:
-            rating = player_stats["statistics"].get("rating")
 
         return {
             "id": player.get("id"),
@@ -28,5 +24,15 @@ class PlayersTransformations:
             "foot": player.get("preferredFoot"), # Assumes model Enum matches (Left, Right)
             "country_code": player.get("country", {}).get("alpha3"),
             "market_value": player.get("proposedMarketValue"),
-            "rating": rating
         }
+
+    def transform_player_stats(self, player_stats) -> tuple[float | None, dict[str, Any] | None]:
+        """
+        Extracts only the statistics fields.
+        """
+        if not player_stats or "statistics" not in player_stats:
+            return None, None
+        
+        stats = player_stats["statistics"]
+        rating = stats.get("rating")
+        return rating, stats
