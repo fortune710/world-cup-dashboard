@@ -31,9 +31,9 @@ def upgrade() -> None:
         op.execute("UPDATE players SET club_name = club_id::text WHERE club_id IS NOT NULL")
         op.drop_index("ix_players_club_id", table_name="players")
         op.drop_column("players", "club_id")
-        op.create_index("ix_players_club_name", "players", ["club_name"], unique=False)
+        op.execute("CREATE INDEX IF NOT EXISTS ix_players_club_name ON players (club_name)")
     elif "club_name" in columns:
-        op.create_index("ix_players_club_name", "players", ["club_name"], unique=False)
+        op.execute("CREATE INDEX IF NOT EXISTS ix_players_club_name ON players (club_name)")
 
 
 def downgrade() -> None:
@@ -43,9 +43,9 @@ def downgrade() -> None:
 
     if "club_name" in columns and "club_id" not in columns:
         op.add_column("players", sa.Column("club_id", sa.BigInteger(), nullable=True))
-        op.drop_index("ix_players_club_name", table_name="players")
+        op.execute("DROP INDEX IF EXISTS ix_players_club_name")
         op.drop_column("players", "club_name")
-        op.create_index("ix_players_club_id", "players", ["club_id"], unique=False)
+        op.execute("CREATE INDEX IF NOT EXISTS ix_players_club_id ON players (club_id)")
 
     op.execute("DROP INDEX IF EXISTS ix_players_country_code")
     op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_players_country_code ON players (country_code)")

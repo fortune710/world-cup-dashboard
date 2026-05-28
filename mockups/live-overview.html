@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Overview | WC26 Dashboard</title>
+    <link rel="stylesheet" href="shared.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        .hero-live {
+            background: var(--color-surface-dark);
+            color: #fff;
+            padding: var(--space-8);
+            border-radius: var(--space-4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-live::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--color-live), transparent);
+        }
+
+        .score-display {
+            font-size: clamp(32px, 5vw, 64px);
+            font-weight: 600;
+            text-align: center;
+            font-family: var(--font-display);
+            margin: var(--space-4) 0;
+        }
+
+        .stat-bar-container {
+            max-width: 600px;
+            margin: var(--space-6) auto;
+        }
+
+        .stat-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: var(--space-2);
+            opacity: 0.8;
+        }
+
+        .bar-bg {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 1s ease-out;
+        }
+
+        .hero-live .bar-fill.left { background: #fff; }
+        .hero-live .bar-fill.right { background: var(--color-accent); }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin: var(--space-8) 0;
+        }
+
+        .kpi-card {
+            border-radius: var(--space-3);
+            background: var(--color-surface);
+            padding: var(--space-6);
+            border: 1px solid var(--color-hairline);
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #666;
+            margin-bottom: var(--space-2);
+        }
+
+        .kpi-value {
+            font-family: var(--font-mono);
+            font-size: 32px;
+            font-weight: 500;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--space-8);
+            margin-bottom: var(--space-12);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #666;
+            padding: var(--space-4) var(--space-2);
+            border-bottom: 1px solid var(--color-ink);
+        }
+
+        td {
+            padding: var(--space-4) var(--space-2);
+            border-bottom: 1px solid var(--color-hairline);
+            font-size: 13px;
+        }
+
+        .performer-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-4) 0;
+            border-bottom: 1px solid var(--color-hairline);
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            background: #eee;
+            border-radius: 50%;
+        }
+
+        .live-tag {
+            background: var(--color-live);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="layout-with-sidebar">
+    <aside class="sidebar">
+        <div style="font-family: var(--font-display); font-weight: 600; font-size: 18px; margin-bottom: var(--space-12);">⚽</div>
+        <button class="nav-icon-btn active" title="Live Overview">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </button>
+        <button class="nav-icon-btn" title="Players" onclick="window.location.href='players.html'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        </button>
+        <button class="nav-icon-btn" title="Teams">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+        </button>
+        <button class="nav-icon-btn" title="Settings" style="margin-top: auto;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        </button>
+    </aside>
+
+    <main class="main-content">
+        <header class="flex justify-between items-center" style="margin-bottom: var(--space-8);">
+            <h1 style="font-size: 32px;">Live Dashboard</h1>
+            <div class="flex items-center gap-4">
+                <div class="mono" style="font-size: 13px; opacity: 0.6;">MAY 27, 2026</div>
+                <div class="pulse-dot"></div>
+            </div>
+        </header>
+
+        <!-- Live Hero -->
+        <section class="hero-live">
+            <div class="flex justify-between items-center" style="margin-bottom: var(--space-6);">
+                <div class="flex items-center gap-2">
+                    <span class="live-tag">Live 67'</span>
+                    <span class="pulse-dot"></span>
+                </div>
+                <div class="mono" style="font-size: 11px; opacity: 0.7; letter-spacing: 0.1em;">LUSAIL STADIUM</div>
+            </div>
+            
+            <div class="score-display">
+                ARG <span style="opacity: 0.3; margin: 0 12px;">2 — 1</span> FRA
+            </div>
+
+            <div class="stat-bar-container">
+                <div class="stat-bar-label">
+                    <span>Possession</span>
+                    <span class="mono">55% - 45%</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill left" style="width: 55%;"></div>
+                    <div class="bar-fill right" style="width: 45%;"></div>
+                </div>
+            </div>
+
+            <div class="stat-bar-container">
+                <div class="stat-bar-label">
+                    <span>Expected Goals (xG)</span>
+                    <span class="mono">1.8 - 1.2</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill left" style="width: 60%;"></div>
+                    <div class="bar-fill right" style="width: 40%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Registry -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Goals Today</div>
+                <div class="kpi-value">07</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Matches </div>
+                <div class="kpi-value">3/4</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Peak xG</div>
+                <div class="kpi-value">2.41</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Yellow Cards</div>
+                <div class="kpi-value">05</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-layout">
+            <div class="standings card" style="background: white;">
+                <div class="flex justify-between items-center" style="margin-bottom: var(--space-6);">
+                    <h2 style="font-size: 20px;">Group C Standings</h2>
+                    <div class="pill-group">
+                        <button class="pill-item active">Live</button>
+                        <button class="pill-item">Final</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>POS</th>
+                            <th>TEAM</th>
+                            <th>P</th>
+                            <th>W</th>
+                            <th>D</th>
+                            <th>L</th>
+                            <th>GD</th>
+                            <th>PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono">1</td>
+                            <td><strong>ARGENTINA</strong></td>
+                            <td class="mono">3</td>
+                            <td class="mono">3</td>
+                            <td class="mono">0</td>
+                            <td class="mono">0</td>
+                            <td class="mono">+7</td>
+                            <td class="mono">9</td>
+                        </tr>
+                        <tr>
+                            <td class="mono">2</td>
+                            <td>POLAND</td>
+                            <td class="mono">3</td>
+                            <td class="mono">1</td>
+                            <td class="mono">1</td>
+                            <td class="mono">1</td>
+                            <td class="mono">0</td>
+                            <td class="mono">4</td>
+                        </tr>
+                        <tr>
+                            <td class="mono">3</td>
+                            <td>MEXICO</td>
+                            <td class="mono">3</td>
+                            <td class="mono">1</td>
+                            <td class="mono">1</td>
+                            <td class="mono">1</td>
+                            <td class="mono">-1</td>
+                            <td class="mono">4</td>
+                        </tr>
+                        <tr>
+                            <td class="mono">4</td>
+                            <td>SAUDI ARABIA</td>
+                            <td class="mono">3</td>
+                            <td class="mono">0</td>
+                            <td class="mono">0</td>
+                            <td class="mono">3</td>
+                            <td class="mono">-6</td>
+                            <td class="mono">0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="performers card" style="background: white;">
+                <h2 style="font-size: 20px; margin-bottom: var(--space-4);">Top Scorers</h2>
+                <div class="performer-list">
+                    <div class="performer-item">
+                        <div class="avatar"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">Lionel Messi</div>
+                            <div style="font-size: 11px; opacity: 0.6;">Argentina</div>
+                        </div>
+                        <div class="mono" style="font-size: 18px;">5</div>
+                    </div>
+                    <div class="performer-item">
+                        <div class="avatar"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">Kylian Mbappé</div>
+                            <div style="font-size: 11px; opacity: 0.6;">France</div>
+                        </div>
+                        <div class="mono" style="font-size: 18px;">4</div>
+                    </div>
+                    <div class="performer-item">
+                        <div class="avatar"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">Julián Álvarez</div>
+                            <div style="font-size: 11px; opacity: 0.6;">Argentina</div>
+                        </div>
+                        <div class="mono" style="font-size: 18px;">4</div>
+                    </div>
+                    <div class="performer-item">
+                        <div class="avatar"></div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">Olivier Giroud</div>
+                            <div style="font-size: 11px; opacity: 0.6;">France</div>
+                        </div>
+                        <div class="mono" style="font-size: 18px;">4</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    gsap.from(".hero-live", { opacity: 0, y: 30, duration: 0.8, ease: "power3.out" });
+    gsap.from(".kpi-card", { opacity: 0, y: 20, duration: 0.6, stagger: 0.1, ease: "power2.out", delay: 0.3 });
+    gsap.from(".card", { opacity: 0, y: 20, duration: 0.8, stagger: 0.2, ease: "power2.out", delay: 0.5 });
+</script>
+
+</body>
+</html>

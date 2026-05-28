@@ -48,16 +48,10 @@ services:
     container_name: world_cup_api
     restart: always
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
 
   airflow-webserver:
     build:
@@ -66,33 +60,22 @@ services:
     image: world-cup-airflow:local
     container_name: airflow_webserver
     command: webserver
-    restart: always
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${AIRFLOW_POSTGRES_DB:-airflow_db}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW_LOAD_EXAMPLES:-False}
       - PYTHONPATH=/opt/airflow/backend
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - WC2026_API_KEY=${WC2026_API_KEY}
-      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
-      - AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT=120
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
+      - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
+      - ./services:/opt/airflow/backend/services
     ports:
       - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-      airflow-db-bootstrap:
-        condition: service_completed_successfully
 
   airflow-scheduler:
     build:
@@ -103,27 +86,19 @@ services:
     command: scheduler
     restart: always
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${AIRFLOW_POSTGRES_DB:-airflow_db}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__CORE__LOAD_EXAMPLES=${AIRFLOW_LOAD_EXAMPLES:-False}
       - PYTHONPATH=/opt/airflow/backend
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - WC2026_API_KEY=${WC2026_API_KEY}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
+      - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
-    depends_on:
-      db:
-        condition: service_healthy
-      airflow-db-bootstrap:
-        condition: service_completed_successfully
+      - ./services:/opt/airflow/backend/services
 
   airflow-init:
     build:
@@ -132,7 +107,7 @@ services:
     image: world-cup-airflow:local
     container_name: airflow_init
     environment:
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT:-5432}/${AIRFLOW_POSTGRES_DB:-airflow_db}
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL}
     entrypoint: /bin/bash
     command:
       - -c
@@ -145,11 +120,94 @@ services:
           --role Admin \
           --email fortunealebiosu710@gmail.com \
           --password ${AIRFLOW_ADMIN_PASSWORD} || true
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: world_cup_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery-beat:
+    build: .
+    container_name: world_cup_celery_beat
+    command: celery -A services.celery_app beat --loglevel=info
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - PYTHONPATH=/app/backend
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  celery-worker-fetch:
+    build: .
+    container_name: world_cup_celery_worker_fetch
+    command: celery -A services.celery_app worker --loglevel=info -Q worker_fetch --concurrency=2
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - PYTHONPATH=/app/backend
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  celery-worker-db:
+    build: .
+    container_name: world_cup_celery_worker_db
+    command: celery -A services.celery_app worker --loglevel=info -Q worker_db --concurrency=4
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - PYTHONPATH=/app/backend
     depends_on:
       db:
         condition: service_healthy
-      airflow-db-bootstrap:
-        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: world_cup_prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: world_cup_grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: always
 
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:
