@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
@@ -33,7 +34,8 @@ class Player(Base):
     market_value = Column(BigInteger)
 
     ## Statistics
-    rating = Column(Float)
+    rating = Column(Float, index=True)
+    stats_json = Column(JSONB)
 
 
 def upsert_players_batch(db: Session, players_data: Iterable[Mapping[str, Any]]) -> int:
