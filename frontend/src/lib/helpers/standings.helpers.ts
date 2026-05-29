@@ -38,9 +38,9 @@ export const groupStandings: Record<GroupKey, StandingRow[]> = {
     { position: 4, team: "Qatar", played: 3, won: 0, drawn: 0, lost: 3, goalDifference: -5, points: 0 },
   ],
   G: [
-    { position: 1, team: "Brazil", played: 3, won: 2, drawn: 0, lost: 1, goalDifference: 2, points: 6 },
-    { position: 2, team: "Switzerland", played: 3, won: 1, drawn: 2, lost: 0, goalDifference: 1, points: 5 },
-    { position: 3, team: "Serbia", played: 3, won: 1, drawn: 0, lost: 2, goalDifference: -3, points: 3 },
+    { position: 1, team: "Brazil", played: 3, won: 2, drawn: 0, lost: 1, goalDifference: 3, points: 6 },
+    { position: 2, team: "Switzerland", played: 3, won: 1, drawn: 2, lost: 0, goalDifference: 2, points: 5 },
+    { position: 3, team: "Serbia", played: 3, won: 1, drawn: 0, lost: 2, goalDifference: -2, points: 3 },
     { position: 4, team: "Cameroon", played: 3, won: 1, drawn: 0, lost: 2, goalDifference: -3, points: 3 },
   ],
   H: [
@@ -62,13 +62,13 @@ export const groupStandings: Record<GroupKey, StandingRow[]> = {
     { position: 4, team: "Panama", played: 3, won: 0, drawn: 1, lost: 2, goalDifference: -5, points: 1 },
   ],
   K: [
-    { position: 1, team: "Belgium", played: 3, won: 2, drawn: 1, lost: 0, goalDifference: 3, points: 7 },
+    { position: 1, team: "Nigeria", played: 3, won: 2, drawn: 1, lost: 0, goalDifference: 3, points: 7 },
     { position: 2, team: "Sweden", played: 3, won: 1, drawn: 2, lost: 0, goalDifference: 1, points: 5 },
     { position: 3, team: "Peru", played: 3, won: 1, drawn: 0, lost: 2, goalDifference: -1, points: 3 },
     { position: 4, team: "Honduras", played: 3, won: 0, drawn: 1, lost: 2, goalDifference: -3, points: 1 },
   ],
   L: [
-    { position: 1, team: "Germany", played: 3, won: 2, drawn: 1, lost: 0, goalDifference: 4, points: 7 },
+    { position: 1, team: "Czech Republic", played: 3, won: 2, drawn: 1, lost: 0, goalDifference: 4, points: 7 },
     { position: 2, team: "Austria", played: 3, won: 2, drawn: 0, lost: 1, goalDifference: 2, points: 6 },
     { position: 3, team: "Scotland", played: 3, won: 1, drawn: 0, lost: 2, goalDifference: -2, points: 3 },
     { position: 4, team: "Jamaica", played: 3, won: 0, drawn: 1, lost: 2, goalDifference: -4, points: 1 },

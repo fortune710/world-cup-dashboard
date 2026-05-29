@@ -1,7 +1,9 @@
 /** Production canonical origin — set VITE_SITE_URL at build/deploy time */
-export const SITE_URL =
-  import.meta.env.VITE_SITE_URL?.replace(/\/$/, "") ??
-  "http://localhost:5173"
+const configuredSiteUrl = import.meta.env.VITE_SITE_URL?.trim()
+export const SITE_URL = (
+  configuredSiteUrl ||
+  (import.meta.env.DEV ? "http://localhost:5173" : "")
+).replace(/\/$/, "")
 
 export const SITE_NAME = "World Cup 2026 Dashboard"
 
