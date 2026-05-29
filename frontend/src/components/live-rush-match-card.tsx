@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -10,23 +11,24 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import type { LiveRushMatch, LiveRushMatchCardProps, MatchWinner } from "@/datatypes"
-import { getLiveRushFooterMessage } from "@/lib/helpers/live-rush.helpers"
 import { getMatchWinner } from "@/lib/helpers/match.helpers"
 import { cn } from "@/lib/utils"
 import { ClockIcon, RadioIcon } from "lucide-react"
 
 function MatchStatusBadge({ match }: { match: LiveRushMatch }) {
+  const { t } = useTranslation()
+
   if (match.status === "live") {
     return (
       <Badge variant="default" className="gap-1">
         <RadioIcon data-icon="inline-start" />
-        Live
+        {t("matchCard.live")}
       </Badge>
     )
   }
 
   if (match.status === "finished") {
-    return <Badge variant="outline">FT</Badge>
+    return <Badge variant="outline">{t("matchCard.fullTime")}</Badge>
   }
 
   return (
@@ -52,6 +54,8 @@ const MatchScoreline = React.memo(function MatchScoreline({
   awayScore,
   winner,
 }: MatchScorelineProps) {
+  const { t } = useTranslation()
+
   const homeMuted = winner === "away"
   const awayMuted = winner === "home"
   const homeScoreMuted = winner === "away"
@@ -80,7 +84,9 @@ const MatchScoreline = React.memo(function MatchScoreline({
             </span>
           ) : null}
         </div>
-        <div className="text-center text-xs text-muted-foreground">vs</div>
+        <div className="text-center text-xs text-muted-foreground">
+          {t("common.vs")}
+        </div>
         <div className="flex min-w-0 items-center justify-between gap-3">
           <span
             className={cn(
@@ -122,7 +128,7 @@ const MatchScoreline = React.memo(function MatchScoreline({
             >
               {homeScore}
             </span>
-            <span className="px-1 text-muted-foreground">vs</span>
+            <span className="px-1 text-muted-foreground">{t("common.vs")}</span>
             <span
               className={cn(
                 "tabular-nums font-semibold",
@@ -143,7 +149,7 @@ const MatchScoreline = React.memo(function MatchScoreline({
         ) : (
           <div className="flex min-w-0 items-center justify-center gap-2">
             <span className="truncate font-semibold">{match.homeTeam}</span>
-            <span className="shrink-0 text-muted-foreground">vs</span>
+            <span className="shrink-0 text-muted-foreground">{t("common.vs")}</span>
             <span className="truncate font-semibold">{match.awayTeam}</span>
           </div>
         )}
@@ -156,11 +162,24 @@ export const LiveRushMatchCard = React.memo(function LiveRushMatchCard({
   match,
   className,
 }: LiveRushMatchCardProps) {
+  const { t } = useTranslation()
   const isLive = match.status === "live"
   const hasScores = match.status !== "upcoming"
   const homeScore = match.homeScore ?? 0
   const awayScore = match.awayScore ?? 0
   const winner = hasScores ? getMatchWinner(homeScore, awayScore) : null
+
+  const footerMessage =
+    match.status === "finished"
+      ? t("liveRush.footer.finished")
+      : match.status === "live"
+        ? t("liveRush.footer.live")
+        : t("liveRush.footer.upcoming")
+
+  const kickoffDescription =
+    match.status === "live"
+      ? t("matchCard.liveKickoff", { label: match.kickoffLabel })
+      : match.kickoffLabel
 
   return (
     <Card
@@ -172,10 +191,10 @@ export const LiveRushMatchCard = React.memo(function LiveRushMatchCard({
     >
       <CardHeader>
         <CardDescription>
-          {match.group ? `Group ${match.group}` : "Knockout"} ·{" "}
-          {match.status === "live"
-            ? `${match.kickoffLabel} live`
-            : match.kickoffLabel}
+          {match.group
+            ? t("common.group", { group: match.group })
+            : t("common.knockout")}{" "}
+          · {kickoffDescription}
         </CardDescription>
         <CardAction>
           <MatchStatusBadge match={match} />
@@ -191,9 +210,7 @@ export const LiveRushMatchCard = React.memo(function LiveRushMatchCard({
         </CardTitle>
       </CardHeader>
       <CardFooter className="flex-col items-start gap-1.5 text-sm">
-        <div className="text-muted-foreground">
-          {getLiveRushFooterMessage(match.status)}
-        </div>
+        <div className="text-muted-foreground">{footerMessage}</div>
       </CardFooter>
     </Card>
   )

@@ -920,6 +920,9 @@ def ingest_live_match(match_id: str):
     if data is None:
         # Fallback to API-Football
         data = fetch_apifootball_fixture(match_id)
+    if data is None:
+        logger.error("ingest_live_match: no fixture data for match_id=%s", match_id)
+        return
     process_match_data.delay(data)
     status = data.get('status', 'unknown')
     interval = POLL_INTERVAL_LIVE if status == 'live' else POLL_INTERVAL_PRE
@@ -932,10 +935,11 @@ def ingest_live_match(match_id: str):
 # app/api/webhooks/sportmonks/route.ts (Next.js)
 export async function POST(req: Request) {
   const sig = req.headers.get('x-sportmonks-signature');
-  if (!verifySignature(sig, await req.text(), process.env.SPORTMONKS_WEBHOOK_SECRET)) {
+  const bodyText = await req.text();
+  if (!verifySignature(sig, bodyText, process.env.SPORTMONKS_WEBHOOK_SECRET)) {
     return new Response('Unauthorized', { status: 401 });
   }
-  const payload = await req.json();
+  const payload = JSON.parse(bodyText);
   await redis.publish('match_events', JSON.stringify(payload));
   return new Response('OK');
 }

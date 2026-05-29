@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   Card,
@@ -38,13 +39,15 @@ import {
 } from "@/lib/helpers/top-performers.helpers"
 import { cn } from "@/lib/utils"
 
-const PERFORMER_TABS = [
-  { value: "Goals", label: "Goals" },
-  { value: "Assists", label: "Assists" },
-  { value: "Saves", label: "Saves" },
-] as const
+const PERFORMER_TAB_VALUES = ["Goals", "Assists", "Saves"] as const
 
-type PerformerTab = (typeof PERFORMER_TABS)[number]["value"]
+type PerformerTab = (typeof PERFORMER_TAB_VALUES)[number]
+
+const PERFORMER_TAB_I18N: Record<PerformerTab, string> = {
+  Goals: "topPerformers.tabs.goals",
+  Assists: "topPerformers.tabs.assists",
+  Saves: "topPerformers.tabs.saves",
+}
 
 const goalPerformerRows = toGoalPerformerRows(topPerformers[0])
 const assistPerformerRows = toAssistPerformerRows(topPerformers[1])
@@ -82,11 +85,24 @@ const PerformerList = React.memo(function PerformerList({
 })
 
 function TopPerformers({ className }: TopPerformersProps) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = React.useState<PerformerTab>("Goals")
+
+  const performerTabs = React.useMemo(
+    () =>
+      PERFORMER_TAB_VALUES.map((value) => ({
+        value,
+        label: t(PERFORMER_TAB_I18N[value]),
+      })),
+    [t]
+  )
 
   const handleTabChange = React.useCallback((value: string) => {
     setActiveTab(value as PerformerTab)
   }, [])
+
+  const activeTabLabel =
+    performerTabs.find((tab) => tab.value === activeTab)?.label ?? activeTab
 
   return (
     <Tabs
@@ -97,17 +113,17 @@ function TopPerformers({ className }: TopPerformersProps) {
       <Card className="@container/card flex h-full flex-col gap-3">
         <CardHeader className="pb-0">
           <div className="flex flex-col gap-2">
-            <CardTitle>Top Performers</CardTitle>
+            <CardTitle>{t("topPerformers.title")}</CardTitle>
             <CardDescription>
               <span className="hidden @[540px]/card:block">
-                Standouts so far in the tournament
+                {t("topPerformers.description")}
               </span>
-              <span className="@[540px]/card:hidden">{activeTab}</span>
+              <span className="@[540px]/card:hidden">{activeTabLabel}</span>
             </CardDescription>
           </div>
           <CardAction>
             <TabsList className="hidden @[767px]/card:inline-flex">
-              {PERFORMER_TABS.map(({ value, label }) => (
+              {performerTabs.map(({ value, label }) => (
                 <TabsTrigger key={value} value={value}>
                   {label}
                 </TabsTrigger>
@@ -117,12 +133,12 @@ function TopPerformers({ className }: TopPerformersProps) {
               <SelectTrigger
                 className="flex w-36 @[767px]/card:hidden"
                 size="sm"
-                aria-label="Select performer category"
+                aria-label={t("common.selectPerformerCategory")}
               >
-                <SelectValue placeholder="Goals" />
+                <SelectValue placeholder={t("topPerformers.tabs.goals")} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                {PERFORMER_TABS.map(({ value, label }) => (
+                {performerTabs.map(({ value, label }) => (
                   <SelectItem key={value} value={value} className="rounded-lg">
                     {label}
                   </SelectItem>

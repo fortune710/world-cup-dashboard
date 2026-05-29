@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { useTranslation } from "react-i18next"
 import { Outlet } from "react-router"
 
 import { AppSidebar } from "@/components/app-sidebar"
@@ -10,6 +11,8 @@ import {
 } from "@/components/ui/sidebar"
 
 export function AppLayout() {
+  const { t } = useTranslation()
+
   return (
     <SidebarProvider
       style={
@@ -24,7 +27,7 @@ export function AppLayout() {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:bg-background focus:px-4 focus:py-2 focus:ring-2 focus:ring-ring"
       >
-        Skip to main content
+        {t("app.skipToContent")}
       </a>
       <AppSidebar variant="inset" />
       <SidebarInset>

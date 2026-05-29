@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next"
+
 import {
   Avatar,
   AvatarFallback,
@@ -29,6 +31,7 @@ export function NavUser({
     avatar: string
   }
 }) {
+  const { t } = useTranslation()
   const { isMobile } = useSidebar()
 
   return (
@@ -76,26 +79,22 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <CircleUserRoundIcon
-                />
-                Account
+                <CircleUserRoundIcon />
+                {t("common.account")}
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
+                <CreditCardIcon />
+                {t("common.billing")}
               </DropdownMenuItem>
               <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
+                <BellIcon />
+                {t("common.notifications")}
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogOutIcon
-              />
-              Log out
+              <LogOutIcon />
+              {t("common.logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

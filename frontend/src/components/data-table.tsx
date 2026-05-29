@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import type { TFunction } from "i18next"
+import { useTranslation } from "react-i18next"
 import {
   flexRender,
   getCoreRowModel,
@@ -17,6 +19,7 @@ import {
 import type {
   ConfederationFilter,
   FormBadgeProps,
+  FormResult,
   PowerRankingRow,
   PowerRankingTableProps,
   RankChangeBadgeProps,
@@ -63,7 +66,6 @@ import {
   ELO_RED_CARD_PENALTY,
   ELO_YELLOW_CARD_PENALTY,
   filterPowerRankingsByConfederation,
-  formatFormLabel,
   formatGoalDifference,
   formatRankChange,
   formatXg,
@@ -89,15 +91,38 @@ import {
 
 export { powerRankingSchema as schema } from "@/datatypes"
 
-const CONFEDERATION_OPTIONS: { value: ConfederationFilter; label: string }[] = [
-  { value: "all", label: "All confederations" },
-  { value: "UEFA", label: "UEFA" },
-  { value: "CONMEBOL", label: "CONMEBOL" },
-  { value: "CONCACAF", label: "CONCACAF" },
-  { value: "AFC", label: "AFC" },
-  { value: "CAF", label: "CAF" },
-  { value: "OFC", label: "OFC" },
+const CONFEDERATION_VALUES: ConfederationFilter[] = [
+  "all",
+  "UEFA",
+  "CONMEBOL",
+  "CONCACAF",
+  "AFC",
+  "CAF",
+  "OFC",
 ]
+
+function formatFormLabel(form: FormResult[], t: TFunction): string {
+  return form
+    .map((result) => {
+      if (result === "W") {
+        return t("common.win")
+      }
+
+      if (result === "D") {
+        return t("common.draw")
+      }
+
+      return t("common.loss")
+    })
+    .join(", ")
+}
+
+function getConfederationOptions(t: TFunction) {
+  return CONFEDERATION_VALUES.map((value) => ({
+    value,
+    label: value === "all" ? t("common.allConfederations") : value,
+  }))
+}
 
 const FormBadge = React.memo(function FormBadge({ result }: FormBadgeProps) {
   return (
@@ -115,10 +140,14 @@ const FormBadge = React.memo(function FormBadge({ result }: FormBadgeProps) {
 })
 
 const TeamForm = React.memo(function TeamForm({ form }: TeamFormProps) {
+  const { t } = useTranslation()
+
   return (
     <div
       className="flex gap-0.5 sm:gap-1"
-      aria-label={`Last 5 results: ${formatFormLabel(form)}`}
+      aria-label={t("common.last5Results", {
+        results: formatFormLabel(form, t),
+      })}
     >
       {form.map((result, index) => (
         <FormBadge key={`${result}-${index}`} result={result} />
@@ -132,6 +161,7 @@ const EloRatingCell = React.memo(function EloRatingCell({
 }: {
   row: PowerRankingRow
 }) {
+  const { t } = useTranslation()
   const penalty = getDisciplineEloPenalty(row)
   const adjustedElo = getAdjustedElo(row)
 
@@ -143,10 +173,16 @@ const EloRatingCell = React.memo(function EloRatingCell({
         </div>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-56 text-xs">
-        Base Elo {row.baseElo}
+        {t("powerRanking.eloTooltip.base", { elo: row.baseElo })}
         {penalty > 0
-          ? ` · −${penalty} discipline (${row.yellowCards} yellow × ${ELO_YELLOW_CARD_PENALTY}, ${row.redCards} red × ${ELO_RED_CARD_PENALTY})`
-          : " · no discipline penalty"}
+          ? t("powerRanking.eloTooltip.discipline", {
+              penalty,
+              yellow: row.yellowCards,
+              yellowPenalty: ELO_YELLOW_CARD_PENALTY,
+              red: row.redCards,
+              redPenalty: ELO_RED_CARD_PENALTY,
+            })
+          : t("powerRanking.eloTooltip.none")}
       </TooltipContent>
     </Tooltip>
   )
@@ -187,183 +223,195 @@ const RankChangeBadge = React.memo(function RankChangeBadge({
   )
 })
 
-const columns: ColumnDef<PowerRankingRow>[] = [
-  {
-    accessorKey: "rank",
-    header: () => <div className="w-10">#</div>,
-    cell: ({ row }) => {
-      const rank = row.original.rank
-      const isTopTier = isTopPowerRank(rank)
+function createPowerRankingColumns(t: TFunction): ColumnDef<PowerRankingRow>[] {
+  return [
+    {
+      accessorKey: "rank",
+      header: () => <div className="w-10">#</div>,
+      cell: ({ row }) => {
+        const rank = row.original.rank
+        const isTopTier = isTopPowerRank(rank)
 
-      return (
-        <div className="flex items-center gap-2">
-          {isTopTier ? (
+        return (
+          <div className="flex items-center gap-2">
+            {isTopTier ? (
+              <span
+                className={cn(
+                  "size-2 shrink-0 rounded-full bg-primary",
+                  rank === 1 && "size-2.5 ring-2 ring-primary/40"
+                )}
+                aria-hidden
+              />
+            ) : (
+              <span className="size-2 shrink-0" aria-hidden />
+            )}
             <span
               className={cn(
-                "size-2 shrink-0 rounded-full bg-primary",
-                rank === 1 && "size-2.5 ring-2 ring-primary/40"
+                "font-medium tabular-nums",
+                isTopTier ? "text-primary" : "text-muted-foreground"
               )}
-              aria-hidden
-            />
-          ) : (
-            <span className="size-2 shrink-0" aria-hidden />
-          )}
-          <span
-            className={cn(
-              "font-medium tabular-nums",
-              isTopTier ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            {rank}
-          </span>
-        </div>
-      )
+            >
+              {rank}
+            </span>
+          </div>
+        )
+      },
+      enableHiding: false,
     },
-    enableHiding: false,
-  },
-  {
-    id: "rankChange",
-    header: () => <span className="sr-only">Rank change</span>,
-    cell: ({ row }) => <RankChangeBadge change={row.original.rankChange} />,
-    enableSorting: false,
-  },
-  {
-    accessorKey: "team",
-    header: "Team",
-    cell: ({ row }) => (
-      <div className="flex min-w-32 flex-col gap-1 sm:min-w-36">
-        <span className="font-medium">{row.original.team}</span>
-        <Badge variant="outline" className="w-fit px-1.5 text-muted-foreground">
-          {row.original.code}
-        </Badge>
-      </div>
-    ),
-    enableHiding: false,
-  },
-  {
-    accessorKey: "played",
-    header: () => <div className="text-end">GP</div>,
-    cell: ({ row }) => (
-      <div className="text-end tabular-nums">{row.original.played}</div>
-    ),
-  },
-  {
-    accessorKey: "wins",
-    header: () => <div className="text-end">W</div>,
-    cell: ({ row }) => (
-      <div className="text-end tabular-nums">{row.original.wins}</div>
-    ),
-  },
-  {
-    accessorKey: "draws",
-    header: () => <div className="hidden text-end sm:table-cell">D</div>,
-    cell: ({ row }) => (
-      <div className="hidden text-end tabular-nums sm:table-cell">
-        {row.original.draws}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "losses",
-    header: () => <div className="hidden text-end sm:table-cell">L</div>,
-    cell: ({ row }) => (
-      <div className="hidden text-end tabular-nums sm:table-cell">
-        {row.original.losses}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "goalsScored",
-    header: () => <div className="hidden text-end md:table-cell">GS</div>,
-    cell: ({ row }) => (
-      <div className="hidden text-end tabular-nums md:table-cell">
-        {row.original.goalsScored}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "goalsAgainst",
-    header: () => <div className="hidden text-end md:table-cell">GA</div>,
-    cell: ({ row }) => (
-      <div className="hidden text-end tabular-nums md:table-cell">
-        {row.original.goalsAgainst}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "goalDifference",
-    header: () => <div className="text-end">GD</div>,
-    cell: ({ row }) => (
-      <div className="text-end tabular-nums">
-        {formatGoalDifference(row.original.goalDifference)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "xgFor",
-    header: () => <div className="hidden text-end lg:table-cell">xG</div>,
-    cell: ({ row }) => (
-      <div className="hidden text-end tabular-nums lg:table-cell">
-        {formatXg(row.original.xgFor)}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "yellowCards",
-    header: () => <div className="hidden text-end xl:table-cell">YC</div>,
-    cell: ({ row }) => (
-      <div
-        className="hidden text-end tabular-nums xl:table-cell"
-        aria-label={`${row.original.yellowCards} yellow cards`}
-      >
-        {row.original.yellowCards}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "redCards",
-    header: () => <div className="hidden text-end xl:table-cell">RC</div>,
-    cell: ({ row }) => (
-      <div
-        className="hidden text-end tabular-nums xl:table-cell"
-        aria-label={`${row.original.redCards} red cards`}
-      >
-        {row.original.redCards}
-      </div>
-    ),
-  },
-  {
-    id: "adjustedElo",
-    accessorFn: (row) => getAdjustedElo(row),
-    header: () => <div className="text-end">Elo</div>,
-    cell: ({ row }) => <EloRatingCell row={row.original} />,
-  },
-  {
-    accessorKey: "form",
-    header: () => (
-      <div>
-        <span>Form</span>
-        <span className="sr-only"> — last 5</span>
-      </div>
-    ),
-    cell: ({ row }) => <TeamForm form={row.original.form} />,
-    enableSorting: false,
-  },
-  {
-    accessorKey: "confederation",
-    header: () => <div className="hidden text-end xl:table-cell">Conf.</div>,
-    cell: ({ row }) => (
-      <div className="hidden text-end text-muted-foreground xl:table-cell">
-        {row.original.confederation}
-      </div>
-    ),
-  },
-]
+    {
+      id: "rankChange",
+      header: () => <span className="sr-only">{t("common.rankChange")}</span>,
+      cell: ({ row }) => <RankChangeBadge change={row.original.rankChange} />,
+      enableSorting: false,
+    },
+    {
+      accessorKey: "team",
+      header: t("common.team"),
+      cell: ({ row }) => (
+        <div className="flex min-w-32 flex-col gap-1 sm:min-w-36">
+          <span className="font-medium">{row.original.team}</span>
+          <Badge variant="outline" className="w-fit px-1.5 text-muted-foreground">
+            {row.original.code}
+          </Badge>
+        </div>
+      ),
+      enableHiding: false,
+    },
+    {
+      accessorKey: "played",
+      header: () => <div className="text-end">GP</div>,
+      cell: ({ row }) => (
+        <div className="text-end tabular-nums">{row.original.played}</div>
+      ),
+    },
+    {
+      accessorKey: "wins",
+      header: () => <div className="text-end">W</div>,
+      cell: ({ row }) => (
+        <div className="text-end tabular-nums">{row.original.wins}</div>
+      ),
+    },
+    {
+      accessorKey: "draws",
+      header: () => <div className="hidden text-end sm:table-cell">D</div>,
+      cell: ({ row }) => (
+        <div className="hidden text-end tabular-nums sm:table-cell">
+          {row.original.draws}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "losses",
+      header: () => <div className="hidden text-end sm:table-cell">L</div>,
+      cell: ({ row }) => (
+        <div className="hidden text-end tabular-nums sm:table-cell">
+          {row.original.losses}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "goalsScored",
+      header: () => <div className="hidden text-end md:table-cell">GS</div>,
+      cell: ({ row }) => (
+        <div className="hidden text-end tabular-nums md:table-cell">
+          {row.original.goalsScored}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "goalsAgainst",
+      header: () => <div className="hidden text-end md:table-cell">GA</div>,
+      cell: ({ row }) => (
+        <div className="hidden text-end tabular-nums md:table-cell">
+          {row.original.goalsAgainst}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "goalDifference",
+      header: () => <div className="text-end">GD</div>,
+      cell: ({ row }) => (
+        <div className="text-end tabular-nums">
+          {formatGoalDifference(row.original.goalDifference)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "xgFor",
+      header: () => <div className="hidden text-end lg:table-cell">xG</div>,
+      cell: ({ row }) => (
+        <div className="hidden text-end tabular-nums lg:table-cell">
+          {formatXg(row.original.xgFor)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "yellowCards",
+      header: () => <div className="hidden text-end xl:table-cell">YC</div>,
+      cell: ({ row }) => (
+        <div
+          className="hidden text-end tabular-nums xl:table-cell"
+          aria-label={t("common.yellowCardsCount", {
+            count: row.original.yellowCards,
+          })}
+        >
+          {row.original.yellowCards}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "redCards",
+      header: () => <div className="hidden text-end xl:table-cell">RC</div>,
+      cell: ({ row }) => (
+        <div
+          className="hidden text-end tabular-nums xl:table-cell"
+          aria-label={t("common.redCardsCount", {
+            count: row.original.redCards,
+          })}
+        >
+          {row.original.redCards}
+        </div>
+      ),
+    },
+    {
+      id: "adjustedElo",
+      accessorFn: (row) => getAdjustedElo(row),
+      header: () => <div className="text-end">Elo</div>,
+      cell: ({ row }) => <EloRatingCell row={row.original} />,
+    },
+    {
+      accessorKey: "form",
+      header: () => (
+        <div>
+          <span>{t("common.form")}</span>
+          <span className="sr-only">{t("common.formLast5SrOnly")}</span>
+        </div>
+      ),
+      cell: ({ row }) => <TeamForm form={row.original.form} />,
+      enableSorting: false,
+    },
+    {
+      accessorKey: "confederation",
+      header: () => (
+        <div className="hidden text-end xl:table-cell">{t("common.confederation")}</div>
+      ),
+      cell: ({ row }) => (
+        <div className="hidden text-end text-muted-foreground xl:table-cell">
+          {row.original.confederation}
+        </div>
+      ),
+    },
+  ]
+}
 
 export const PowerRankingTable = React.memo(function PowerRankingTable({
   data = powerRankingRows,
   className,
 }: PowerRankingTableProps) {
+  const { t } = useTranslation()
+  const columns = React.useMemo(() => createPowerRankingColumns(t), [t])
+  const confederationOptions = React.useMemo(() => getConfederationOptions(t), [t])
+
   const [confederationFilter, setConfederationFilter] =
     React.useState<ConfederationFilter>("all")
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -414,12 +462,12 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
       <Card>
         <CardHeader>
           <div className="flex flex-col gap-2">
-            <CardTitle>Tournament Power Rankings</CardTitle>
+            <CardTitle>{t("powerRanking.title")}</CardTitle>
             <CardDescription>
-              Match record, goals, xG, and discipline through the group stage.
-              Elo applies a small penalty for yellow (−{ELO_YELLOW_CARD_PENALTY})
-              and red (−{ELO_RED_CARD_PENALTY}) cards — hover a rating for the
-              breakdown.
+              {t("powerRanking.description", {
+                yellowPenalty: ELO_YELLOW_CARD_PENALTY,
+                redPenalty: ELO_RED_CARD_PENALTY,
+              })}
             </CardDescription>
           </div>
         </CardHeader>
@@ -427,18 +475,18 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Label htmlFor="confederation-filter" className="sr-only">
-                Filter by confederation
+                {t("common.filterByConfederation")}
               </Label>
               <Select
                 value={confederationFilter}
                 onValueChange={handleConfederationChange}
               >
                 <SelectTrigger id="confederation-filter" className="w-48" size="sm">
-                  <SelectValue placeholder="All confederations" />
+                  <SelectValue placeholder={t("common.allConfederations")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {CONFEDERATION_OPTIONS.map(({ value, label }) => (
+                    {confederationOptions.map(({ value, label }) => (
                       <SelectItem key={value} value={value}>
                         {label}
                       </SelectItem>
@@ -451,7 +499,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Columns3Icon data-icon="inline-start" />
-                  Columns
+                  {t("common.columns")}
                   <ChevronDownIcon data-icon="inline-end" />
                 </Button>
               </DropdownMenuTrigger>
@@ -476,7 +524,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
           </div>
 
           <div className="overflow-x-auto rounded-lg border">
-            <Table aria-label="Tournament power rankings">
+            <Table aria-label={t("powerRanking.tableAriaLabel")}>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
@@ -509,7 +557,10 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                         )}
                         aria-label={
                           isTopTier
-                            ? `${row.original.team}, top ${TOP_POWER_RANK_THRESHOLD} power rank`
+                            ? t("powerRanking.topRankAria", {
+                                team: row.original.team,
+                                threshold: TOP_POWER_RANK_THRESHOLD,
+                              })
                             : undefined
                         }
                       >
@@ -530,7 +581,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                       colSpan={columns.length}
                       className="h-24 text-center text-muted-foreground"
                     >
-                      No teams match this filter.
+                      {t("powerRanking.noTeams")}
                     </TableCell>
                   </TableRow>
                 )}
@@ -540,13 +591,15 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
-              {filteredData.length} teams ranked · sorted by{" "}
-              {sorting[0]?.id ?? "rank"}
+              {t("common.teamsRankedSorted", {
+                count: filteredData.length,
+                sort: sorting[0]?.id ?? "rank",
+              })}
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
               <div className="flex items-center gap-2">
                 <Label htmlFor="rankings-page-size" className="text-sm font-medium">
-                  Rows
+                  {t("common.rows")}
                 </Label>
                 <Select
                   value={`${table.getState().pagination.pageSize}`}
@@ -573,8 +626,10 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                 </Select>
               </div>
               <div className="text-sm font-medium tabular-nums">
-                Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
+                {t("common.pageOf", {
+                  current: table.getState().pagination.pageIndex + 1,
+                  total: table.getPageCount(),
+                })}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -584,7 +639,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                   onClick={() => table.setPageIndex(0)}
                   disabled={!table.getCanPreviousPage()}
                 >
-                  <span className="sr-only">Go to first page</span>
+                  <span className="sr-only">{t("common.goToFirstPage")}</span>
                   <ChevronsLeftIcon />
                 </Button>
                 <Button
@@ -594,7 +649,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
                 >
-                  <span className="sr-only">Go to previous page</span>
+                  <span className="sr-only">{t("common.goToPreviousPage")}</span>
                   <ChevronLeftIcon />
                 </Button>
                 <Button
@@ -604,7 +659,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
                 >
-                  <span className="sr-only">Go to next page</span>
+                  <span className="sr-only">{t("common.goToNextPage")}</span>
                   <ChevronRightIcon />
                 </Button>
                 <Button
@@ -614,7 +669,7 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                   onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                   disabled={!table.getCanNextPage()}
                 >
-                  <span className="sr-only">Go to last page</span>
+                  <span className="sr-only">{t("common.goToLastPage")}</span>
                   <ChevronsRightIcon />
                 </Button>
               </div>

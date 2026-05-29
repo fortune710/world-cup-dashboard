@@ -1,6 +1,5 @@
 import { NavLink, useMatch } from "react-router"
 
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -8,7 +7,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { CirclePlusIcon, MailIcon } from "lucide-react"
 
 function NavMainItem({
   item,
@@ -51,11 +49,8 @@ export function NavMain({
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-       
-        </SidebarMenu>
-        <SidebarMenu>
           {items.map((item) => (
-            <NavMainItem key={item.title} item={item} />
+            <NavMainItem key={item.url} item={item} />
           ))}
         </SidebarMenu>
       </SidebarGroupContent>

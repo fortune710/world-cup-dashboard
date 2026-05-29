@@ -103,17 +103,3 @@ export function tabTriggerLabel(
 
   return count > 0 ? `${label} (${count})` : label
 }
-
-export function getLiveRushFooterMessage(
-  status: LiveRushMatch["status"]
-): string {
-  if (status === "finished") {
-    return "Full time — rush locked"
-  }
-
-  if (status === "live") {
-    return "In play — goals count now"
-  }
-
-  return "Kickoff pending — picks open"
-}

@@ -1,3 +1,4 @@
+import * as React from "react"
 import { NavLink, useMatch } from "react-router"
 
 import {
@@ -46,7 +47,7 @@ export function NavSecondary({
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
-            <NavSecondaryItem key={item.title} item={item} />
+            <NavSecondaryItem key={item.url} item={item} />
           ))}
         </SidebarMenu>
       </SidebarGroupContent>

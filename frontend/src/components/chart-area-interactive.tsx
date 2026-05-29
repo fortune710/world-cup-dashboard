@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 
 import {
   Card,
@@ -34,18 +35,18 @@ import {
 } from "@/lib/helpers/standings.helpers"
 import { cn } from "@/lib/utils"
 
-export const description = "Group stage standings with tabbed groups"
-
 const StandingsTable = React.memo(function StandingsTable({
   group,
   rows,
 }: StandingsTableProps) {
+  const { t } = useTranslation()
+
   return (
-    <Table aria-label={`Group ${group} standings`}>
+    <Table aria-label={t("groupStandings.tableAriaLabel", { group })}>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-10">Pos</TableHead>
-          <TableHead>Team</TableHead>
+          <TableHead className="w-10">{t("common.pos")}</TableHead>
+          <TableHead>{t("common.team")}</TableHead>
           <TableHead className="text-end">P</TableHead>
           <TableHead className="hidden text-end sm:table-cell">W</TableHead>
           <TableHead className="hidden text-end sm:table-cell">D</TableHead>
@@ -90,6 +91,7 @@ const StandingsTable = React.memo(function StandingsTable({
 export const GroupStageStandings = React.memo(function GroupStageStandings({
   className,
 }: GroupStageStandingsProps) {
+  const { t } = useTranslation()
   const [activeGroup, setActiveGroup] = React.useState<GroupKey>("A")
 
   const handleGroupChange = React.useCallback((value: string) => {
@@ -104,12 +106,14 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
     >
       <Card className="@container/card flex h-full flex-col gap-3">
         <CardHeader className="pb-0">
-          <CardTitle>Group Stage Standings</CardTitle>
+          <CardTitle>{t("groupStandings.title")}</CardTitle>
           <CardDescription>
             <span className="hidden @[540px]/card:block">
-              Top two from each group advance to the Round of 32
+              {t("groupStandings.description")}
             </span>
-            <span className="@[540px]/card:hidden">Group {activeGroup}</span>
+            <span className="@[540px]/card:hidden">
+              {t("groupStandings.groupShort", { group: activeGroup })}
+            </span>
           </CardDescription>
           <CardAction>
             <TabsList className="hidden max-w-full overflow-x-auto @[767px]/card:inline-flex">
@@ -123,14 +127,14 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
               <SelectTrigger
                 className="flex w-36 @[767px]/card:hidden"
                 size="sm"
-                aria-label="Select group"
+                aria-label={t("common.selectGroup")}
               >
-                <SelectValue placeholder="Group A" />
+                <SelectValue placeholder={t("groupStandings.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 {GROUPS.map((group) => (
                   <SelectItem key={group} value={group} className="rounded-lg">
-                    Group {group}
+                    {t("groupStandings.groupShort", { group })}
                   </SelectItem>
                 ))}
               </SelectContent>

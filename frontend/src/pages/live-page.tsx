@@ -3,7 +3,7 @@ import { PowerRankingTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 
 import { LiveRush } from "@/components/live-rush"
-import TopPerformers from "@/components/top-perfomer"
+import TopPerformers from "@/components/top-performers"
 
 export function LivePage() {
   return (

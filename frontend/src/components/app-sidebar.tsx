@@ -1,10 +1,9 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
 import { ListTreeIcon } from "lucide-react"
 import {
   Sidebar,
@@ -17,9 +16,6 @@ import {
 } from "@/components/ui/sidebar"
 import {
   CircleHelpIcon,
-  DatabaseIcon,
-  FileChartColumnIcon,
-  FileIcon,
   RadioIcon,
   SearchIcon,
   Settings2Icon,
@@ -28,89 +24,62 @@ import {
   UsersIcon,
 } from "lucide-react"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Live",
-      url: "/",
-      end: true,
-      icon: <RadioIcon />,
-    },
-    {
-      title: "Teams",
-      url: "/teams",
-      icon: <UsersIcon />,
-    },
-    {
-      title: "Players",
-      url: "/players",
-      icon: <UserIcon />,
-    },
-    {
-      title: "Matches",
-      url: "/matches",
-      icon: <TrophyIcon />,
-    },
-    {
-      title: "Bracket",
-      url: "/bracket",
-      icon: <ListTreeIcon />,
-    },  
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: <Settings2Icon />,
-    },
-    {
-      title: "Get Help",
-      url: "/help",
-      icon: <CircleHelpIcon />,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: (
-        <SearchIcon
-        />
-      ),
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: (
-        <DatabaseIcon
-        />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <FileChartColumnIcon
-        />
-      ),
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: (
-        <FileIcon
-        />
-      ),
-    },
-  ],
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { t } = useTranslation()
+
+  const navMain = React.useMemo(
+    () => [
+      {
+        title: t("nav.live"),
+        url: "/",
+        end: true,
+        icon: <RadioIcon />,
+      },
+      {
+        title: t("nav.teams"),
+        url: "/teams",
+        icon: <UsersIcon />,
+      },
+      {
+        title: t("nav.players"),
+        url: "/players",
+        icon: <UserIcon />,
+      },
+      {
+        title: t("nav.matches"),
+        url: "/matches",
+        icon: <TrophyIcon />,
+      },
+      {
+        title: t("nav.bracket"),
+        url: "/bracket",
+        icon: <ListTreeIcon />,
+      },
+    ],
+    [t]
+  )
+
+  const navSecondary = React.useMemo(
+    () => [
+      {
+        title: t("nav.settings"),
+        url: "/settings",
+        icon: <Settings2Icon />,
+      },
+      {
+        title: t("nav.getHelp"),
+        url: "/help",
+        icon: <CircleHelpIcon />,
+      },
+      {
+        title: t("nav.search"),
+        url: "#",
+        icon: <SearchIcon />,
+      },
+    ],
+    [t]
+  )
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -122,18 +91,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link to="/">
                 <TrophyIcon className="size-5!" />
-                <span className="text-base font-semibold">BF WC26 Dashboard</span>
+                <span className="text-base font-semibold">{t("app.title")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
       </SidebarContent>
-     <SidebarFooter>
-     <NavSecondary items={data.navSecondary} className="mt-auto" />
-     </SidebarFooter>
+      <SidebarFooter>
+        <NavSecondary items={navSecondary} className="mt-auto" />
+      </SidebarFooter>
     </Sidebar>
   )
 }

@@ -1,19 +1,19 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { useLocation } from "react-router"
 
+import { getLocaleConfig, isSupportedLocale } from "@/lib/i18n/locales"
+import { getRouteTranslationKey } from "@/lib/i18n/route-keys"
+
 import {
+  formatPageTitle,
   getAbsoluteUrl,
   getOgImageUrl,
   SITE_KEYWORDS,
   SITE_NAME,
   TWITTER_HANDLE,
 } from "@/lib/seo/site-config"
-import {
-  getDocumentTitle,
-  getRouteDescription,
-  getRouteMeta,
-  getSiteJsonLd,
-} from "@/lib/seo/route-meta"
+import { getRouteMeta, getSiteJsonLd } from "@/lib/seo/route-meta"
 
 const JSON_LD_SCRIPT_ID = "wc26-site-json-ld"
 
@@ -63,11 +63,14 @@ function upsertJsonLd(payload: Record<string, unknown>): void {
 
 export function DocumentMeta() {
   const { pathname } = useLocation()
+  const { i18n, t } = useTranslation()
 
   React.useEffect(() => {
     const meta = getRouteMeta(pathname)
-    const title = getDocumentTitle(pathname)
-    const description = getRouteDescription(pathname)
+    const routeKey = getRouteTranslationKey(pathname)
+    const heading = t(`routes.${routeKey}`)
+    const title = formatPageTitle(heading)
+    const description = t(`routes.descriptions.${routeKey}`)
     const canonicalUrl = getAbsoluteUrl(pathname === "/" ? "/" : pathname)
     const ogImageUrl = getOgImageUrl()
     const robotsContent = meta.noIndex
@@ -87,7 +90,10 @@ export function DocumentMeta() {
     upsertMeta("property", "og:description", description)
     upsertMeta("property", "og:url", canonicalUrl)
     upsertMeta("property", "og:image", ogImageUrl)
-    upsertMeta("property", "og:locale", "en_US")
+    const locale = isSupportedLocale(i18n.language)
+      ? getLocaleConfig(i18n.language)
+      : getLocaleConfig("en")
+    upsertMeta("property", "og:locale", locale.ogLocale)
 
     upsertMeta("name", "twitter:card", "summary_large_image")
     upsertMeta("name", "twitter:title", title)
@@ -100,10 +106,10 @@ export function DocumentMeta() {
     upsertJsonLd({
       ...getSiteJsonLd(),
       url: getAbsoluteUrl("/"),
-      headline: meta.heading,
+      headline: heading,
       description,
     })
-  }, [pathname])
+  }, [i18n.language, pathname, t])
 
   return null
 }
