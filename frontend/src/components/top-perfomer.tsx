@@ -1,158 +1,150 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client"
+
+import * as React from "react"
+
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-    Item,
-    ItemActions,
-    ItemContent,
-    ItemDescription,
-    ItemGroup,
-    ItemMedia,
-    ItemTitle,
-  } from "@/components/ui/item"
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+  ItemTitle,
+} from "@/components/ui/item"
+import type { PerformerListProps, TopPerformersProps } from "@/datatypes"
+import {
+  toAssistPerformerRows,
+  toGoalPerformerRows,
+  toSavePerformerRows,
+  topPerformers,
+} from "@/lib/helpers/top-performers.helpers"
+import { cn } from "@/lib/utils"
 
+const PERFORMER_TABS = [
+  { value: "Goals", label: "Goals" },
+  { value: "Assists", label: "Assists" },
+  { value: "Saves", label: "Saves" },
+] as const
 
-  interface TopGoalScorer {
-    name: string;
-    initials: string;
-    nationality: string;
-    goals: number;
-    avatar: string;
-  }
-  interface TopAssistScorer {
-    name: string;   
-    initials: string;
-    nationality: string;
-    assists: number;
-    avatar?: string;
-  }
-  interface TopSaveScorer {
-    name: string;
-    initials: string;
-    nationality: string;
-    saves: number;
-    avatar?: string;
-  }
+type PerformerTab = (typeof PERFORMER_TABS)[number]["value"]
 
-  type TopPerformer = [TopGoalScorer[], TopAssistScorer[], TopSaveScorer[]];
+const goalPerformerRows = toGoalPerformerRows(topPerformers[0])
+const assistPerformerRows = toAssistPerformerRows(topPerformers[1])
+const savePerformerRows = toSavePerformerRows(topPerformers[2])
 
-  const topPerformers: TopPerformer = [
-    [
-      { name: "Lionel Messi", initials: "LM", nationality: "Argentina", goals: 5, avatar: "https://via.placeholder.com/150" },
-      { name: "Kylian Mbappé", initials: "KM", nationality: "France", goals: 4, avatar: "https://via.placeholder.com/150" },
-      { name: "Julián Álvarez", initials: "JA", nationality: "Argentina", goals: 4, avatar: "https://via.placeholder.com/150" },
-    ],
-    [
-      { name: "Antoine Griezmann", initials: "AG", nationality: "France", assists: 5, avatar: "https://via.placeholder.com/150" },
-      { name: "Kevin De Bruyne", initials: "KB", nationality: "Belgium", assists: 4, avatar: "https://via.placeholder.com/150" },
-      { name: "Pedri", initials: "PD", nationality: "Spain", assists: 4, avatar: "https://via.placeholder.com/150" },
-    ],
-    [
-      { name: "Ederson", initials: "ED", nationality: "Brazil", saves: 5, avatar: "https://via.placeholder.com/150" },
-      { name: "Kepa Arrizabalaga", initials: "KA", nationality: "Spain", saves: 4, avatar: "https://via.placeholder.com/150" },
-      { name: "Manuel Neuer", initials: "MN", nationality: "Germany", saves: 4, avatar: "https://via.placeholder.com/150" },
-    ],
-  ]
-export default function TopPerformers() {
-    return (
-        <Card className="gap-3">
-            <CardHeader className="pb-0">
-                <CardTitle>Top Performers</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-                <Tabs defaultValue="Goals">
-                    <TabsList>
-                        <TabsTrigger value="Goals">Goals</TabsTrigger>
-                        <TabsTrigger value="Assists">Assists</TabsTrigger>
-                        <TabsTrigger value="Saves">Saves</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="Goals">
-                      <ScrollArea className="h-full">
-                        <ItemGroup>
-                          {topPerformers[0].map((performer) => (
-                            <Item key={performer.name}>
-                              <ItemMedia>
-                                <Avatar>
-                                  <AvatarImage
-                                    src={performer.avatar}
-                                    alt={performer.name}
-                                  />
-                                  <AvatarFallback>{performer.initials}</AvatarFallback>
-                                </Avatar>
-                              </ItemMedia>
-                              <ItemContent>
-                                <ItemTitle>{performer.name}</ItemTitle>
-                                <ItemDescription>{performer.nationality}</ItemDescription>
-                              </ItemContent>
-                              <ItemActions>
-                                <span className="text-sm font-medium tabular-nums">
-                                  {performer.goals}
-                                </span>
-                              </ItemActions>
-                            </Item>
-                          ))}
-                        </ItemGroup>
-                      </ScrollArea>
-                    </TabsContent>
-                    <TabsContent value="Assists">
-                      <ScrollArea className="h-full">
-                        <ItemGroup>
-                          {topPerformers[1].map((performer) => (
-                            <Item key={performer.name}>
-                              <ItemMedia>
-                                <Avatar>
-                                  <AvatarImage
-                                    src={performer.avatar}
-                                    alt={performer.name}
-                                  />
-                                  <AvatarFallback>{performer.initials}</AvatarFallback>
-                                </Avatar>
-                              </ItemMedia>
-                              <ItemContent>
-                                <ItemTitle>{performer.name}</ItemTitle>
-                                <ItemDescription>{performer.nationality}</ItemDescription>
-                              </ItemContent>
-                              <ItemActions>
-                                <span className="text-sm font-medium tabular-nums">
-                                  {performer.assists}
-                                </span>
-                              </ItemActions>
-                            </Item>
-                          ))}
-                        </ItemGroup>
-                      </ScrollArea>
-                    </TabsContent>
-                    <TabsContent value="Saves">
-                      <ScrollArea className="h-full">
-                        <ItemGroup>
-                          {topPerformers[2].map((performer) => (
-                            <Item key={performer.name}>
-                              <ItemMedia>
-                                <Avatar>
-                                  <AvatarImage
-                                    src={performer.avatar}
-                                    alt={performer.name}
-                                  />
-                                  <AvatarFallback>{performer.initials}</AvatarFallback>
-                                </Avatar>
-                              </ItemMedia>
-                              <ItemContent>
-                                <ItemTitle>{performer.name}</ItemTitle>
-                                <ItemDescription>{performer.nationality}</ItemDescription>
-                              </ItemContent>
-                              <ItemActions>
-                                <span className="text-sm font-medium tabular-nums">
-                                  {performer.saves}
-                                </span>
-                              </ItemActions>
-                            </Item>
-                          ))}
-                        </ItemGroup>
-                      </ScrollArea>
-                    </TabsContent>
+const PerformerList = React.memo(function PerformerList({
+  performers,
+}: PerformerListProps) {
+  return (
+    <ItemGroup className="gap-0">
+      {performers.map((performer, index) => (
+        <div key={performer.name} className="flex flex-col">
+          {index > 0 ? <ItemSeparator /> : null}
+          <Item>
+            <ItemMedia>
+              <Avatar>
+                <AvatarImage src={performer.avatar} alt={performer.name} />
+                <AvatarFallback>{performer.initials}</AvatarFallback>
+              </Avatar>
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>{performer.name}</ItemTitle>
+              <ItemDescription>{performer.nationality}</ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <span className="text-sm font-medium tabular-nums">
+                {performer.value}
+              </span>
+            </ItemActions>
+          </Item>
+        </div>
+      ))}
+    </ItemGroup>
+  )
+})
+
+function TopPerformers({ className }: TopPerformersProps) {
+  const [activeTab, setActiveTab] = React.useState<PerformerTab>("Goals")
+
+  const handleTabChange = React.useCallback((value: string) => {
+    setActiveTab(value as PerformerTab)
+  }, [])
+
+  return (
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className={cn("flex h-full flex-col", className)}
+    >
+      <Card className="@container/card flex h-full flex-col gap-3">
+        <CardHeader className="pb-0">
+          <div className="flex flex-col gap-2">
+            <CardTitle>Top Performers</CardTitle>
+            <CardDescription>
+              <span className="hidden @[540px]/card:block">
+                Standouts so far in the tournament
+              </span>
+              <span className="@[540px]/card:hidden">{activeTab}</span>
+            </CardDescription>
+          </div>
+          <CardAction>
+            <TabsList className="hidden @[767px]/card:inline-flex">
+              {PERFORMER_TABS.map(({ value, label }) => (
+                <TabsTrigger key={value} value={value}>
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <Select value={activeTab} onValueChange={handleTabChange}>
+              <SelectTrigger
+                className="flex w-36 @[767px]/card:hidden"
+                size="sm"
+                aria-label="Select performer category"
+              >
+                <SelectValue placeholder="Goals" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {PERFORMER_TABS.map(({ value, label }) => (
+                  <SelectItem key={value} value={value} className="rounded-lg">
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="flex flex-1 flex-col pt-0">
+          <TabsContent value="Goals" className="flex-1">
+            <PerformerList performers={goalPerformerRows} />
+          </TabsContent>
+          <TabsContent value="Assists" className="flex-1">
+            <PerformerList performers={assistPerformerRows} />
+          </TabsContent>
+          <TabsContent value="Saves" className="flex-1">
+            <PerformerList performers={savePerformerRows} />
+          </TabsContent>
+        </CardContent>
+      </Card>
     </Tabs>
-  </CardContent>
-</Card>
-);
+  )
 }
+
+export default React.memo(TopPerformers)

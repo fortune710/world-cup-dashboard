@@ -1,25 +1,24 @@
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
+import { GroupStageStandings } from "@/components/chart-area-interactive"
+import { PowerRankingTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 
-import data from "@/app/dashboard/data.json"
 import { LiveRush } from "@/components/live-rush"
-import TopPerfomer from "@/components/top-perfomer"
+import TopPerformers from "@/components/top-perfomer"
 
 export function LivePage() {
   return (
     <div className="flex flex-col gap-2 py-2 md:gap-4 md:py-4">
       <LiveRush />
       <SectionCards />
-      <div className="px-4 lg:px-6 grid grid-cols-1 lg:grid-cols-3 gap-2">
-       <div className="col-span-1 lg:col-span-2 h-full">
-          <ChartAreaInteractive />
-       </div>
-       <div className="col-span-1">
-        <TopPerfomer />
-       </div>
+      <div className="grid grid-cols-1 items-stretch gap-2 px-4 lg:grid-cols-3 lg:px-6">
+        <div className="col-span-1 flex lg:col-span-2">
+          <GroupStageStandings className="flex-1" />
+        </div>
+        <div className="col-span-1 flex">
+          <TopPerformers className="flex-1" />
+        </div>
       </div>
-      <DataTable data={data} />
+      <PowerRankingTable />
     </div>
   )
 }

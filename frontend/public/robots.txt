@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /settings
+
+Sitemap: http://localhost:5173/sitemap.xml

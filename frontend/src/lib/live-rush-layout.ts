@@ -7,20 +7,6 @@ import { cn } from "@/lib/utils"
  */
 export const WC26_MAX_MATCHES_PER_DAY = 6
 
-export type LiveRushMatchStatus = "finished" | "live" | "upcoming"
-
-export interface LiveRushMatch {
-  id: string
-  homeTeam: string
-  awayTeam: string
-  homeScore?: number
-  awayScore?: number
-  /** Display time (e.g. "15:00") or live minute (e.g. "72'") */
-  kickoffLabel: string
-  status: LiveRushMatchStatus
-  group?: string
-}
-
 type ColSpanAtXl = 3 | 4 | 6 | 12
 
 function colSpanAtXl(matchCount: number, index: number): ColSpanAtXl {
@@ -51,6 +37,9 @@ const colSpanClass: Record<ColSpanAtXl, string> = {
 }
 
 /** Responsive grid column span for a match tile at a given index. */
-export function getLiveRushColSpanClass(matchCount: number, index: number): string {
+export function getLiveRushColSpanClass(
+  matchCount: number,
+  index: number
+): string {
   return cn("col-span-12", colSpanClass[colSpanAtXl(matchCount, index)])
 }

@@ -122,7 +122,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <Link to="/">
                 <TrophyIcon className="size-5!" />
-                <span className="text-base font-semibold">WC26</span>
+                <span className="text-base font-semibold">BF WC26 Dashboard</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

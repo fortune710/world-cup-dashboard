@@ -1,3 +1,5 @@
+import * as React from "react"
+
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -7,16 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import type { LiveRushMatch } from "@/lib/live-rush-layout"
+import type { LiveRushMatch, LiveRushMatchCardProps, MatchWinner } from "@/datatypes"
+import { getLiveRushFooterMessage } from "@/lib/helpers/live-rush.helpers"
+import { getMatchWinner } from "@/lib/helpers/match.helpers"
 import { cn } from "@/lib/utils"
 import { ClockIcon, RadioIcon } from "lucide-react"
-import { getMatchWinner } from "@/lib/helper"
-interface LiveRushMatchCardProps {
-  match: LiveRushMatch
-  className?: string
-}
 
-function statusBadge(match: LiveRushMatch) {
+function MatchStatusBadge({ match }: { match: LiveRushMatch }) {
   if (match.status === "live") {
     return (
       <Badge variant="default" className="gap-1">
@@ -25,9 +24,11 @@ function statusBadge(match: LiveRushMatch) {
       </Badge>
     )
   }
+
   if (match.status === "finished") {
     return <Badge variant="outline">FT</Badge>
   }
+
   return (
     <Badge variant="secondary" className="gap-1">
       <ClockIcon data-icon="inline-start" />
@@ -36,22 +37,125 @@ function statusBadge(match: LiveRushMatch) {
   )
 }
 
-function scoreLine(match: LiveRushMatch) {
-  if (match.status === "upcoming") {
-    return (
-      <span className="text-muted-foreground tabular-nums">
-        {match.kickoffLabel}
-      </span>
-    )
-  }
-  return (
-    <span className="tabular-nums">
-      {match.homeScore ?? 0} – {match.awayScore ?? 0}
-    </span>
-  )
+interface MatchScorelineProps {
+  match: LiveRushMatch
+  hasScores: boolean
+  homeScore: number
+  awayScore: number
+  winner: MatchWinner | null
 }
 
-export function LiveRushMatchCard({ match, className }: LiveRushMatchCardProps) {
+const MatchScoreline = React.memo(function MatchScoreline({
+  match,
+  hasScores,
+  homeScore,
+  awayScore,
+  winner,
+}: MatchScorelineProps) {
+  const homeMuted = winner === "away"
+  const awayMuted = winner === "home"
+  const homeScoreMuted = winner === "away"
+  const awayScoreMuted = winner === "home"
+
+  return (
+    <>
+      <div className="flex w-full min-w-0 flex-col gap-1.5 @[360px]/card:hidden">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <span
+            className={cn(
+              "min-w-0 truncate font-semibold",
+              homeMuted && "text-muted-foreground"
+            )}
+          >
+            {match.homeTeam}
+          </span>
+          {hasScores ? (
+            <span
+              className={cn(
+                "shrink-0 tabular-nums font-semibold",
+                homeScoreMuted && "text-muted-foreground"
+              )}
+            >
+              {homeScore}
+            </span>
+          ) : null}
+        </div>
+        <div className="text-center text-xs text-muted-foreground">vs</div>
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <span
+            className={cn(
+              "min-w-0 truncate font-semibold",
+              awayMuted && "text-muted-foreground"
+            )}
+          >
+            {match.awayTeam}
+          </span>
+          {hasScores ? (
+            <span
+              className={cn(
+                "shrink-0 tabular-nums font-semibold",
+                awayScoreMuted && "text-muted-foreground"
+              )}
+            >
+              {awayScore}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="hidden w-full min-w-0 @[360px]/card:block">
+        {hasScores ? (
+          <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)] items-center gap-x-2">
+            <span
+              className={cn(
+                "truncate text-end font-semibold",
+                homeMuted && "text-muted-foreground"
+              )}
+            >
+              {match.homeTeam}
+            </span>
+            <span
+              className={cn(
+                "tabular-nums font-semibold",
+                homeScoreMuted && "text-muted-foreground"
+              )}
+            >
+              {homeScore}
+            </span>
+            <span className="px-1 text-muted-foreground">vs</span>
+            <span
+              className={cn(
+                "tabular-nums font-semibold",
+                awayScoreMuted && "text-muted-foreground"
+              )}
+            >
+              {awayScore}
+            </span>
+            <span
+              className={cn(
+                "truncate text-start font-semibold",
+                awayMuted && "text-muted-foreground"
+              )}
+            >
+              {match.awayTeam}
+            </span>
+          </div>
+        ) : (
+          <div className="flex min-w-0 items-center justify-center gap-2">
+            <span className="truncate font-semibold">{match.homeTeam}</span>
+            <span className="shrink-0 text-muted-foreground">vs</span>
+            <span className="truncate font-semibold">{match.awayTeam}</span>
+          </div>
+        )}
+      </div>
+    </>
+  )
+})
+
+export const LiveRushMatchCard = React.memo(function LiveRushMatchCard({
+  match,
+  className,
+}: LiveRushMatchCardProps) {
   const isLive = match.status === "live"
   const hasScores = match.status !== "upcoming"
   const homeScore = match.homeScore ?? 0
@@ -69,56 +173,28 @@ export function LiveRushMatchCard({ match, className }: LiveRushMatchCardProps) 
       <CardHeader>
         <CardDescription>
           {match.group ? `Group ${match.group}` : "Knockout"} ·{" "}
-          {match.status === "live" ? `${match.kickoffLabel} live` : match.kickoffLabel}
+          {match.status === "live"
+            ? `${match.kickoffLabel} live`
+            : match.kickoffLabel}
         </CardDescription>
-        <CardTitle className=" font-semibold @[250px]/card:text-xl flex items-center">
-          <span className="line-clamp-1">
-            <span
-              className={cn(
-                winner !== null && winner !== "home" && "text-muted-foreground"
-              )}
-            >
-              {match.homeTeam}
-            </span>
-            <span className="mx-2" />
-            <span
-              className={cn(
-                "tabular-nums",
-                winner !== "home" && "text-muted-foreground"
-              )}
-            >
-              {hasScores ? homeScore : match.homeScore}
-            </span>
-            <span className="mx-4 text-muted-foreground">vs</span>
-            <span className="mx-4" />
-            <span
-              className={cn(
-                "tabular-nums",
-                winner !== "away" && "text-muted-foreground"
-              )}
-            >
-              {hasScores ? awayScore : match.awayScore}
-            </span>
-            <span className="mx-2" />
-            <span
-              className={cn(
-                winner !== null && winner !== "away" && "text-muted-foreground"
-              )}
-            >
-              {match.awayTeam}
-            </span>
-          </span>
+        <CardAction>
+          <MatchStatusBadge match={match} />
+        </CardAction>
+        <CardTitle className="col-span-2 w-full min-w-0 font-semibold @[250px]/card:text-xl">
+          <MatchScoreline
+            match={match}
+            hasScores={hasScores}
+            homeScore={homeScore}
+            awayScore={awayScore}
+            winner={winner}
+          />
         </CardTitle>
-        <CardAction>{statusBadge(match)}</CardAction>
       </CardHeader>
       <CardFooter className="flex-col items-start gap-1.5 text-sm">
-      
         <div className="text-muted-foreground">
-          {match.status === "finished" && "Full time — rush locked"}
-          {match.status === "live" && "In play — goals count now"}
-          {match.status === "upcoming" && "Kickoff pending — picks open"}
+          {getLiveRushFooterMessage(match.status)}
         </div>
       </CardFooter>
     </Card>
   )
-}
+})

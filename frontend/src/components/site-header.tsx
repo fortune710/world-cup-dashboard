@@ -2,20 +2,11 @@ import { useLocation } from "react-router"
 
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-
-const routeTitles: Record<string, string> = {
-  "/": "Live",
-  "/teams": "Teams",
-  "/players": "Players",
-  "/matches": "Matches",
-  "/bracket": "Bracket",
-  "/settings": "Settings",
-  "/help": "Help",
-}
+import { getRouteHeading } from "@/lib/seo/route-meta"
 
 export function SiteHeader() {
   const { pathname } = useLocation()
-  const title = routeTitles[pathname] ?? "WC26"
+  const title = getRouteHeading(pathname)
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
