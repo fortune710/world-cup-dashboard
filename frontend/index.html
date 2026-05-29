@@ -1,0 +1,68 @@
+<!doctype html>
+<!-- lang and dir are updated at runtime from the active locale (see src/lib/i18n/config.ts) -->
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    <meta
+      name="description"
+      content="Track FIFA World Cup 2026 live matches, group standings, power rankings, top performers, and knockout brackets in one real-time dashboard."
+    />
+    <meta
+      name="keywords"
+      content="World Cup 2026, FIFA World Cup, live scores, group standings, power rankings, xG, tournament bracket, soccer dashboard"
+    />
+    <meta name="author" content="World Cup 2026 Dashboard" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="World Cup 2026 Dashboard" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="World Cup 2026 Dashboard" />
+    <meta property="og:title" content="Live · World Cup 2026 Dashboard" />
+    <meta
+      property="og:description"
+      content="Live World Cup 2026 match rush, group standings, Elo power rankings, and top performers."
+    />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="/og-cover.svg" />
+    <meta property="og:image:alt" content="World Cup 2026 live dashboard preview" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Live · World Cup 2026 Dashboard" />
+    <meta
+      name="twitter:description"
+      content="Live World Cup 2026 match rush, group standings, Elo power rankings, and top performers."
+    />
+    <meta name="twitter:image" content="/og-cover.svg" />
+    <meta name="twitter:site" content="@wc26dashboard" />
+
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="apple-touch-icon" href="/vite.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <title>Live · World Cup 2026 Dashboard</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "World Cup 2026 Dashboard",
+        "description": "Track FIFA World Cup 2026 live matches, group standings, power rankings, top performers, and knockout brackets in one real-time dashboard.",
+        "applicationCategory": "SportsApplication",
+        "operatingSystem": "Web",
+        "about": {
+          "@type": "SportsEvent",
+          "name": "FIFA World Cup 2026",
+          "sport": "Soccer"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
