@@ -2,33 +2,30 @@
 
 ## Compose File Merging
 
-Use multiple compose files to keep a base config and a production override:
+Use the production compose file for the deployed stack:
 
 ```bash
-docker compose -f compose.yaml -f compose.prod.yaml up -d
+docker compose -f compose.prod.yaml up -d
 ```
 
 How it works:
 
-- `compose.yaml` is loaded first (base).
-- `compose.prod.yaml` is loaded second (override).
-- Final config is merged left-to-right.
-- Same scalar key in later file replaces earlier value.
-- Map keys (like `environment`) merge, later keys win.
-- Services in either file are included in final config.
+- `compose.prod.yaml` is the production-only stack.
+- It omits the local `db` and `airflow-db-bootstrap` services.
+- Production uses external database URLs from the environment.
 
 Preview the effective merged configuration:
 
 ```bash
-docker compose -f compose.yaml -f compose.prod.yaml config
+docker compose -f compose.prod.yaml config
 ```
 
 ## Running Only Production Services
 
-If you want to run only app + airflow + monitoring (without local db bootstrap path), start only required services:
+If you want to run the production stack locally, start the production compose file directly:
 
 ```bash
-docker compose up -d web airflow-webserver airflow-scheduler airflow-init celery-beat celery-worker-fetch celery-worker-db rabbitmq prometheus grafana
+docker compose -f compose.prod.yaml up -d web airflow-webserver airflow-scheduler airflow-init celery-beat celery-worker-fetch celery-worker-db rabbitmq prometheus grafana
 ```
 
 This allows your API/Airflow to use external managed databases via:

@@ -26,7 +26,7 @@ else
 fi
 
 echo "Starting Docker containers in prod mode"
-${COMPOSE_CMD} up -d \
+${COMPOSE_CMD} -f compose.prod.yaml up -d --build \
   web \
   airflow-webserver \
   airflow-scheduler \
