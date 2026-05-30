@@ -1,16 +1,18 @@
 name: Backend Deployment
 
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types:
+      - closed
     paths:
       - "backend/**"
-      - ".github/workflows/deployment.yaml"
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: backend-production-deploy
@@ -21,6 +23,7 @@ jobs:
     name: Deploy backend to DigitalOcean droplet
     runs-on: ubuntu-latest
     environment: production
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
       - name: Configure SSH key
@@ -86,6 +89,64 @@ jobs:
           ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'chmod 600 ~/world-cup-dashboard/backend/.env'
           rm -f "$env_file"
 
+      - name: Detect backend model changes
+        id: detect_backend_model_changes
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const shouldMigrate = context.eventName === 'pull_request'
+              ? (await github.paginate(github.rest.pulls.listFiles, {
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.payload.pull_request.number,
+                  per_page: 100,
+                })).some((file) => file.filename.startsWith('backend/db/models/'))
+              : false;
+
+            core.info(`backend/db/models changed: ${shouldMigrate}`);
+            core.setOutput('should_migrate', shouldMigrate ? 'true' : 'false');
+
+      - name: Sync backend checkout on droplet
+        env:
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
+        run: |
+          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
+          set -Eeuo pipefail
+
+          DEPLOY_DIR="$HOME/world-cup-dashboard"
+
+          if [ ! -d "$DEPLOY_DIR/.git" ]; then
+            echo "Expected the repository to be checked out at $DEPLOY_DIR"
+            exit 1
+          fi
+
+          cd "$DEPLOY_DIR"
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+          EOF
+
+      - name: Run backend migrations
+        if: steps.detect_backend_model_changes.outputs.should_migrate == 'true'
+        env:
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
+        run: |
+          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
+          set -Eeuo pipefail
+
+          DEPLOY_DIR="$HOME/world-cup-dashboard"
+
+          if [ ! -d "$DEPLOY_DIR/.git" ]; then
+            echo "Expected the repository to be checked out at $DEPLOY_DIR"
+            exit 1
+          fi
+
+          cd "$DEPLOY_DIR/backend"
+          docker compose -f compose.prod.yaml run --rm --build --no-deps web bash scripts/migrate.sh
+          EOF
+
       - name: Deploy and start backend
         env:
           DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
@@ -124,10 +185,6 @@ jobs:
             exit 1
           fi
 
-          cd "$DEPLOY_DIR"
-          git fetch origin main
-          git checkout main
-          git pull --ff-only origin main
           cd backend
           bash scripts/startup-prod.sh
           EOF

@@ -13,6 +13,8 @@ How it works:
 - `compose.prod.yaml` is the production-only stack.
 - It omits the local `db` and `airflow-db-bootstrap` services.
 - Production uses external database URLs from the environment.
+- GitHub Actions deploys on merged PRs to `main`.
+- The deploy job detects whether `backend/db/models/**` changed, runs Alembic migrations only when needed, then starts the production stack and unpauses only DAGs that are still paused.
 
 Preview the effective merged configuration:
 
