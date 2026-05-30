@@ -44,6 +44,10 @@ jobs:
           DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AIRFLOW_DATABASE_URL: ${{ secrets.AIRFLOW_DATABASE_URL }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          AIRFLOW_POSTGRES_DB: ${{ secrets.AIRFLOW_POSTGRES_DB }}
           AIRFLOW_ADMIN_USER: ${{ secrets.AIRFLOW_ADMIN_USER }}
           AIRFLOW_ADMIN_PASSWORD: ${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
           AIRFLOW_WEBSERVER_SECRET_KEY: ${{ secrets.AIRFLOW_WEBSERVER_SECRET_KEY }}
@@ -60,6 +64,10 @@ jobs:
           {
             printf '%s=%s\n' DATABASE_URL "$DATABASE_URL"
             printf '%s=%s\n' AIRFLOW_DATABASE_URL "$AIRFLOW_DATABASE_URL"
+            printf '%s=%s\n' POSTGRES_USER "$POSTGRES_USER"
+            printf '%s=%s\n' POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
+            printf '%s=%s\n' POSTGRES_DB "$POSTGRES_DB"
+            printf '%s=%s\n' AIRFLOW_POSTGRES_DB "$AIRFLOW_POSTGRES_DB"
             printf '%s=%s\n' AIRFLOW_ADMIN_USER "$AIRFLOW_ADMIN_USER"
             printf '%s=%s\n' AIRFLOW_ADMIN_PASSWORD "$AIRFLOW_ADMIN_PASSWORD"
             printf '%s=%s\n' AIRFLOW_WEBSERVER_SECRET_KEY "$AIRFLOW_WEBSERVER_SECRET_KEY"

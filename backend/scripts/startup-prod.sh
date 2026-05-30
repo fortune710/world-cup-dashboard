@@ -17,16 +17,14 @@ fi
 COMPOSE_CMD=""
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_CMD="docker compose"
-elif command -v docker-compose >/dev/null 2>&1; then
-  COMPOSE_CMD="docker-compose"
 else
-  echo "Neither 'docker compose' nor 'docker-compose' is installed on this server."
-  echo "Install the Docker Compose plugin or the legacy docker-compose binary, then rerun deployment."
+  echo "The Docker Compose plugin is not installed or not available on PATH."
+  echo "Install the plugin so 'docker compose' works, then rerun deployment."
   exit 1
 fi
 
 echo "Starting Docker containers in prod mode"
-${COMPOSE_CMD} -f compose.prod.yaml up -d --build \
+${COMPOSE_CMD} -f compose.prod.yaml up -d --build --remove-orphans \
   web \
   airflow-webserver \
   airflow-scheduler \

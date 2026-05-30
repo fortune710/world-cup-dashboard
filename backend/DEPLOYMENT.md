@@ -32,13 +32,17 @@ This allows your API/Airflow to use external managed databases via:
 
 - `DATABASE_URL`
 - `AIRFLOW_DATABASE_URL`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `AIRFLOW_POSTGRES_DB`
 
 ## Deployment User and Virtualenv
 
 The GitHub Actions deploy workflow SSHes into the droplet as `deployment-admin`.
 The production startup script also creates a local Python virtual environment at `backend/.venv` before starting the Docker stack.
 The `deployment-admin` user must be in the `docker` group so Docker can run non-interactively.
-The droplet must have either `docker compose` or `docker-compose` installed.
+The droplet must have the Docker Compose plugin installed so `docker compose` works.
 
 ## Environment File From GitHub Secrets
 
@@ -49,6 +53,10 @@ Each secret should use the same name as the environment variable it represents.
 
 - `DATABASE_URL`
 - `AIRFLOW_DATABASE_URL`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+- `AIRFLOW_POSTGRES_DB`
 - `AIRFLOW_ADMIN_USER`
 - `AIRFLOW_ADMIN_PASSWORD`
 - `AIRFLOW_WEBSERVER_SECRET_KEY`
