@@ -28,13 +28,23 @@ docker compose -f compose.yaml -f compose.prod.yaml config
 If you want to run only app + airflow + monitoring (without local db bootstrap path), start only required services:
 
 ```bash
-docker compose up -d web airflow-webserver airflow-scheduler airflow-init worker rabbitmq prometheus grafana
+docker compose up -d web airflow-webserver airflow-scheduler airflow-init celery-beat celery-worker-fetch celery-worker-db rabbitmq prometheus grafana
 ```
 
 This allows your API/Airflow to use external managed databases via:
 
 - `DATABASE_URL`
 - `AIRFLOW_DATABASE_URL`
+
+## Deployment User and Virtualenv
+
+The GitHub Actions deploy workflow SSHes into the droplet as `deployment-admin`.
+The production startup script also creates a local Python virtual environment at `backend/.venv` before starting the Docker stack.
+
+## Environment File From GitHub Secrets
+
+During deployment, GitHub Actions writes `backend/.env` on the droplet from GitHub Secrets before starting the stack.
+Each secret should use the same name as the environment variable it represents.
 
 ## Required Environment Variables
 
