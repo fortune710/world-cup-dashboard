@@ -10,7 +10,7 @@ fi
 . .venv/bin/activate
 
 echo "Starting Docker containers in prod mode"
-docker compose up -d \
+sudo docker compose up -d \
   web \
   airflow-webserver \
   airflow-scheduler \
