@@ -84,9 +84,32 @@ jobs:
           DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
         run: |
           ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
-          set -euo pipefail
+          set -Eeuo pipefail
 
           DEPLOY_DIR="$HOME/world-cup-dashboard"
+
+          compose_logs() {
+            cd "$DEPLOY_DIR/backend" >/dev/null 2>&1 || return 0
+
+            if docker compose version >/dev/null 2>&1; then
+              docker compose -f compose.prod.yaml ps || true
+              echo
+              docker compose -f compose.prod.yaml logs --no-color --tail=200 || true
+            elif command -v docker-compose >/dev/null 2>&1; then
+              docker-compose -f compose.prod.yaml ps || true
+              echo
+              docker-compose -f compose.prod.yaml logs --no-color --tail=200 || true
+            else
+              echo "No compose command available for log collection."
+            fi
+          }
+
+          on_error() {
+            echo "=== Deployment failed, collecting compose logs ==="
+            compose_logs
+          }
+
+          trap on_error ERR
 
           if [ ! -d "$DEPLOY_DIR/.git" ]; then
             echo "Expected the repository to be checked out at $DEPLOY_DIR"
@@ -99,4 +122,41 @@ jobs:
           git pull --ff-only origin main
           cd backend
           bash scripts/startup-prod.sh
+          EOF
+
+      - name: Collect server logs on failure
+        if: failure()
+        env:
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
+        run: |
+          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
+          set +e
+
+          DEPLOY_DIR="$HOME/world-cup-dashboard"
+
+          echo "=== Docker version ==="
+          docker --version
+          echo
+
+          echo "=== Docker ps ==="
+          docker ps -a
+          echo
+
+          echo "=== Compose service status ==="
+          cd "$DEPLOY_DIR/backend" || exit 0
+
+          if docker compose version >/dev/null 2>&1; then
+            docker compose -f compose.prod.yaml ps
+            echo
+            echo "=== Compose logs ==="
+            docker compose -f compose.prod.yaml logs --no-color --tail=200
+          elif command -v docker-compose >/dev/null 2>&1; then
+            docker-compose -f compose.prod.yaml ps
+            echo
+            echo "=== Compose logs ==="
+            docker-compose -f compose.prod.yaml logs --no-color --tail=200
+          else
+            echo "No compose command available for diagnostics."
+          fi
           EOF
