@@ -86,10 +86,10 @@ jobs:
           ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
           set -euo pipefail
 
-          DEPLOY_DIR="$HOME/world-cup-dashboard/backend"
+          DEPLOY_DIR="$HOME/world-cup-dashboard"
 
           if [ ! -d "$DEPLOY_DIR/.git" ]; then
-            echo "Expected the backend repository to be checked out at $DEPLOY_DIR"
+            echo "Expected the repository to be checked out at $DEPLOY_DIR"
             exit 1
           fi
 
@@ -97,5 +97,6 @@ jobs:
           git fetch origin main
           git checkout main
           git pull --ff-only origin main
+          cd backend
           bash scripts/startup-prod.sh
           EOF
