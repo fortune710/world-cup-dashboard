@@ -9,8 +9,13 @@ fi
 
 . .venv/bin/activate
 
+if ! docker ps >/dev/null 2>&1; then
+  echo "Docker is not accessible to this user. Add deployment-admin to the docker group and reconnect the SSH session."
+  exit 1
+fi
+
 echo "Starting Docker containers in prod mode"
-sudo docker compose up -d \
+docker compose up -d \
   web \
   airflow-webserver \
   airflow-scheduler \

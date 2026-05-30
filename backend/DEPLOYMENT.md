@@ -40,6 +40,7 @@ This allows your API/Airflow to use external managed databases via:
 
 The GitHub Actions deploy workflow SSHes into the droplet as `deployment-admin`.
 The production startup script also creates a local Python virtual environment at `backend/.venv` before starting the Docker stack.
+The `deployment-admin` user must be in the `docker` group so Docker can run non-interactively.
 
 ## Environment File From GitHub Secrets
 
