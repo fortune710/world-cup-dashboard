@@ -183,8 +183,7 @@ jobs:
             exit 1
           fi
 
-          cd backend
-          bash scripts/startup-prod.sh
+          bash "$DEPLOY_DIR/backend/scripts/startup-prod.sh"
           EOF
 
       - name: Collect server logs on failure

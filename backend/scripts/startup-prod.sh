@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+cd "$(dirname "$0")/.."
+
 echo "Preparing Python virtual environment"
 if [ ! -d ".venv" ]; then
   python3 -m venv .venv
