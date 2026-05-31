@@ -15,6 +15,14 @@ How it works:
 - Production uses external database URLs from the environment.
 - GitHub Actions deploys on merged PRs to `main`.
 - The deploy job detects whether `backend/db/models/**` changed, runs Alembic migrations only when needed, then starts the production stack and unpauses only DAGs that are still paused.
+- Nginx is the public entrypoint on ports `80` and `443`.
+- The API is available at `/`.
+- Airflow is available at `/airflow/`.
+- Grafana is available at `/grafana/`.
+- Airflow Scheduler remains internal; it does not have its own HTTP endpoint.
+- Nginx uses self-signed TLS certificates on first deploy unless you replace them with real certificates.
+- The Nginx config file lives in the checked-out repo on the droplet at `backend/config/nginx/default.conf`.
+- The generated TLS certs are stored alongside it at `backend/config/nginx/certs/`.
 
 Preview the effective merged configuration:
 
@@ -27,7 +35,7 @@ docker compose -f compose.prod.yaml config
 If you want to run the production stack locally, start the production compose file directly:
 
 ```bash
-docker compose -f compose.prod.yaml up -d web airflow-webserver airflow-scheduler airflow-init celery-beat celery-worker-fetch celery-worker-db rabbitmq prometheus grafana
+docker compose -f compose.prod.yaml up -d web airflow-webserver airflow-scheduler airflow-init celery-beat celery-worker-fetch celery-worker-db rabbitmq prometheus grafana nginx
 ```
 
 This allows your API/Airflow to use external managed databases via:
@@ -67,6 +75,5 @@ Each secret should use the same name as the environment variable it represents.
 - `RABBITMQ_PASSWORD`
 - `RABBITMQ_URL`
 - `PROMETHEUS_PORT`
-- `GRAFANA_PORT`
 - `GRAFANA_ADMIN_USER`
 - `GRAFANA_ADMIN_PASSWORD`

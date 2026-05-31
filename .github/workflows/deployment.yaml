@@ -59,7 +59,6 @@ jobs:
           RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
           RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
           PROMETHEUS_PORT: ${{ secrets.PROMETHEUS_PORT }}
-          GRAFANA_PORT: ${{ secrets.GRAFANA_PORT }}
           GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: |
@@ -79,7 +78,6 @@ jobs:
             printf '%s=%s\n' RABBITMQ_PASSWORD "$RABBITMQ_PASSWORD"
             printf '%s=%s\n' RABBITMQ_URL "$RABBITMQ_URL"
             printf '%s=%s\n' PROMETHEUS_PORT "$PROMETHEUS_PORT"
-            printf '%s=%s\n' GRAFANA_PORT "$GRAFANA_PORT"
             printf '%s=%s\n' GRAFANA_ADMIN_USER "$GRAFANA_ADMIN_USER"
             printf '%s=%s\n' GRAFANA_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
           } > "$env_file"

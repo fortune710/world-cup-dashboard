@@ -86,6 +86,33 @@ PY
   exit 1
 }
 
+ensure_nginx_tls_certs() {
+  local cert_dir="config/nginx/certs"
+  local cert_file="$cert_dir/server.crt"
+  local key_file="$cert_dir/server.key"
+
+  if [ -f "$cert_file" ] && [ -f "$key_file" ]; then
+    echo "Nginx TLS certificates already exist"
+    return 0
+  fi
+
+  echo "Generating self-signed Nginx TLS certificates"
+  mkdir -p "$cert_dir"
+
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "OpenSSL is required to generate Nginx TLS certificates."
+    exit 1
+  fi
+
+  openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+    -keyout "$key_file" \
+    -out "$cert_file" \
+    -subj "/CN=world-cup-dashboard"
+  chmod 600 "$key_file"
+}
+
+ensure_nginx_tls_certs
+
 echo "Starting Docker containers in prod mode"
 ${COMPOSE_CMD} -f compose.prod.yaml up -d --build --remove-orphans \
   web \
@@ -97,7 +124,8 @@ ${COMPOSE_CMD} -f compose.prod.yaml up -d --build --remove-orphans \
   celery-worker-db \
   rabbitmq \
   prometheus \
-  grafana
+  grafana \
+  nginx
 
 echo "Checking Airflow pipeline pause state"
 ensure_airflow_pipelines_unpaused
