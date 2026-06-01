@@ -83,6 +83,7 @@ jobs:
             printf '%s=%s\n' RABBITMQ_PASSWORD "$RABBITMQ_PASSWORD"
             printf '%s=%s\n' RABBITMQ_URL "$RABBITMQ_URL"
             printf '%s=%s\n' PROMETHEUS_PORT "$PROMETHEUS_PORT"
+            printf '%s=%s\n' DROPLET_HOST "$DROPLET_HOST"
             printf '%s=%s\n' GRAFANA_ADMIN_USER "$GRAFANA_ADMIN_USER"
             printf '%s=%s\n' GRAFANA_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
           } > "$env_file"
