@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
@@ -7,8 +8,8 @@ from pipeline.transformations.matches import MatchesTransformations
 from pipeline.load.matches import MatchesLoader
 from config.db import SessionLocal
 from db.controllers.players import get_players_by_team
-from services.queue_service import QueueService
-from config.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 default_args = {
     'owner': 'airflow',
@@ -21,25 +22,54 @@ default_args = {
 }
 
 def extract_matches(**context):
+    logger.info({"message": "Starting matches extraction"})
     source = MatchesSource()
-    matches = source.get_matches()
-    return matches
+    try:
+        matches = source.get_matches()
+        logger.info({"message": "Successfully extracted matches", "count": len(matches)})
+        return matches
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to extract matches",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
 
 def transform_matches(**context):
+    logger.info({"message": "Starting matches transformation"})
     raw_matches = context['ti'].xcom_pull(task_ids='extract_matches')
     transform = MatchesTransformations()
-    transformed_matches = transform.transform_match_data(raw_matches)
-    return transformed_matches
+    try:
+        transformed_matches = transform.transform_match_data(raw_matches)
+        logger.info({"message": "Successfully transformed matches", "count": len(transformed_matches)})
+        return transformed_matches
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to transform matches",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
 
 def load_matches(**context):
+    logger.info({"message": "Starting matches load"})
     transformed_matches = context['ti'].xcom_pull(task_ids='transform_matches')
     loader = MatchesLoader()
-    loader.load_matches(transformed_matches)
+    try:
+        loader.load_matches(transformed_matches)
+        logger.info({"message": "Successfully loaded matches", "count": len(transformed_matches or [])})
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to load matches",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
 
 
 def enqueue_player_stats(**context):
+    logger.info({"message": "Starting player stats enqueue"})
     transformed_matches = context['ti'].xcom_pull(task_ids='transform_matches')
     if not transformed_matches:
+        logger.warning({"message": "No transformed matches found", "count": 0})
         return
 
     # Identify teams in completed matches
@@ -50,12 +80,18 @@ def enqueue_player_stats(**context):
             teams_to_update.add(match.get('away_team_code'))
 
     if not teams_to_update:
-        print("No completed matches found in this run.")
+        logger.info({"message": "No completed matches found in this run"})
         return
 
-    print(f"Found {len(teams_to_update)} teams from completed matches. Enqueueing players...")
+    logger.info({
+        "message": "Found teams from completed matches",
+        "count": len(teams_to_update),
+    })
 
     db = SessionLocal()
+    from config.settings import Settings
+    from services.queue_service import QueueService
+
     queue = QueueService()
     settings = Settings()
     try:
@@ -66,6 +102,16 @@ def enqueue_player_stats(**context):
                     queue_name=settings.PLAYER_STATS_UPDATES_QUEUE,
                     message={'player_id': player.id, 'name': player.name}
                 )
+        logger.info({
+            "message": "Completed player stats enqueue",
+            "teams": len(teams_to_update),
+        })
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to enqueue player stats",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
     finally:
         db.close()
         queue.close()
