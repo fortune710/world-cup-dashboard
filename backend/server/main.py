@@ -1,9 +1,4 @@
 from fastapi import FastAPI
-from config.db import engine, Base
-import db.models
-
-# Create tables on startup (simplest way without migrations for now)
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="World Cup Dashboard API")
 
