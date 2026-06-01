@@ -1,34 +1,32 @@
-name: Backend Deployment
+name: Database Migrations
 
 on:
   push:
     branches:
       - main
     paths:
-      - "backend/**"
+      - "backend/db/models/**"
   pull_request:
     branches:
       - main
     types:
       - closed
     paths:
-      - "backend/**"
-  workflow_dispatch:
+      - "backend/db/models/**"
 
 permissions:
   contents: read
-  pull-requests: read
 
 concurrency:
-  group: backend-production-deploy
+  group: backend-production-migrations
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Deploy backend to DigitalOcean droplet
+  migrate_database:
+    name: Run database migrations
     runs-on: ubuntu-latest
     environment: production
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
       - name: Configure SSH key
@@ -113,7 +111,7 @@ jobs:
           git pull --ff-only origin main
           EOF
 
-      - name: Deploy and start backend
+      - name: Run backend migrations
         env:
           DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
           DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
@@ -123,70 +121,11 @@ jobs:
 
           DEPLOY_DIR="$HOME/world-cup-dashboard"
 
-          compose_logs() {
-            cd "$DEPLOY_DIR/backend" >/dev/null 2>&1 || return 0
-
-            if docker compose version >/dev/null 2>&1; then
-              docker compose -f compose.prod.yaml ps || true
-              echo
-              docker compose -f compose.prod.yaml logs --no-color --tail=200 || true
-            elif command -v docker-compose >/dev/null 2>&1; then
-              docker-compose -f compose.prod.yaml ps || true
-              echo
-              docker-compose -f compose.prod.yaml logs --no-color --tail=200 || true
-            else
-              echo "No compose command available for log collection."
-            fi
-          }
-
-          on_error() {
-            echo "=== Deployment failed, collecting compose logs ==="
-            compose_logs
-          }
-
-          trap on_error ERR
-
           if [ ! -d "$DEPLOY_DIR/.git" ]; then
             echo "Expected the repository to be checked out at $DEPLOY_DIR"
             exit 1
           fi
 
-          bash "$DEPLOY_DIR/backend/scripts/startup-prod.sh"
-          EOF
-
-      - name: Collect server logs on failure
-        if: failure()
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
-        run: |
-          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
-          set +e
-
-          DEPLOY_DIR="$HOME/world-cup-dashboard"
-
-          echo "=== Docker version ==="
-          docker --version
-          echo
-
-          echo "=== Docker ps ==="
-          docker ps -a
-          echo
-
-          echo "=== Compose service status ==="
-          cd "$DEPLOY_DIR/backend" || exit 0
-
-          if docker compose version >/dev/null 2>&1; then
-            docker compose -f compose.prod.yaml ps
-            echo
-            echo "=== Compose logs ==="
-            docker compose -f compose.prod.yaml logs --no-color --tail=200
-          elif command -v docker-compose >/dev/null 2>&1; then
-            docker-compose -f compose.prod.yaml ps
-            echo
-            echo "=== Compose logs ==="
-            docker-compose -f compose.prod.yaml logs --no-color --tail=200
-          else
-            echo "No compose command available for diagnostics."
-          fi
+          cd "$DEPLOY_DIR/backend"
+          docker compose -f compose.prod.yaml run --rm --build --no-deps web bash scripts/migrate.sh
           EOF
