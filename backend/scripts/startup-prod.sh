@@ -65,3 +65,6 @@ ${COMPOSE_CMD} -f compose.prod.yaml up -d --build --remove-orphans \
   prometheus \
   grafana \
   nginx
+
+echo "Restarting Nginx to load the latest proxy configuration"
+${COMPOSE_CMD} -f compose.prod.yaml restart nginx
