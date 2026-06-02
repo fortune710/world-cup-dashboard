@@ -58,8 +58,11 @@ def upsert_team(db: Session, team_data: dict):
     db.refresh(db_team)
     return db_team
 
-def get_all_teams(db: Session):
-    return db.query(Team).all()
+def get_all_teams(db: Session, group: str = None):
+    query = db.query(Team)
+    if group:
+        query = query.filter(Team.group == group).order_by(Team.points.desc())
+    return query.all()
 
 def upsert_teams_batch(db: Session, teams_data: list[dict]):
     """
