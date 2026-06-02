@@ -38,6 +38,7 @@ services:
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
       - ./services:/opt/airflow/backend/services
+      - airflow_logs:/opt/airflow/logs
     expose:
       - "8080"
 
@@ -66,6 +67,7 @@ services:
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
       - ./services:/opt/airflow/backend/services
+      - airflow_logs:/opt/airflow/logs
 
   airflow-init:
     build:
@@ -193,3 +195,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  airflow_logs:
