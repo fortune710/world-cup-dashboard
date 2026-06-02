@@ -11,3 +11,8 @@ class Settings:
     WC_LEAGUE_ID = 16
     WC_SEASON_ID_2022 = 41087
     WC_SEASON_ID_2026 = 58210
+
+    # MLflow (match outcome predictor)
+    MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
+    MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "world-cup-match-outcome")
+    MLFLOW_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "world-cup-match-outcome-xgb")

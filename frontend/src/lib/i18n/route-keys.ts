@@ -19,5 +19,9 @@ const ROUTE_TRANSLATION_KEYS: Record<string, RouteTranslationKey> = {
 }
 
 export function getRouteTranslationKey(pathname: string): RouteTranslationKey {
+  if (pathname.startsWith("/teams/") && pathname.length > "/teams/".length) {
+    return "teams"
+  }
+
   return ROUTE_TRANSLATION_KEYS[pathname] ?? "notFound"
 }

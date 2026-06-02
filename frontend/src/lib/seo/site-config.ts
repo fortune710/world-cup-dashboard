@@ -5,7 +5,7 @@ export const SITE_URL = (
   (import.meta.env.DEV ? "http://localhost:5173" : "")
 ).replace(/\/$/, "")
 
-export const SITE_NAME = "World Cup 2026 Dashboard"
+export const SITE_NAME = "Golazo"
 
 export const SITE_TAGLINE = "Live scores, standings, and tournament analytics"
 
@@ -20,11 +20,11 @@ export const SITE_KEYWORDS = [
   "power rankings",
   "xG",
   "tournament bracket",
-  "soccer dashboard",
+  "soccer stats",
   "football analytics",
 ].join(", ")
 
-export const TWITTER_HANDLE = "@wc26dashboard"
+export const TWITTER_HANDLE = "@golazoapp"
 
 export const OG_IMAGE_PATH = "/og-cover.svg"
 

@@ -62,7 +62,7 @@ const LiveRushMatchGrid = React.memo(function LiveRushMatchGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-2 *:data-[slot=card]:shadow-xs",
+        "grid grid-cols-1 gap-2",
         "@xl/main:grid-cols-12"
       )}
     >

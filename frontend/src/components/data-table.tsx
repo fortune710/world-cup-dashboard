@@ -18,13 +18,11 @@ import {
 
 import type {
   ConfederationFilter,
-  FormBadgeProps,
-  FormResult,
   PowerRankingRow,
   PowerRankingTableProps,
   RankChangeBadgeProps,
-  TeamFormProps,
 } from "@/datatypes"
+import { TeamForm } from "@/components/team-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -101,60 +99,12 @@ const CONFEDERATION_VALUES: ConfederationFilter[] = [
   "OFC",
 ]
 
-function formatFormLabel(form: FormResult[], t: TFunction): string {
-  return form
-    .map((result) => {
-      if (result === "W") {
-        return t("common.win")
-      }
-
-      if (result === "D") {
-        return t("common.draw")
-      }
-
-      return t("common.loss")
-    })
-    .join(", ")
-}
-
 function getConfederationOptions(t: TFunction) {
   return CONFEDERATION_VALUES.map((value) => ({
     value,
     label: value === "all" ? t("common.allConfederations") : value,
   }))
 }
-
-const FormBadge = React.memo(function FormBadge({ result }: FormBadgeProps) {
-  return (
-    <span
-      className={cn(
-        "inline-flex size-4 items-center justify-center rounded-sm text-[9px] font-semibold tabular-nums sm:size-5 sm:text-[10px]",
-        result === "W" && "bg-primary/20 text-primary",
-        result === "D" && "bg-muted text-muted-foreground",
-        result === "L" && "bg-destructive/15 text-destructive"
-      )}
-    >
-      {result}
-    </span>
-  )
-})
-
-const TeamForm = React.memo(function TeamForm({ form }: TeamFormProps) {
-  const { t } = useTranslation()
-
-  return (
-    <div
-      className="flex gap-0.5 sm:gap-1"
-      aria-label={t("common.last5Results", {
-        results: formatFormLabel(form, t),
-      })}
-    >
-      {form.map((result, index) => (
-        <FormBadge key={`${result}-${index}`} result={result} />
-      ))}
-    </div>
-  )
-})
 
 const EloRatingCell = React.memo(function EloRatingCell({
   row,
