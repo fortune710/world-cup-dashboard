@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Cup Match Predictor: Probabilistic Lean Output — Deep Research Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #1a1a1a; background: #ffffff; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; }
+        .header { background: #003d5c; color: white; padding: 25px 40px; border-bottom: 3px solid #002840; }
+        .header h1 { font-size: 26px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .header-meta { font-size: 13px; color: #b8d4e6; display: flex; gap: 25px; }
+        .metrics-dashboard { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; border-bottom: 2px solid #003d5c; }
+        .metric { padding: 18px 20px; background: #f8f9fa; border-right: 1px solid #d1d5db; text-align: center; }
+        .metric:last-child { border-right: none; }
+        .metric-number { font-size: 28px; font-weight: 700; color: #003d5c; display: block; margin-bottom: 6px; }
+        .metric-label { font-size: 11px; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+        .content { padding: 30px 40px; }
+        .section { margin-bottom: 30px; }
+        .section-title { font-size: 18px; font-weight: 700; color: #003d5c; margin: 32px 0 16px 0; padding-bottom: 8px; border-bottom: 2px solid #003d5c; text-transform: uppercase; letter-spacing: 0.8px; line-height: 1.3; }
+        .subsection-title { font-size: 15px; font-weight: 700; color: #1a1a1a; margin: 22px 0 10px 0; line-height: 1.4; }
+        .executive-summary { background: #f8f9fa; padding: 20px; margin-bottom: 30px; border-left: 4px solid #003d5c; }
+        .executive-summary p { margin-bottom: 12px; font-size: 14px; line-height: 1.6; }
+        p { margin-bottom: 14px; line-height: 1.7; }
+        .section p { margin-bottom: 16px; }
+        .data-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
+        .data-table th { background: #003d5c; color: white; padding: 10px 15px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .data-table td { padding: 10px 15px; border-bottom: 1px solid #e5e7eb; }
+        .data-table tr:nth-child(even) { background: #f8f9fa; }
+        ul, ol { margin: 14px 0 14px 28px; }
+        li { margin-bottom: 8px; font-size: 14px; line-height: 1.6; }
+        .key-insight { background: white; border: 1px solid #d1d5db; border-left: 3px solid #003d5c; padding: 14px 16px; margin: 15px 0; }
+        .key-insight strong { color: #003d5c; font-weight: 600; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 15px 0; }
+        .card { background: #f8f9fa; padding: 16px; border-left: 3px solid #003d5c; }
+        .card h4 { font-size: 13px; font-weight: 700; color: #003d5c; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .card p { font-size: 13px; line-height: 1.5; margin-bottom: 6px; }
+        .card ul { margin: 6px 0 6px 18px; }
+        .card li { font-size: 13px; margin-bottom: 5px; }
+        .warning-box { background: #fffbf0; border: 1px solid #e6a817; border-left: 3px solid #e6a817; padding: 14px 16px; margin: 15px 0; }
+        .warning-box strong { color: #b07d0b; }
+        .tag { display: inline-block; background: #003d5c; color: white; padding: 2px 7px; font-size: 11px; font-weight: 600; margin: 2px; letter-spacing: 0.3px; }
+        .tag-secondary { background: #6b7280; }
+        .tag-green { background: #166534; }
+        .tag-amber { background: #92400e; }
+        .bibliography { background: #f8f9fa; padding: 30px; margin-top: 40px; border-left: 4px solid #003d5c; }
+        .bib-entry { margin-bottom: 14px; padding-left: 40px; text-indent: -40px; line-height: 1.6; font-size: 13px; }
+        .bib-number { color: #003d5c; font-weight: 700; margin-right: 6px; }
+        .bib-entry a { color: #003d5c; text-decoration: none; word-break: break-all; }
+        .bib-entry a:hover { text-decoration: underline; }
+        strong { font-weight: 600; }
+        code { background: #f1f5f9; padding: 1px 5px; font-family: monospace; font-size: 13px; }
+
+        /* Probability Lean Display */
+        .prob-match { background: #fff; border: 1px solid #d1d5db; margin: 14px 0; overflow: hidden; }
+        .prob-match-header { background: #003d5c; color: white; padding: 8px 14px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; }
+        .prob-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 12px 14px 6px; gap: 10px; }
+        .prob-team-name { font-size: 15px; font-weight: 700; color: #003d5c; }
+        .prob-team-name.away { text-align: right; }
+        .prob-vs { font-size: 11px; color: #9ca3af; font-weight: 600; text-align: center; }
+        .prob-bar-wrap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 3px; padding: 6px 14px 14px; align-items: center; }
+        .prob-bar { height: 32px; display: flex; align-items: center; position: relative; }
+        .prob-bar.home { justify-content: flex-end; }
+        .prob-bar-fill { height: 100%; background: #003d5c; transition: width 0.3s; display: flex; align-items: center; padding: 0 8px; }
+        .prob-bar.home .prob-bar-fill { justify-content: flex-end; }
+        .prob-bar-fill.away { background: #b45309; }
+        .prob-pct { font-size: 13px; font-weight: 700; color: white; white-space: nowrap; }
+        .prob-draw-cell { text-align: center; }
+        .prob-draw-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px; }
+        .prob-draw-pct { font-size: 16px; font-weight: 700; color: #374151; display: block; }
+
+        @media (max-width: 768px) { .metrics-dashboard { grid-template-columns: repeat(2, 1fr); } .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <h1>World Cup Match Predictor: Probabilistic Lean Output — Technical Requirements</h1>
+        <div class="header-meta">
+            <span>2026-06-02</span>
+            <span>•</span>
+            <span>Deep Research — Standard Mode</span>
+            <span>•</span>
+            <span>27 Sources</span>
+            <span>•</span>
+            <span>FIFA World Cup 2026</span>
+        </div>
+    </div>
+
+    <div class="metrics-dashboard">
+        <div class="metric">
+            <span class="metric-number">~54%</span>
+            <span class="metric-label">Typical Best Accuracy (3-class)</span>
+        </div>
+        <div class="metric">
+            <span class="metric-number">86.7%</span>
+            <span class="metric-label">Best MLP Result (World Cup TSI)</span>
+        </div>
+        <div class="metric">
+            <span class="metric-number">10K+</span>
+            <span class="metric-label">Monte Carlo Runs Recommended</span>
+        </div>
+        <div class="metric">
+            <span class="metric-number">48</span>
+            <span class="metric-label">Teams / 104 Matches — WC 2026</span>
+        </div>
+        <div class="metric">
+            <span class="metric-number">RPS</span>
+            <span class="metric-label">Primary Evaluation Metric</span>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <!-- EXECUTIVE SUMMARY -->
+        <div class="section">
+            <div class="section-title">Executive Summary</div>
+            <div class="executive-summary">
+                <p>This predictor is not designed to output a single winner. The goal is a <strong>probabilistic lean</strong> — for every match, the model produces three numbers that sum to 100%: the probability Team A wins, the probability of a draw, and the probability Team B wins. For example: <em>Brazil 50% / Draw 20% / Senegal 30%</em>. These are the three outputs the entire architecture is built to produce, calibrate, and present.</p>
+                <p>With a data source already in hand, the focus shifts from collection to computation. The key challenges become: (1) engineering the right features from the data you have, (2) choosing a model family that produces well-calibrated probability distributions rather than just a modal outcome, (3) handling the structural difficulty of draw prediction, and (4) surfacing those probabilities in a readable lean format rather than burying them in raw numbers.</p>
+                <p>The recommended path is a Dixon-Coles Poisson score simulator (produces naturally calibrated win/draw/loss splits from goal distributions), enriched by an XGBoost classifier for pre-match feature context, with output normalised to a three-probability lean per match. Evaluated with Ranked Probability Score (RPS) rather than accuracy — because accuracy ignores how well-calibrated your draw and loss probabilities are, which is the core of the lean format.</p>
+            </div>
+        </div>
+
+        <!-- FINDING 1: THE DATA PROBLEM -->
+        <div class="section">
+            <div class="section-title">1. The Data Problem: International vs Club Football</div>
+            <p>The first thing to understand about World Cup prediction is that it operates in a fundamentally different data environment than club football. This is not a minor caveat — it defines every architecture decision downstream.</p>
+
+            <h3 class="subsection-title">1.1 Sparse Match Volume</h3>
+            <p>National teams play approximately 8–12 competitive matches per year. Compare this to Premier League clubs that play 50+ matches per season. This means that for any given team in the 2026 World Cup, your usable training window is shallow. A team's last 20 "relevant" competitive matches may span three to four years. Standard rolling-window approaches built for club football — 5-match form, last 10-game averages — need significant recalibration for this context [15].</p>
+            <p>The implication: models trained only on World Cup data will have extremely small sample sizes. The canonical approach is to train on all international football (friendlies weighted lower than competitive matches) and use ELO-style time-decay to emphasise recent results.</p>
+
+            <h3 class="subsection-title">1.2 No True Home Advantage</h3>
+            <p>Home advantage is consistently one of the top two predictive features in domestic football research. A PMC study on Bundesliga data ranked match venue as the first or second most important feature in both xG and EPV models [20]. At a neutral-ground tournament like the World Cup, this signal collapses. The standard fix is to apply a reduced host-nation bonus rather than a full home-advantage coefficient: World Football Elo Ratings uses 60 Elo points as a home-advantage offset [20]; WC2026 simulators apply a smaller bonus for USA, Mexico, and Canada as co-hosts [68].</p>
+
+            <h3 class="subsection-title">1.3 Club-to-International Transfer Problem</h3>
+            <p>Player-level data from club football is richer than international data, but the transfer is imperfect. A player performing at elite club level may occupy a different tactical role internationally, or may be returning from injury. Models that proxy national team strength via aggregated club-level xG or market values (Transfermarkt squad values) get useful signal but introduce noise. The 2023 Women's World Cup XGBoost study from the US Soccer Federation used FIFA post-match tracking data directly, reporting 58% accuracy — the honest ceiling when using purely available international data [60].</p>
+
+            <div class="key-insight">
+                <strong>Key Insight:</strong> The data scarcity problem pushes World Cup models toward ratings-based features (ELO, FIFA ranking points) over match-event features. ELO outperforms FIFA rankings for prediction accuracy, achieving the lowest binomial deviance (1.2634) in head-to-head comparisons — better than Opta models and official FIFA rankings (deviance 1.3681) [16].
+            </div>
+        </div>
+
+        <!-- FINDING 2: DATA SOURCES -->
+        <div class="section">
+            <div class="section-title">2. Data Sources: What to Use and Where</div>
+            <p>The table below ranks data sources by coverage, cost, and relevance to an international match predictor.</p>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Type</th>
+                        <th>Cost</th>
+                        <th>Key Signals</th>
+                        <th>Relevance to WC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>World Football EloRatings.net</strong></td>
+                        <td>Ratings</td>
+                        <td>Free</td>
+                        <td>Historical ELO, 125+ years of international data</td>
+                        <td>Critical — backbone rating</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FIFA Official Rankings</strong></td>
+                        <td>Ratings</td>
+                        <td>Free</td>
+                        <td>FIFA points, confederation, ranking position</td>
+                        <td>High — official seed basis</td>
+                    </tr>
+                    <tr>
+                        <td><strong>StatsBomb Open Data</strong></td>
+                        <td>Event-level</td>
+                        <td>Free (GitHub)</td>
+                        <td>xG, xA, passes, pressures, shot location, 360 data for select competitions</td>
+                        <td>High for World Cup events covered</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FBref.com</strong></td>
+                        <td>Aggregated stats</td>
+                        <td>Free</td>
+                        <td>xG, xA, progressive passes/carries, pressure %, possession by phase</td>
+                        <td>High — club & international</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Understat.com</strong></td>
+                        <td>Shot/xG</td>
+                        <td>Free (scrapeable)</td>
+                        <td>xG per shot, shot maps, match xG totals</td>
+                        <td>Medium — club leagues only</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Transfermarkt</strong></td>
+                        <td>Market values</td>
+                        <td>Free (scrapeable)</td>
+                        <td>Squad market value, player valuations, age profiles</td>
+                        <td>High — squad strength proxy</td>
+                    </tr>
+                    <tr>
+                        <td><strong>API-Football</strong></td>
+                        <td>Structured API</td>
+                        <td>Freemium</td>
+                        <td>Results, lineups, stats, live data, 500+ competitions</td>
+                        <td>High — broad coverage</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Football-Data.co.uk</strong></td>
+                        <td>Historical results + odds</td>
+                        <td>Free</td>
+                        <td>Match results, bookmaker odds (10+ books)</td>
+                        <td>Medium — market calibration</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Soccerdata (Python lib)</strong></td>
+                        <td>Multi-source scraper</td>
+                        <td>Free</td>
+                        <td>Unified wrapper for FBref, Understat, WhoScored, Sofascore</td>
+                        <td>High — dev convenience</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Opta / Sportradar</strong></td>
+                        <td>Enterprise event data</td>
+                        <td>Expensive</td>
+                        <td>Full event + tracking, official rights</td>
+                        <td>Enterprise — not needed for research</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 class="subsection-title">2.1 Recommended Minimum Stack for a Functional WC Predictor</h3>
+            <div class="two-col">
+                <div class="card">
+                    <h4>Ratings Layer</h4>
+                    <ul>
+                        <li>EloRatings.net — team strength baseline</li>
+                        <li>FIFA points (monthly updates)</li>
+                        <li>Confederational form (CONMEBOL, UEFA qualifiers weighting)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Form Layer</h4>
+                    <ul>
+                        <li>FBref international match logs (last 10 competitive matches)</li>
+                        <li>Transfermarkt squad values (depth metric)</li>
+                        <li>Goals/xG in last 5 qualifying matches (time-weighted)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Squad Context</h4>
+                    <ul>
+                        <li>Squad age profile (optimal: 24–27 avg)</li>
+                        <li>Key player availability (injury/suspension flags)</li>
+                        <li>CL/league participation level of squad (proxy for club form)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>Tournament Context</h4>
+                    <ul>
+                        <li>Group stage fixture order and recovery time</li>
+                        <li>Host nation flag (USA, Mexico, Canada)</li>
+                        <li>Historical World Cup stage progression per team</li>
+                        <li>Head-to-head record</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINDING 3: FEATURE ENGINEERING -->
+        <div class="section">
+            <div class="section-title">3. Feature Engineering: What Actually Predicts Outcomes</div>
+            <p>Feature engineering is consistently identified as the primary driver of prediction ceiling in football ML research — "the quality and structure of features often determine the performance ceiling" [2]. The research consensus on what features matter most is relatively stable across studies.</p>
+
+            <h3 class="subsection-title">3.1 Tier 1 Features — Maximum Signal</h3>
+            <p>These appear in the top features of virtually every study that runs feature importance analysis:</p>
+            <ul>
+                <li><strong>ELO differential</strong> — the difference in ELO rating between the two teams. Validated across 8 rating methods as the highest-accuracy predictor for international football [10, 16]. Has better predictive performance than raw FIFA ranking difference because it adjusts for opponent strength and recency.</li>
+                <li><strong>xG in recent matches (rolling 3–5 games)</strong> — expected goals created and conceded. A 2025 Bundesliga PMC study found xG post-match had the best prediction performance (RPS 0.148, accuracy 65.6%), and xG pre-match features were powerful in pre-match scenarios [21]. For WC specifically, use xG from qualifying campaign as the primary form signal.</li>
+                <li><strong>Goal difference in last N matches (time-weighted)</strong> — raw goals are noisy but goal difference over recent form windows carries more signal than individual match outcomes. Notably, raw goal count per match has low predictive power; it is the differential and the xG-adjusted version that matters [20].</li>
+                <li><strong>Shots on target (rolling)</strong> — consistently in top 10 feature sets across multiple studies [58, 60]. A team that generates high-quality chances is reliably stronger regardless of whether those chances are converted.</li>
+            </ul>
+
+            <h3 class="subsection-title">3.2 Tier 2 Features — Strong Supplemental Signal</h3>
+            <ul>
+                <li><strong>Squad market value (Transfermarkt)</strong> — a strong proxy for aggregate squad quality. Used in the Kaggle WC2026 dataset as a continuous feature [26]. Correlates with club competition level, which partially solves the club-to-international transfer problem.</li>
+                <li><strong>Pass accuracy / possession % (rolling)</strong> — possession-dominant teams maintain more predictable scoring patterns. Feature engineering from StatsBomb uses progressive passes and carries to capture territorial dominance.</li>
+                <li><strong>Expected Possession Value (EPV) pre-match</strong> — a 2025 study found EPV outperforms xG in pre-match prediction scenarios (RPS 0.194 vs 0.199 for xG pre-match) [21], making it more useful for pre-tournament modeling than pure shot-based xG.</li>
+                <li><strong>Qualifying campaign performance</strong> — points per game, goals per game in qualification. Teams entering strong qualifying campaigns correlate with tournament performance [24, 55].</li>
+                <li><strong>Squad age profile</strong> — squads peaking in the 24–27 bracket historically over-perform their ratings. Appears in FiveThirtyEight and Sportmonks WC models [52].</li>
+                <li><strong>Head-to-head record</strong> — limited historical data for international matchups, but carries marginal signal for likely matchups (e.g. Brazil vs Argentina).</li>
+            </ul>
+
+            <h3 class="subsection-title">3.3 Tier 3 — Contextual Features (Use Carefully)</h3>
+            <ul>
+                <li><strong>Manager tournament experience</strong> — tactical flexibility and adaptation matter in a short tournament. Hard to quantify but used in qualitative overlays [27].</li>
+                <li><strong>Travel distance / climate zone</strong> — relevant for 2026 specifically because of North American geography. Playing in Atlanta vs Seattle involves meaningful altitude and weather differences. Professional simulators now include this explicitly [65].</li>
+                <li><strong>Suspension risk / card accumulation</strong> — tournament-specific: yellow card accumulation affects knockout eligibility. Group stage results may be affected by deliberate squad management.</li>
+                <li><strong>Market odds (betting lines)</strong> — can be used as a calibration target or as an ensemble feature. Bookmaker odds aggregate expert opinion and market efficiency. Using them as a feature risks circularity, but using them for calibration verification is standard practice [34].</li>
+            </ul>
+
+            <div class="warning-box">
+                <strong>Draw Prediction Problem:</strong> All studies consistently report draw prediction as the hardest outcome to classify. The 2023 FIFA Women's World Cup XGBoost study reported draw accuracy of 32% vs 67% for wins/losses [60]. The 2025 Frontiers MLP paper on World Cup TSI data reported F1 of 0.793 for draws vs 0.98 for losses [58]. Draw-specific architecture (e.g. Dixon-Coles tau correction, Bradley-Terry-Davidson draw inflator) is necessary for any score-based model.
+            </div>
+
+            <h3 class="subsection-title">3.4 Feature Engineering for the WC 2026 Specifically</h3>
+            <p>The expanded format (48 teams, 12 groups of 4, Round of 32 with 8 best third-placed teams) creates specific engineering requirements. The "best third" qualification mechanic means that a team can finish third in their group and still advance based on goal difference relative to other third-placed teams across 12 groups — this introduces late-game tactical incentives (score management, deliberate draws) that do not exist in earlier World Cups. Any feature encoding group-stage scorelines should account for this possibility [65].</p>
+        </div>
+
+        <!-- FINDING 4: MODELS -->
+        <div class="section">
+            <div class="section-title">4. Model Architecture: The Three-Layer Stack</div>
+            <p>The research landscape reveals two distinct modelling traditions: <strong>result-based models</strong> that directly predict win/draw/loss probabilities, and <strong>score-based models</strong> that predict goal distributions and derive outcome probabilities from those. For a World Cup predictor, both are necessary at different layers of the system.</p>
+
+            <h3 class="subsection-title">4.1 Layer 1: Team Strength Rating (Always On)</h3>
+            <p>Every competitive World Cup predictor uses some form of continuous team strength rating as its backbone. The dominant choice is an ELO-variant for three reasons: it self-corrects over time, handles opponent strength, and has 125+ years of international football data available [15].</p>
+            <div class="two-col">
+                <div class="card">
+                    <h4>ELO System Mechanics</h4>
+                    <p>Start each team from a base rating (typically 1500). After each match, update ratings based on outcome vs expected outcome. Key parameters:</p>
+                    <ul>
+                        <li><strong>K-factor:</strong> 20 (standard) — controls rating volatility</li>
+                        <li><strong>Goal scaling:</strong> multiply K by a factor based on goal margin (typically log(1 + goal_diff))</li>
+                        <li><strong>Neutral venue:</strong> remove home advantage coefficient (or apply reduced 30-40pt bonus for hosts)</li>
+                        <li><strong>Match weighting:</strong> friendlies weighted lower than competitive matches (0.5x vs 1.0x)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>ELO vs FIFA Rankings</h4>
+                    <p>ELO outperforms official FIFA rankings across multiple validation studies:</p>
+                    <ul>
+                        <li>Binomial deviance: ELO 1.2634 vs FIFA 1.3681 [16]</li>
+                        <li>Ensemble ELO variants improve further to 1.2358</li>
+                        <li>FIFA adopted ELO-inspired methodology in 2018, closing but not eliminating the gap</li>
+                        <li>ELO remains more stable — less sensitive to recent friendlies or subjective adjustments</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 class="subsection-title">4.2 Layer 2: Match Score Simulation (Poisson / Dixon-Coles)</h3>
+            <p>The industry standard for score-based prediction is the Poisson regression framework, specifically the Dixon-Coles variant. The Dixon-Coles model estimates each team's attack strength (alpha) and defensive capability (beta), plus a home advantage term (gamma), using all available match history. Its key innovation is the tau correction factor, which adjusts for the underrepresentation of draws in standard Poisson models — particularly relevant for 0-0, 1-0, 0-1, and 1-1 scorelines [46, 48].</p>
+
+            <p>The expected goals for a match are computed as: <code>lambda = exp(intercept + attack_home + defense_away + home_advantage)</code> and <code>mu = exp(intercept + attack_away + defense_home)</code>. Each team's goal count is then drawn from Poisson(lambda) and Poisson(mu) respectively, and win/draw/loss probabilities are summed across all (home goals, away goals) combinations up to some ceiling (typically 10 goals per side).</p>
+
+            <p>For international football specifically, time-weighting of historical matches (downweighting results older than 2 years) is important because team quality changes faster than in stable club environments. The standard approach uses an exponential decay parameter fitted to maximise log-likelihood on historical World Cup data [48].</p>
+
+            <div class="key-insight">
+                <strong>Dixon-Coles vs Standard Poisson:</strong> In head-to-head tests, Dixon-Coles shows 1–3% improvement in log-likelihood over basic Poisson. Prediction accuracy improvement is often negligible (both ~50–53% match-level accuracy) — the key gain is in calibration of low-scoring outcomes and draw probability [51].
+            </div>
+
+            <h3 class="subsection-title">4.3 Layer 3: ML Ensemble for Match Outcome Classification</h3>
+            <p>When you have pre-match tabular features (ELO, form metrics, squad data), a gradient-boosted classifier provides strong win/draw/loss prediction. The research consensus is that XGBoost, LightGBM, and CatBoost dominate recent benchmarks in this domain [59, 61, 64].</p>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Model Family</th>
+                        <th>Best For</th>
+                        <th>Typical Accuracy</th>
+                        <th>Key Strength</th>
+                        <th>Weakness</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>XGBoost / LightGBM</strong></td>
+                        <td>Pre-match classification</td>
+                        <td>52–58%</td>
+                        <td>Feature importance (SHAP), handles mixed feature types</td>
+                        <td>Needs calibration for probability output</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dixon-Coles (Poisson)</strong></td>
+                        <td>Score prediction + simulation</td>
+                        <td>50–54%</td>
+                        <td>Interpretable, generates full score distribution</td>
+                        <td>Assumes Poisson (real goals are overdispersed)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Bayesian Hierarchical</strong></td>
+                        <td>Dynamic rating + inference</td>
+                        <td>52–56%</td>
+                        <td>Uncertainty quantification, updates smoothly</td>
+                        <td>Computationally heavier, requires MCMC</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MLP Neural Network</strong></td>
+                        <td>Technical indicator inputs</td>
+                        <td>Up to 86.7% (WC TSI)</td>
+                        <td>Non-linear pattern capture</td>
+                        <td>Needs large feature set; PCA preprocessing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logistic Regression</strong></td>
+                        <td>Baseline / interpretability</td>
+                        <td>49–53%</td>
+                        <td>Interpretable coefficients, well-calibrated</td>
+                        <td>Linear only, ceiling is low</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Random Forest</strong></td>
+                        <td>Feature selection</td>
+                        <td>51–56%</td>
+                        <td>Embedded feature importance, robust to noise</td>
+                        <td>Slower than XGBoost, often 2nd-best</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>The 86.7% accuracy reported in the Frontiers MLP World Cup study should be interpreted carefully — it used PCA-reduced Technical Statistics Indicators (TSIs) from post-match FIFA data across 22 features, trained on completed World Cup matches. Pre-match prediction accuracy (predicting before a match is played, from features available beforehand) is substantially lower [5, 7].</p>
+
+            <h3 class="subsection-title">4.4 Layer 4: Monte Carlo Tournament Simulation</h3>
+            <p>A match predictor becomes a tournament predictor through Monte Carlo simulation. The pipeline is: for each simulated tournament run, resolve every group match (using outcome probabilities from Layer 2 or 3), apply FIFA's tiebreaker rules (points → head-to-head → goal difference → goals scored → disciplinary points), determine 8 best third-placed qualifiers, build the knockout bracket, resolve each knockout match (with penalty shootout model if drawn), and record the winner. Running 10,000–50,000 iterations gives stable probability estimates for each team reaching each stage [67, 68, 70].</p>
+
+            <p>For the 2026 format specifically, the 8-best-third mechanic requires careful implementation. The selection of which third-placed teams advance is based on a cross-group comparison that only makes sense after all group stage results are known — meaning you cannot resolve groups independently in parallel; you must complete all group matches before determining knockout bracket seeding [65].</p>
+        </div>
+
+        <!-- FINDING 5: EVALUATION METRICS -->
+        <div class="section">
+            <div class="section-title">5. Evaluation Metrics: How to Know Your Model Is Good</div>
+            <p>Football match prediction is a three-class probabilistic classification problem (home win / draw / away win). The choice of evaluation metric has real consequences for what your model optimises toward.</p>
+
+            <h3 class="subsection-title">5.1 Primary Metrics</h3>
+            <div class="two-col">
+                <div class="card">
+                    <h4>Ranked Probability Score (RPS)</h4>
+                    <p>Standard in football forecasting since the 2017 Soccer Prediction Challenge. Evaluates cumulative probability accuracy across ordered outcomes. <strong>Lower is better.</strong> Rewards well-distributed and well-ranked probabilities — not just picking the modal outcome. Sensitive to the ordering of outcomes (correctly penalises a model that was confident in Home Win when the result was Away Win more than one that predicted Draw).</p>
+                    <p>Typical RPS for a solid football model: 0.19–0.21. Top Bundesliga models achieve RPS ~0.148 [21]. A naive always-home-win baseline gives RPS ~0.25.</p>
+                </div>
+                <div class="card">
+                    <h4>Log Loss (Ignorance Score)</h4>
+                    <p>Penalises overconfident wrong predictions harshly. The standard metric for any probabilistic classifier, and recommended by Wheatcroft (2022) over RPS for football because it assesses each outcome independently. <strong>Lower is better.</strong></p>
+                    <p>Typical log-loss for a functional model: 0.90–1.05. Market odds typically achieve ~0.97. A model matching market log-loss is performing at roughly commercial standard. Good model Brier score target: 0.17–0.21 [21, 34].</p>
+                </div>
+            </div>
+
+            <div class="two-col">
+                <div class="card">
+                    <h4>Brier Score</h4>
+                    <p>Mean squared error over probability predictions. Non-local and distance-insensitive. More conservative than RPS, recommended by Spiegelhalter for football evaluation. Works well as a calibration check alongside RPS [32, 35]. Target: below 0.22 for a solid model.</p>
+                </div>
+                <div class="card">
+                    <h4>Classification Accuracy</h4>
+                    <p>Percentage of matches where modal predicted outcome matches actual. Insufficient alone (a model predicting home win every match achieves ~45% accuracy without calibrated probabilities), but useful as a sanity check. 53–58% is the practical ceiling for pre-match domestic football prediction; World Cup is harder given data sparsity.</p>
+                </div>
+            </div>
+
+            <h3 class="subsection-title">5.2 Calibration — The Overlooked Metric</h3>
+            <p>A well-performing model should be calibrated: when it says 70% chance of a home win, that outcome should occur roughly 70% of the time across all matches where it said 70%. Calibration plots (predicted probability vs empirical frequency) reveal systematic bias. Reliability diagrams and Expected Calibration Error (ECE) are standard tools. A model can have good accuracy or RPS but be poorly calibrated — meaning its probabilities are not trustworthy for downstream tournament simulation. Always check calibration before using match-level probabilities in a Monte Carlo simulator [34, 36].</p>
+
+            <h3 class="subsection-title">5.3 The Market Benchmark</h3>
+            <p>Bookmaker odds represent the practical performance ceiling for pre-match football prediction — they aggregate large amounts of expert knowledge and market efficiency. A useful evaluation practice is to compare your model's log-loss and Brier score against the implied probabilities from aggregated bookmaker odds. If your model consistently beats market odds, that is a strong validation signal (and also suggests profitable betting opportunities, though small EV advantages are often indistinguishable from noise [34]).</p>
+
+            <h3 class="subsection-title">5.4 Tournament-Level Evaluation</h3>
+            <p>For a full-tournament predictor, per-match metrics are insufficient. Additional evaluation dimensions: bracket accuracy (did the model correctly identify which teams would advance from groups?), stage probability calibration (did teams given 20% semifinal probability reach the semis ~20% of the time across multiple tournaments?), and upset detection rate. Given that only one World Cup is played every four years, backtesting across Euro, Copa America, and Asian Cup tournaments expands your evaluation dataset significantly.</p>
+        </div>
+
+        <!-- FINDING 6: WORLD CUP 2026 SPECIFIC -->
+        <div class="section">
+            <div class="section-title">6. World Cup 2026 Specific Considerations</div>
+            <p>The 2026 tournament is historically unusual in several respects that have meaningful implications for prediction models.</p>
+
+            <h3 class="subsection-title">6.1 48 Teams — More Variance, More Upsets</h3>
+            <p>Expanding from 32 to 48 teams significantly increases upset frequency. Among the 16 additional teams, several are historically weaker confederations (OFC, partial CONCACAF) with limited high-quality match data. A model built on historical World Cup data from 32-team tournaments will underestimate variance in group stages [23, 24].</p>
+            <p>The new Round of 32 (with 8 best-third-placed qualifiers) creates an additional variance amplifier: a single upset in the group stage now propagates further through the knockout bracket. Professional simulators report running 10,000–50,000 iterations precisely because the outcome distribution is wider [65, 68].</p>
+
+            <h3 class="subsection-title">6.2 North American Geography and Travel</h3>
+            <p>Matches are spread across 16 cities in the US, Canada, and Mexico — spanning Pacific Coast to East Coast, with significant altitude differences (Mexico City, Denver, Kansas City all above 1500m). Travel logistics matter for recovery between group matches. An African team playing two consecutive matches in Los Angeles and New York faces different fatigue profiles than a European team in a tighter geographic cluster. Current state-of-the-art simulators are explicitly modelling altitude and travel schedules for 2026 [65].</p>
+
+            <h3 class="subsection-title">6.3 Squad Depth as a Premium Signal</h3>
+            <p>With 104 matches across a compressed tournament schedule, squad depth becomes a stronger predictor than in a 64-match World Cup. France rates highly in most 2026 models specifically because they can replace injured starters with Champions League-caliber squad players [24, 55]. This means your squad encoding should capture depth (not just starter quality): Transfermarkt values for the full 26-man squad, average club competition level across the squad depth, number of players at top-5 league clubs.</p>
+
+            <h3 class="subsection-title">6.4 Penalty Shootout Modelling</h3>
+            <p>Knockout matches that finish level require a penalty shootout model. Standard approaches: give the higher-rated team a slight advantage (55–60% win probability) reflecting weak historical penalty correlation with team strength. More sophisticated models encode known penalty records per team and individual penalty taker statistics from FBref [67, 68]. This matters because across 104 matches in 2026, multiple knockout ties will end in penalties.</p>
+
+            <div class="key-insight">
+                <strong>Calibration Check for WC2026 Models:</strong> History suggests a ~25% chance the tournament winner is not in the top-5 rated teams entering the competition. If your model assigns &lt;5% total probability to all non-top-5 teams winning, it is likely underestimating variance. Opta, ESPN, and The Guardian models for 2026 all show meaningful disagreement on the 4th-favorite slot, correctly reflecting genuine uncertainty [28].
+            </div>
+        </div>
+
+        <!-- FINDING 7: SYSTEM ARCHITECTURE -->
+        <div class="section">
+            <div class="section-title">7. Recommended System Architecture</div>
+            <p>Based on the research landscape, here is a practical build-order for a World Cup match outcome predictor that balances predictive power, maintainability, and feasibility for a solo or small-team build.</p>
+
+            <h3 class="subsection-title">7.1 Phase 1: ELO Baseline (Week 1)</h3>
+            <p>Build a working ELO rating system using World Football ELO data (or bootstrap from FIFA ranking points). Implement the Poisson score simulation (basic, pre-Dixon-Coles). Wire up Monte Carlo simulation with correct 2026 format (12 groups, best-third mechanic). Validate: compare your tournament win probabilities against established WC2026 simulators (Football Meets Data, wc2026sim.com). At this stage you have a functional baseline — roughly equivalent to any ELO-only predictor.</p>
+
+            <h3 class="subsection-title">7.2 Phase 2: Feature Engineering Layer (Week 2)</h3>
+            <p>Add form features on top of ELO: rolling xG from FBref qualifying data, goal difference (time-weighted), squad market value from Transfermarkt. Train an XGBoost classifier on historical World Cup + international match data. Evaluate with RPS and Brier score against held-out WC matches. Implement calibration plot to verify probability output. At this stage your match predictions should meaningfully outperform the ELO-only baseline.</p>
+
+            <h3 class="subsection-title">7.3 Phase 3: Bayesian Enhancement (Week 3+)</h3>
+            <p>Replace the static attack/defense parameters in the Poisson model with dynamic Bayesian state-space estimates that update after each tournament matchday. This allows the model to incorporate actual WC results in real-time — a team that dramatically over-performs their pre-tournament ELO gets their implied strength revised upward. Implement using PyMC or Stan. Evaluate using held-out tournament matches from multiple iterations (multiple World Cups + Euro + Copa).</p>
+
+            <h3 class="subsection-title">7.4 Integration with Your Dashboard</h3>
+            <p>Given that your WC2026 Performance Dashboard uses Next.js 15, PostgreSQL, and a Python ETL + prediction service (from your PRD/TRD), the natural architecture is: Python prediction service generates match probabilities and tournament simulations, stores results in PostgreSQL (refreshing after each round of matches), Next.js reads from the DB for display. The Monte Carlo simulator should be precomputed and cached (Redis) rather than run on-demand, given the compute cost of 10,000+ full-tournament simulations.</p>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Component</th>
+                        <th>Tech</th>
+                        <th>Data Source</th>
+                        <th>Update Frequency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ELO rating engine</td>
+                        <td>Python (pandas, numpy)</td>
+                        <td>EloRatings.net + FIFA API</td>
+                        <td>After each matchday</td>
+                    </tr>
+                    <tr>
+                        <td>Form features ETL</td>
+                        <td>Python (soccerdata, polars)</td>
+                        <td>FBref, Transfermarkt</td>
+                        <td>Pre-tournament + live</td>
+                    </tr>
+                    <tr>
+                        <td>XGBoost classifier</td>
+                        <td>scikit-learn / XGBoost</td>
+                        <td>Historical WC + intl data</td>
+                        <td>Train once, retrain after each round</td>
+                    </tr>
+                    <tr>
+                        <td>Dixon-Coles simulator</td>
+                        <td>Python (scipy optimise)</td>
+                        <td>International match history</td>
+                        <td>Refit after each matchday</td>
+                    </tr>
+                    <tr>
+                        <td>Monte Carlo engine</td>
+                        <td>Python (numpy vectorised)</td>
+                        <td>Match probabilities from above</td>
+                        <td>Pre-match, cache in Redis</td>
+                    </tr>
+                    <tr>
+                        <td>Results display</td>
+                        <td>Next.js 15 + PostgreSQL</td>
+                        <td>Python service output</td>
+                        <td>Live during tournament</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SYNTHESIS -->
+        <div class="section">
+            <div class="section-title">8. Synthesis and Key Insights</div>
+            <p>Several second-order patterns emerge from synthesising this research that are worth calling out explicitly:</p>
+
+            <p><strong>ELO is doing more work than it looks like.</strong> Despite the proliferation of ML approaches, ELO-based systems remain the strongest predictor for international football at a tournament level. This is specifically because ELO was designed for sparse match environments (chess), while neural networks and gradient boosting require feature density that international football doesn't provide. The right architecture uses ELO as the primary signal and treats ML as a calibration and enrichment layer on top.</p>
+
+            <p><strong>Draw prediction is an unsolved problem.</strong> Every study reports draws as the hardest outcome to predict. The practical implication: if you need a market-beating match predictor, your alpha is almost entirely in how you model draws. The Dixon-Coles tau correction helps at the model level, but the deeper issue is that draws often result from tactical choices (park the bus, happy to take a point) that are context-dependent in ways not captured by any current feature set.</p>
+
+            <p><strong>Post-match features vs pre-match features create dramatically different accuracy ceilings.</strong> The 86.7% MLP accuracy reported in the Frontiers WC paper used post-match TSIs — features calculated after the match ended. Pre-match prediction is substantially harder. When evaluating papers for your build, confirm whether the reported accuracy is pre-match (useful) or post-match (academic exercise only).</p>
+
+            <p><strong>Calibration matters more than accuracy for tournament simulation.</strong> A model with 55% accuracy but poor calibration will produce worse tournament win probabilities than a 52% accurate model with good calibration. This is because tournament simulation compounds match-level probability errors across 5–7 sequential match predictions. Calibrate your model, then simulate.</p>
+
+            <p><strong>The WC2026 48-team format is structurally different from any historical training data.</strong> No historical precedent exists for the 8-best-third mechanic at the World Cup. This means your Monte Carlo simulator logic is almost entirely forward-engineered rather than historically validated. Use Copa America and UEFA Nations League third-place mechanics as partial analogues for validation.</p>
+        </div>
+
+        <!-- LIMITATIONS -->
+        <div class="section">
+            <div class="section-title">9. Limitations and Caveats</div>
+            <ul>
+                <li><strong>Research is primarily club-football-centric.</strong> The majority of ML football prediction papers use EPL, Bundesliga, or La Liga data. Results do not straightforwardly transfer to international football prediction.</li>
+                <li><strong>Injury and suspension data is not systematically available.</strong> Pre-tournament injury flags (e.g. Brazil losing Rodrygo, Estevao, and Militao before WC2026 [53]) cannot be encoded in a standard feature pipeline — they require real-time squad availability monitoring.</li>
+                <li><strong>Accuracy ceilings are genuine.</strong> Football is intentionally unpredictable. The practical ceiling for pre-match 3-class prediction is approximately 54–58% accuracy. Any claim significantly above this should be treated sceptically — especially if it uses post-match features or in-sample evaluation.</li>
+                <li><strong>WC2026 is live.</strong> All prediction systems are operating on pre-tournament data as of early June 2026. No training data exists for the expanded 48-team format.</li>
+                <li><strong>Betting market efficiency limits exploitability.</strong> Using this model to identify betting value edges is statistically valid in theory but practically difficult — margins, taxes, and small edge sizes make profitability elusive even with a demonstrably better model [34].</li>
+            </ul>
+        </div>
+
+        <!-- RECOMMENDATIONS -->
+        <div class="section">
+            <div class="section-title">10. Recommendations</div>
+            <p>For building your WC2026 match outcome predictor as part of the Performance Dashboard:</p>
+            <ol>
+                <li><strong>Start with the ELO + Poisson baseline first</strong> — it is functional, validated, and correctly scoped for the data-sparse international environment. You can have a working simulator within a day using publicly available ELO data.</li>
+                <li><strong>Use FBref + Transfermarkt as your enrichment sources</strong> — both are freely scrapeable via the <code>soccerdata</code> Python library, cover international competitions, and provide xG, squad value, and form data. Avoid Opta/Sportradar unless you have budget.</li>
+                <li><strong>Train XGBoost on your tabular feature set</strong> using all available World Cup + Euro + Copa data. Use SHAP values to verify that ELO differential, qualifying xG form, and squad value are your top features — if they're not, review your preprocessing.</li>
+                <li><strong>Evaluate with RPS and Brier score, not just accuracy</strong> — and always generate calibration plots before trusting your probabilities in the Monte Carlo simulator.</li>
+                <li><strong>Implement the Monte Carlo simulator with the correct 2026 format</strong> — including the 8-best-third selection, cross-group comparison, and penalty shootout model. This is non-trivial to implement correctly and is where most amateur predictors introduce errors.</li>
+                <li><strong>Add real-time squad updates</strong> — even a simple injury flag system (updated from ESPN/BBC injury reports) will meaningfully improve tournament-stage predictions where key absences are known.</li>
+                <li><strong>Calibrate against market odds from Football-Data.co.uk</strong> — before each matchday, compare your probabilities to aggregated bookmaker odds. Systematic divergence reveals model bias and helps prioritise where to improve.</li>
+            </ol>
+        </div>
+
+        <!-- BIBLIOGRAPHY -->
+        <div class="bibliography">
+            <div class="section-title">Bibliography</div>
+            <div class="bib-entry"><span class="bib-number">[1]</span> Rodrigues, F. and Pinto, A. (2022). Prediction of football match results with machine learning. <em>Procedia Computer Science</em>, 204, 463–470.</div>
+            <div class="bib-entry"><span class="bib-number">[2]</span> XG Football Club (2025). Which Machine Learning Models Perform Best for Football Match Prediction? <a href="https://thexgfootballclub.substack.com/p/which-machine-learning-models-perform">https://thexgfootballclub.substack.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[3]</span> Wong, A., Li, E., Le, H., Bhangu, G. and Bhatia, S. (2025). A predictive analytics framework for forecasting soccer match outcomes using machine learning models. <em>Decision Analytics Journal</em>, 14, 100537. <a href="https://doi.org/10.1016/j.dajour.2024.100537">https://doi.org/10.1016/j.dajour.2024.100537</a></div>
+            <div class="bib-entry"><span class="bib-number">[4]</span> Flax, S. (2026). From Possession to Prediction: A Soccer Analytics Framework for Shot Creation, xG Quality, and Match Outcomes. <em>Medium</em>. <a href="https://medium.com/@sflax91">https://medium.com/@sflax91</a></div>
+            <div class="bib-entry"><span class="bib-number">[5]</span> Luo, Y., Quan, T. and Cao, Y. (2025). Predicting football match outcomes: a multilayer perceptron neural network model based on technical statistics indicators of the FIFA world Cup. <em>Frontiers in Sports and Active Living</em>, 7, 1705198. <a href="https://doi.org/10.3389/fspor.2025.1705198">https://doi.org/10.3389/fspor.2025.1705198</a></div>
+            <div class="bib-entry"><span class="bib-number">[6]</span> PMC (2025). Predicting football match outcomes: multilayer perceptron model, World Cup TSI. PubMed Central. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12708546/">https://pmc.ncbi.nlm.nih.gov/articles/PMC12708546/</a></div>
+            <div class="bib-entry"><span class="bib-number">[7]</span> Cardenas, A. (2026). I Built a World Cup 2026 Predictor From Scratch — Here's What the Data Actually Says. <em>Medium</em>. <a href="https://medium.albertocardenas.com">https://medium.albertocardenas.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[8]</span> World Soccer Planner (2026). ELO Soccer Ratings & Monte Carlo Simulations Methodology. <a href="https://www.worldsoccerplanner.com/methodology.html">https://www.worldsoccerplanner.com/methodology.html</a></div>
+            <div class="bib-entry"><span class="bib-number">[9]</span> Gilch, L. and Müller, S. (2018). On Elo based prediction models for the FIFA Worldcup 2018. <em>arXiv</em> 1806.01930. <a href="https://arxiv.org/pdf/1806.01930">https://arxiv.org/pdf/1806.01930</a></div>
+            <div class="bib-entry"><span class="bib-number">[10]</span> Hvattum, L. and Arntzen, H. (2010). Using ELO ratings for match result prediction in association football. <em>Academia.edu</em>. <a href="https://www.academia.edu/80761583">https://www.academia.edu/80761583</a></div>
+            <div class="bib-entry"><span class="bib-number">[11]</span> DataCamp (2022). Predicting FIFA World Cup Qatar 2022 Winners. <a href="https://www.datacamp.com/blog/predicting-soccer-world-cup-winners">https://www.datacamp.com/blog/predicting-soccer-world-cup-winners</a></div>
+            <div class="bib-entry"><span class="bib-number">[12]</span> Grokipedia (2026). World Football Elo Ratings. <a href="https://grokipedia.com/page/World_Football_Elo_Ratings">https://grokipedia.com/page/World_Football_Elo_Ratings</a></div>
+            <div class="bib-entry"><span class="bib-number">[13]</span> PMC (2025). AI in Bundesliga match analysis — EPV vs xG to predict match outcomes. <em>Frontiers in Sports and Active Living</em>. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12640942/">https://pmc.ncbi.nlm.nih.gov/articles/PMC12640942/</a></div>
+            <div class="bib-entry"><span class="bib-number">[14]</span> Forcher, L. et al. (2025). AI in Bundesliga match analysis — EPV vs xG. DOI: 10.3389/fspor.2025.1713852.</div>
+            <div class="bib-entry"><span class="bib-number">[15]</span> World Soccer Planner (2026). ELO vs sparse national team data. <a href="https://www.worldsoccerplanner.com/methodology.html">https://www.worldsoccerplanner.com/methodology.html</a></div>
+            <div class="bib-entry"><span class="bib-number">[16]</span> Grokipedia (2026). World Football ELO Ratings — binomial deviance comparisons. <a href="https://grokipedia.com/page/World_Football_Elo_Ratings">https://grokipedia.com/page/World_Football_Elo_Ratings</a></div>
+            <div class="bib-entry"><span class="bib-number">[17]</span> Penaltyblog (2025). Better Metrics for Football Forecasts: Moving Beyond the Ranked Probability Score. <a href="https://pena.lt/y/2025/05/01/better-metrics-for-football-forecasts-moving-beyond-the-ranked-probability-score/">https://pena.lt/y</a></div>
+            <div class="bib-entry"><span class="bib-number">[18]</span> Wheatcroft, E. (2019). Evaluating probabilistic forecasts of football matches: The case against the Ranked Probability Score. <em>arXiv</em> 1908.08980. <a href="https://arxiv.org/pdf/1908.08980">https://arxiv.org/pdf/1908.08980</a></div>
+            <div class="bib-entry"><span class="bib-number">[19]</span> Wilkens, S. (2026). Can simple models predict football — and beat the odds? Lessons from the German Bundesliga. <em>International Journal of Sports Science & Coaching</em>. <a href="https://journals.sagepub.com/doi/10.1177/22150218261416681">https://journals.sagepub.com/doi/10.1177/22150218261416681</a></div>
+            <div class="bib-entry"><span class="bib-number">[20]</span> Forcher, L. et al. (2025). EPV vs xG Bundesliga match prediction — feature importance. PMC.</div>
+            <div class="bib-entry"><span class="bib-number">[21]</span> Forcher et al. (2025). xG post-match RPS 0.148, EPV pre-match RPS 0.194. Frontiers in Sports. DOI: 10.3389/fspor.2025.1713852.</div>
+            <div class="bib-entry"><span class="bib-number">[22]</span> Sportmonks (2026). World Cup 2026 Predictions: Who is Going to Win Based on Football Data? <a href="https://www.sportmonks.com/blogs/world-cup-2026-predictions">https://www.sportmonks.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[23]</span> Sportmonks (2026). 48-team format effect on variance. <a href="https://www.sportmonks.com/blogs/world-cup-2026-predictions">https://www.sportmonks.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[24]</span> TimeSoccerTV (2026). Why World Cup Prediction Models Matter More Than Ever in 2026. <a href="https://timesoccertv.com/why-world-cup-prediction-models-matter-more-than-ever-in-2026/">https://timesoccertv.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[25]</span> Oliva-Lozano, J.M. et al. (2025). Predicting the Match Outcome in the 2023 FIFA Women's World Cup and Analysis of Influential Features. <em>Journal of Human Kinetics</em>. <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12360935/">https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12360935/</a></div>
+            <div class="bib-entry"><span class="bib-number">[26]</span> Kaggle (2026). FIFA World Cup Dataset — WC2026 prediction features. <a href="https://www.kaggle.com/datasets/harrachimustapha/fifa-world-cup-team-dataset">https://www.kaggle.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[27]</span> Football Meets Data (2026). How to Simulate the FIFA World Cup 2026 with our Simulator. <a href="https://football-md.com/blog/predict-fifa-world-cup-2026-simulator">https://football-md.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[28]</span> Bracket2026 (2026). World Cup 2026 Predictions — Opta/ESPN/Guardian comparison. <a href="https://bracket2026.com/en/predictions">https://bracket2026.com</a></div>
+            <div class="bib-entry"><span class="bib-number">[29]</span> DataFC Blog (2025). Better Predictions for Football: How Does the Dixon-Coles Model Work? <a href="https://urazakgul.github.io/datafc-blog/posts/en/post3">https://urazakgul.github.io</a></div>
+            <div class="bib-entry"><span class="bib-number">[30]</span> Dashee87 (2018). Predicting Football Results With Statistical Modelling: Dixon-Coles and Time-Weighting. <a href="https://dashee87.github.io/football/python/predicting-football-results-with-statistical-modelling-dixon-coles-and-time-weighting/">https://dashee87.github.io</a></div>
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
