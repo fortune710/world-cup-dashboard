@@ -1,3 +1,4 @@
+import type * as React from "react"
 import { NavLink, useMatch } from "react-router"
 
 import {
