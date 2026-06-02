@@ -28,5 +28,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 USER airflow
-RUN pip install --no-cache-dir requests sqlalchemy psycopg2-binary sofascore-wrapper playwright python-dotenv \
+RUN pip install --no-cache-dir requests sqlalchemy psycopg2-binary sofascore-wrapper playwright python-dotenv pika \
     && python -m playwright install chromium

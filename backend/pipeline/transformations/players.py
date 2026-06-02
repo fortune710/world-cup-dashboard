@@ -1,8 +1,25 @@
 from typing import Any
 from datetime import datetime
 import enum
+import re
 
 class PlayersTransformations:
+    @staticmethod
+    def _camel_to_kebab(value: str) -> str:
+        """Convert camelCase/PascalCase keys to kebab-case."""
+        return re.sub(r"(?<!^)(?=[A-Z])", "-", value).lower()
+
+    def _to_kebab_case_keys(self, payload: Any) -> Any:
+        """Recursively convert dictionary keys to kebab-case."""
+        if isinstance(payload, dict):
+            return {
+                self._camel_to_kebab(str(key)): self._to_kebab_case_keys(val)
+                for key, val in payload.items()
+            }
+        if isinstance(payload, list):
+            return [self._to_kebab_case_keys(item) for item in payload]
+        return payload
+
     def transform_player_info(self, player_info, player_stats=None):
         """
         Transforms player information and statistics from Sofascore format to DB format.
@@ -35,4 +52,4 @@ class PlayersTransformations:
         
         stats = player_stats["statistics"]
         rating = stats.get("rating")
-        return rating, stats
+        return rating, self._to_kebab_case_keys(stats)
