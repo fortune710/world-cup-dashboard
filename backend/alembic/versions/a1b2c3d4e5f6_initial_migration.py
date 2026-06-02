@@ -34,16 +34,16 @@ def upgrade() -> None:
     
     # Refresh tables list
     tables = inspector.get_table_names()
-    teams_indexes = []
     if 'teams' in tables:
+        teams_columns = [col['name'] for col in inspector.get_columns('teams')]
         teams_indexes = [idx['name'] for idx in inspector.get_indexes('teams')]
 
-    if 'ix_teams_code' not in teams_indexes:
-        op.create_index(op.f('ix_teams_code'), 'teams', ['code'], unique=True)
-    if 'ix_teams_id' not in teams_indexes:
-        op.create_index(op.f('ix_teams_id'), 'teams', ['id'], unique=False)
-    if 'ix_teams_name' not in teams_indexes:
-        op.create_index(op.f('ix_teams_name'), 'teams', ['name'], unique=False)
+        if 'ix_teams_code' not in teams_indexes and 'code' in teams_columns:
+            op.create_index(op.f('ix_teams_code'), 'teams', ['code'], unique=True)
+        if 'ix_teams_id' not in teams_indexes and 'id' in teams_columns:
+            op.create_index(op.f('ix_teams_id'), 'teams', ['id'], unique=False)
+        if 'ix_teams_name' not in teams_indexes and 'name' in teams_columns:
+            op.create_index(op.f('ix_teams_name'), 'teams', ['name'], unique=False)
     
     if 'matches' not in tables:
         op.create_table('matches',
@@ -67,12 +67,12 @@ def upgrade() -> None:
     
     # Refresh tables list
     tables = inspector.get_table_names()
-    matches_indexes = []
     if 'matches' in tables:
+        matches_columns = [col['name'] for col in inspector.get_columns('matches')]
         matches_indexes = [idx['name'] for idx in inspector.get_indexes('matches')]
     
-    if 'ix_matches_id' not in matches_indexes:
-        op.create_index(op.f('ix_matches_id'), 'matches', ['id'], unique=False)
+        if 'ix_matches_id' not in matches_indexes and 'id' in matches_columns:
+            op.create_index(op.f('ix_matches_id'), 'matches', ['id'], unique=False)
     # ### end Alembic commands ###
 
 

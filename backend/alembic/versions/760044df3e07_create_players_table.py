@@ -40,16 +40,16 @@ def upgrade() -> None:
     
     # Refresh tables list
     tables = inspector.get_table_names()
-    players_indexes = []
     if 'players' in tables:
+        players_columns = [col['name'] for col in inspector.get_columns('players')]
         players_indexes = [idx['name'] for idx in inspector.get_indexes('players')]
 
-    if 'ix_players_club_id' not in players_indexes:
-        op.create_index(op.f('ix_players_club_id'), 'players', ['club_id'], unique=False)
-    if 'ix_players_id' not in players_indexes:
-        op.create_index(op.f('ix_players_id'), 'players', ['id'], unique=False)
-    if 'ix_players_name' not in players_indexes:
-        op.create_index(op.f('ix_players_name'), 'players', ['name'], unique=False)
+        if 'ix_players_club_id' not in players_indexes and 'club_id' in players_columns:
+            op.create_index(op.f('ix_players_club_id'), 'players', ['club_id'], unique=False)
+        if 'ix_players_id' not in players_indexes and 'id' in players_columns:
+            op.create_index(op.f('ix_players_id'), 'players', ['id'], unique=False)
+        if 'ix_players_name' not in players_indexes and 'name' in players_columns:
+            op.create_index(op.f('ix_players_name'), 'players', ['name'], unique=False)
     
     # Handle teams columns
     if 'teams' in tables:
@@ -60,7 +60,7 @@ def upgrade() -> None:
             op.add_column('teams', sa.Column('sofascore_id', sa.Integer(), nullable=True))
         
         teams_indexes = [idx['name'] for idx in inspector.get_indexes('teams')]
-        if 'ix_teams_sofascore_id' not in teams_indexes:
+        if 'ix_teams_sofascore_id' not in teams_indexes and 'sofascore_id' in teams_columns:
             op.create_index(op.f('ix_teams_sofascore_id'), 'teams', ['sofascore_id'], unique=True)
     # ### end Alembic commands ###
 
