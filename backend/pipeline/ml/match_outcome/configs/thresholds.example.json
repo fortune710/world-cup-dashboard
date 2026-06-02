@@ -1,0 +1,13 @@
+{
+  "validation": {
+    "min_accuracy": 0.45,
+    "max_log_loss": 1.10,
+    "min_macro_f1": 0.35,
+    "max_ece": 0.08
+  },
+  "monitoring": {
+    "max_prediction_staleness_hours": 24,
+    "max_feature_drift_psi": 0.25
+  }
+}
+
