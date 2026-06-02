@@ -4,10 +4,6 @@ import asyncio
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from pipeline.sources.teams import TeamsSource
-from pipeline.transformations.teams import TeamsTransformations
-from pipeline.load.teams import TeamsLoader
-
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -23,10 +19,11 @@ default_args = {
 
 def extract_team_details(**context):
     logger.info({"message": "Starting team details extraction"})
+    from pipeline.sources.teams import TeamsSource
+
     source = TeamsSource()
     try:
-        loop = asyncio.get_event_loop()
-        teams = loop.run_until_complete(source.get_teams_details())
+        teams = asyncio.run(source.get_teams_details())
         logger.info({"message": "Successfully extracted team details", "count": len(teams)})
         return teams
     except Exception as e:
@@ -43,6 +40,7 @@ def transform_team_details(**context):
         logger.warning({"message": "No raw teams data found for transformation", "count": 0})
         return []
     
+    from pipeline.transformations.teams import TeamsTransformations
     transform = TeamsTransformations()
     try:
         transformed_teams = transform.transform_team_details(raw_teams)
@@ -62,6 +60,7 @@ def load_team_details(**context):
         logger.warning({"message": "No transformed teams data found for loading", "count": 0})
         return
     
+    from pipeline.load.teams import TeamsLoader
     loader = TeamsLoader()
     try:
         loader.load_teams(transformed_teams)

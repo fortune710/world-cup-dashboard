@@ -3,10 +3,6 @@ import logging
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-from pipeline.sources.teams import TeamsSource
-from pipeline.transformations.teams import TeamsTransformations
-from pipeline.load.teams import TeamsLoader
-
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -22,6 +18,8 @@ default_args = {
 
 def extract_teams(**context):
     logger.info({"message": "Starting teams extraction"})
+    from pipeline.sources.teams import TeamsSource
+
     source = TeamsSource()
     try:
         teams = source.get_teams()
@@ -41,6 +39,7 @@ def transform_teams(**context):
         logger.warning({"message": "No raw teams data found for transformation", "count": 0})
         return []
 
+    from pipeline.transformations.teams import TeamsTransformations
     transform = TeamsTransformations()
     try:
         transformed_teams = transform.transform_team_data(raw_teams)
@@ -60,6 +59,7 @@ def load_teams(**context):
         logger.warning({"message": "No transformed teams data found for loading", "count": 0})
         return
     
+    from pipeline.load.teams import TeamsLoader
     loader = TeamsLoader()
     try:
         loader.load_teams(transformed_teams)

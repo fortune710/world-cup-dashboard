@@ -1,15 +1,11 @@
 from datetime import datetime, timedelta
+import asyncio
+import logging
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.sensors.external_task import ExternalTaskSensor
-import asyncio
 
-from config.db import SessionLocal
-from db.controllers.teams import get_next_team_to_index, mark_team_as_indexed
-from sofascore_wrapper.api import SofascoreAPI
-from pipeline.sources.teams import TeamsSource
-from pipeline.transformations.teams import TeamsTransformations
-from pipeline.load.players import PlayersLoader
+logger = logging.getLogger(__name__)
 
 default_args = {
     'owner': 'airflow',
@@ -22,25 +18,49 @@ default_args = {
 }
 
 def fetch_team_to_index(**context):
+    logger.info({"message": "Starting team selection for player indexing"})
+    from config.db import SessionLocal
+    from db.controllers.teams import get_next_team_to_index
+
     db = SessionLocal()
     try:
         team = get_next_team_to_index(db)
         if not team:
-            print("No teams left to index.")
+            logger.info({"message": "No teams left to index"})
             return None
-        return {"code": team.code, "sofascore_id": team.sofascore_id}
+        payload = {"code": team.code, "sofascore_id": team.sofascore_id}
+        logger.info({
+            "message": "Selected team for player indexing",
+            "team_code": team.code,
+            "sofascore_id": team.sofascore_id,
+        })
+        return payload
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to select team for player indexing",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
     finally:
         db.close()
 
 def extract_player_info(**context):
+    logger.info({"message": "Starting player info extraction"})
     team_data = context['ti'].xcom_pull(task_ids='fetch_team_to_index')
     if not team_data:
-        print("No team data received from previous task.")
+        logger.warning({"message": "No team data received from previous task"})
         return None
 
     team_id = team_data['sofascore_id']
     team_code = team_data['code']
-    print(f"Indexing players for team: {team_code} (ID: {team_id})")
+    logger.info({
+        "message": "Indexing players for team",
+        "team_code": team_code,
+        "sofascore_id": team_id,
+    })
+
+    from pipeline.sources.teams import TeamsSource
+    from sofascore_wrapper.api import SofascoreAPI
 
     async def run_extract():
         api = SofascoreAPI()
@@ -51,17 +71,32 @@ def extract_player_info(**context):
         finally:
             await api.close()
 
-    squad = asyncio.run(run_extract())
-    return {"team_code": team_code, "squad": squad}
+    try:
+        squad = asyncio.run(run_extract())
+        logger.info({
+            "message": "Successfully extracted player info",
+            "team_code": team_code,
+            "count": len(squad or []),
+        })
+        return {"team_code": team_code, "squad": squad}
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to extract player info",
+            "team_code": team_code,
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
 
 def transform_player_info(**context):
+    logger.info({"message": "Starting player info transformation"})
     extract_data = context['ti'].xcom_pull(task_ids='extract_player_info')
     if not extract_data:
-        print("No player data received from extract task.")
+        logger.warning({"message": "No player data received from extract task"})
         return None
 
     team_code = extract_data['team_code']
     squad = extract_data.get('squad') or []
+    from pipeline.transformations.teams import TeamsTransformations
     transformations = TeamsTransformations()
 
     transformed_players = []
@@ -70,29 +105,57 @@ def transform_player_info(**context):
             transformed = transformations.transform_squad_player(player_raw, team_code)
             transformed_players.append(transformed)
         except Exception as e:
-            print(f"Error transforming data for player {player_raw.get('id')}: {e}")
+            logger.warning({
+                "message": "Error transforming player data",
+                "player_id": player_raw.get("id"),
+                "error": {"message": str(e), "type": type(e).__name__},
+            })
 
+    logger.info({
+        "message": "Successfully transformed player info",
+        "team_code": team_code,
+        "count": len(transformed_players),
+    })
     return {"team_code": team_code, "players": transformed_players}
 
 def load_player_info(**context):
+    logger.info({"message": "Starting player info load"})
     transformed_data = context['ti'].xcom_pull(task_ids='transform_player_info')
     if not transformed_data:
-        print("No transformed player data to load.")
+        logger.warning({"message": "No transformed player data to load"})
         return
 
     team_code = transformed_data['team_code']
     players = transformed_data.get('players') or []
 
     if not players:
+        logger.info({
+            "message": "No players available to load",
+            "team_code": team_code,
+        })
         return
 
-    loader = PlayersLoader()
-    loader.load_players(players)
+    from config.db import SessionLocal
+    from db.controllers.teams import mark_team_as_indexed
+    from pipeline.load.players import PlayersLoader
 
+    loader = PlayersLoader()
     db = SessionLocal()
     try:
+        loader.load_players(players)
         mark_team_as_indexed(db, team_code)
-        print(f"Successfully marked team {team_code} as indexed.")
+        logger.info({
+            "message": "Successfully loaded player info and marked team indexed",
+            "team_code": team_code,
+            "count": len(players),
+        })
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to load player info",
+            "team_code": team_code,
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
     finally:
         db.close()
 
