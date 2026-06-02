@@ -26,6 +26,7 @@ services:
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - AIRFLOW__WEBSERVER__WEB_SERVER_URL_PREFIX=/airflow
       - AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX=True
+      - AIRFLOW__FAB__UPDATE_FAB_PERMS=False
       - RABBITMQ_URL=${RABBITMQ_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
