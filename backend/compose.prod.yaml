@@ -32,6 +32,7 @@ services:
       - AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT=900
       - AIRFLOW__WEBSERVER__WORKERS=1
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -61,6 +62,7 @@ services:
       - AIRFLOW__WEBSERVER__BASE_URL=https://${DROPLET_HOST}/airflow
       - AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX=True
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -77,6 +79,7 @@ services:
     container_name: airflow_init
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL}
     entrypoint: /bin/bash
     command:
       - -c
