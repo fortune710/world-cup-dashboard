@@ -4,9 +4,8 @@ A comprehensive dashboard for world cup data processing and visualization.
 
 ## Prerequisites
 
-- Python 3.12.9
-- Docker & Docker Compose (optional, for containerized setup)
-- `uv` (for fast dependency management)
+- Docker
+- Docker Compose
 
 ---
 
@@ -20,9 +19,27 @@ Copy the example environment file and fill in your credentials:
 cp backend/.env.example backend/.env
 ```
 
+The default `.env.example` is configured for Docker Compose. Containers connect to Postgres through the Compose service name `db`:
+
+```env
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+POSTGRES_HOST_PORT=5433
+DATABASE_URL=postgresql://postgres:postgres@db:5432/world_cup_db
+```
+
+`POSTGRES_HOST_PORT=5433` publishes Postgres on `localhost:5433` to avoid clashing with a local Postgres install on `localhost:5432`. Inside Docker, services still use `db:5432`.
+
+If you already created a Postgres volume with a different password, either keep using that original password or reset the local Docker data:
+
+```bash
+cd backend
+docker compose down -v
+```
+
 ---
 
-## Option 1: Running with Docker (Recommended)
+## Running with Docker
 
 This is the easiest way to get everything (Database, API, Airflow) running in sync.
 
@@ -33,64 +50,46 @@ This is the easiest way to get everything (Database, API, Airflow) running in sy
 
 2.  **Start all services:**
     ```bash
-    docker compose up -d
+    docker compose up --build -d
     ```
+
+    The FastAPI container runs Alembic migrations automatically before starting the server.
 
 3.  **Access the services:**
     - **FastAPI Server:** [http://localhost:8000](http://localhost:8000)
     - **Airflow Webserver:** [http://localhost:8080](http://localhost:8080) (Log in with credentials from `.env`)
 
----
+### Useful Docker Commands
 
-## Option 2: Running without Docker (Manual Setup)
+Run migrations manually if needed:
 
-### 1. Database
-You will need a PostgreSQL instance running locally. Ensure the credentials in `backend/.env` match your local setup.
+```bash
+docker compose exec web alembic upgrade head
+```
 
-### 2. Backend API
-1.  **Install dependencies:**
-    ```bash
-    cd backend
-    uv venv
-    source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
-    uv pip install -r requirements.txt
-    ```
+Run the Elo unit tests inside the backend image:
 
-2.  **Start the server using the startup script:**
-    ```bash
-    chmod +x scripts/startup.sh
-    ./scripts/startup.sh
-    ```
-    *Note: On Windows, you can run `uvicorn server.main:app --reload` directly.*
+```bash
+docker compose run --rm web python -m unittest tests/test_elo_transformation.py
+```
 
-### 3. Airflow
-1.  **Set Airflow Home:**
-    ```bash
-    export AIRFLOW_HOME=$(pwd)/backend/airflow
-    mkdir -p $AIRFLOW_HOME
-    ```
+Show API logs:
 
-2.  **Initialize the database:**
-    ```bash
-    airflow db init
-    ```
+```bash
+docker compose logs -f web
+```
 
-3.  **Create an admin user:**
-    ```bash
-    airflow users create \
-        --username [USERNAME] \
-        --firstname [First Name] \
-        --lastname [Last Name] \
-        --role Admin \
-        --email [EMAIL_ADDRESS] \
-        --password [PASSWORD]
-    ```
+Stop the stack:
 
-4.  **Start Airflow services (in separate terminals or background):**
-    ```bash
-    airflow webserver -p 8080
-    airflow scheduler
-    ```
+```bash
+docker compose down
+```
+
+Stop the stack and remove local database volumes:
+
+```bash
+docker compose down -v
+```
 
 ---
 

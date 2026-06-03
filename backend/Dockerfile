@@ -10,9 +10,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN uv pip install --no-cache -r requirements.txt --system
 
-# Install playwright browsers
-RUN python -m playwright install chromium
-
 # Copy the rest of the application
 COPY . .
 
