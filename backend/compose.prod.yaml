@@ -25,18 +25,21 @@ services:
       - WC2026_API_KEY=${WC2026_API_KEY}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - AIRFLOW__WEBSERVER__WEB_SERVER_URL_PREFIX=/airflow
+      - AIRFLOW__WEBSERVER__BASE_URL=https://${DROPLET_HOST}/airflow
       - AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX=True
       - AIRFLOW__WEBSERVER__UPDATE_FAB_PERMS=False
       - AIRFLOW__FAB__UPDATE_FAB_PERMS=False
       - AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT=900
       - AIRFLOW__WEBSERVER__WORKERS=1
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
       - ./services:/opt/airflow/backend/services
+      - airflow_logs:/opt/airflow/logs
     expose:
       - "8080"
 
@@ -56,14 +59,17 @@ services:
       - WC2026_API_KEY=${WC2026_API_KEY}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - AIRFLOW__WEBSERVER__WEB_SERVER_URL_PREFIX=/airflow
+      - AIRFLOW__WEBSERVER__BASE_URL=https://${DROPLET_HOST}/airflow
       - AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX=True
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
       - ./services:/opt/airflow/backend/services
+      - airflow_logs:/opt/airflow/logs
 
   airflow-init:
     build:
@@ -73,6 +79,7 @@ services:
     container_name: airflow_init
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL}
+      - DATABASE_URL=${DATABASE_URL}
     entrypoint: /bin/bash
     command:
       - -c
@@ -191,3 +198,4 @@ services:
 volumes:
   prometheus_data:
   grafana_data:
+  airflow_logs:

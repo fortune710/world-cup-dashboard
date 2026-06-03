@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from db.models.matches import Match
 from datetime import datetime
 
@@ -18,5 +18,14 @@ def upsert_match(db: Session, match_data: dict):
     db.refresh(db_match)
     return db_match
 
-def get_all_matches(db: Session):
-    return db.query(Match).all()
+def get_all_matches(db: Session, status: str = None, page: int = 1, page_size: int = 5):
+    skip = (page - 1) * page_size
+    query = db.query(Match).options(
+        joinedload(Match.home_team),
+        joinedload(Match.away_team)
+    ).order_by(Match.kickoff_utc.asc())
+    
+    if status:
+        query = query.filter(Match.status == status)
+        
+    return query.offset(skip).limit(page_size).all()

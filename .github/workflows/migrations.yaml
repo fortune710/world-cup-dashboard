@@ -44,52 +44,6 @@ jobs:
         run: |
           ssh-keyscan -p "$DROPLET_PORT" -H "$DROPLET_HOST" >> ~/.ssh/known_hosts
 
-      - name: Write backend env file
-        env:
-          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
-          DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          AIRFLOW_DATABASE_URL: ${{ secrets.AIRFLOW_DATABASE_URL }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          AIRFLOW_POSTGRES_DB: ${{ secrets.AIRFLOW_POSTGRES_DB }}
-          AIRFLOW_ADMIN_USER: ${{ secrets.AIRFLOW_ADMIN_USER }}
-          AIRFLOW_ADMIN_PASSWORD: ${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
-          AIRFLOW_WEBSERVER_SECRET_KEY: ${{ secrets.AIRFLOW_WEBSERVER_SECRET_KEY }}
-          WC2026_API_KEY: ${{ secrets.WC2026_API_KEY }}
-          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
-          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
-          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
-          PROMETHEUS_PORT: ${{ secrets.PROMETHEUS_PORT }}
-          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
-          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
-        run: |
-          env_file="$(mktemp)"
-          {
-            printf '%s=%s\n' DATABASE_URL "$DATABASE_URL"
-            printf '%s=%s\n' AIRFLOW_DATABASE_URL "$AIRFLOW_DATABASE_URL"
-            printf '%s=%s\n' POSTGRES_USER "$POSTGRES_USER"
-            printf '%s=%s\n' POSTGRES_PASSWORD "$POSTGRES_PASSWORD"
-            printf '%s=%s\n' POSTGRES_DB "$POSTGRES_DB"
-            printf '%s=%s\n' AIRFLOW_POSTGRES_DB "$AIRFLOW_POSTGRES_DB"
-            printf '%s=%s\n' AIRFLOW_ADMIN_USER "$AIRFLOW_ADMIN_USER"
-            printf '%s=%s\n' AIRFLOW_ADMIN_PASSWORD "$AIRFLOW_ADMIN_PASSWORD"
-            printf '%s=%s\n' AIRFLOW_WEBSERVER_SECRET_KEY "$AIRFLOW_WEBSERVER_SECRET_KEY"
-            printf '%s=%s\n' WC2026_API_KEY "$WC2026_API_KEY"
-            printf '%s=%s\n' RABBITMQ_USER "$RABBITMQ_USER"
-            printf '%s=%s\n' RABBITMQ_PASSWORD "$RABBITMQ_PASSWORD"
-            printf '%s=%s\n' RABBITMQ_URL "$RABBITMQ_URL"
-            printf '%s=%s\n' PROMETHEUS_PORT "$PROMETHEUS_PORT"
-            printf '%s=%s\n' GRAFANA_ADMIN_USER "$GRAFANA_ADMIN_USER"
-            printf '%s=%s\n' GRAFANA_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
-          } > "$env_file"
-
-          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'mkdir -p ~/world-cup-dashboard/backend'
-          scp -i ~/.ssh/droplet_key -P "$DROPLET_PORT" "$env_file" "deployment-admin@$DROPLET_HOST:~/world-cup-dashboard/backend/.env"
-          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'chmod 600 ~/world-cup-dashboard/backend/.env'
-          rm -f "$env_file"
-
       - name: Sync backend checkout on droplet
         env:
           DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
