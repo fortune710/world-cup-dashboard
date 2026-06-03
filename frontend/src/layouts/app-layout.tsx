@@ -1,14 +1,8 @@
-import type { CSSProperties } from "react"
 import { useTranslation } from "react-i18next"
 import { Outlet, useNavigation } from "react-router"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import { DocumentMeta } from "@/components/document-meta"
 import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
 export function AppLayout() {
@@ -17,14 +11,7 @@ export function AppLayout() {
   const isNavigating = navigation.state !== "idle"
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as CSSProperties
-      }
-    >
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <DocumentMeta />
       <a
         href="#main-content"
@@ -32,22 +19,23 @@ export function AppLayout() {
       >
         {t("app.skipToContent")}
       </a>
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div
-          aria-hidden
-          className={cn(
-            "h-0.5 w-full bg-primary/0 transition-colors duration-200",
-            isNavigating && "bg-primary/60"
-          )}
-        />
-        <main id="main-content" className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <Outlet />
-          </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+
+      {/* SiteHeader is now the top navigation bar */}
+      <SiteHeader />
+
+      <div
+        aria-hidden
+        className={cn(
+          "h-0.5 w-full bg-primary/0 transition-colors duration-200",
+          isNavigating && "bg-primary/60"
+        )}
+      />
+
+      <main id="main-content" className="flex flex-1 flex-col pb-12">
+        <div className="@container/main w-full flex flex-1 flex-col gap-4">
+          <Outlet />
+        </div>
+      </main>
+    </div>
   )
 }

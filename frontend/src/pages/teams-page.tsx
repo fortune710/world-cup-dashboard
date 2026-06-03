@@ -40,7 +40,8 @@ import {
 
 import { TeamForm } from "@/components/team-form"
 import { useWc26Teams } from "@/hooks/use-wc26-teams"
-import { getTeamHref } from "@/lib/teams/wc26-teams"
+import { getTeamHref, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type TeamsViewMode = "list" | "cards"
 
@@ -242,13 +243,19 @@ export function TeamsPage() {
                           {serial}
                         </TableCell>
                         <TableCell>
-                          <div className="min-w-40">
-                            <span className="block truncate font-medium">
-                              {team.teamName}
-                            </span>
-                            <span className="block text-xs text-muted-foreground">
-                              {team.idCountry}
-                            </span>
+                          <div className="flex items-center gap-2.5 min-w-40">
+                            <Avatar className="size-6 rounded-xs border border-border/30 overflow-hidden shrink-0 group-hover:border-primary-foreground/30">
+                              <AvatarImage src={getTeamFlagUrl(team, 40)} alt={team.teamName} className="object-cover" />
+                              <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <span className="block truncate font-medium">
+                                {team.teamName}
+                              </span>
+                              <span className="block text-xs text-muted-foreground group-hover:text-primary-foreground/80">
+                                {team.idCountry}
+                              </span>
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
@@ -308,14 +315,18 @@ export function TeamsPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="tabular-nums">
+                              <Avatar className="size-6 rounded-xs border border-border/30 overflow-hidden shrink-0 group-hover:border-primary-foreground/30">
+                                <AvatarImage src={getTeamFlagUrl(team, 40)} alt={team.teamName} className="object-cover" />
+                                <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
+                              </Avatar>
+                              <Badge variant="secondary" className="tabular-nums shrink-0">
                                 {team.fifaRank != null ? `#${team.fifaRank}` : "—"}
                               </Badge>
                               <span className="truncate font-semibold">
                                 {team.teamName}
                               </span>
                             </div>
-                            <p className="mt-1 text-xs text-muted-foreground">
+                            <p className="mt-1.5 text-xs text-muted-foreground">
                               {team.idCountry} · {confed}
                             </p>
                           </div>

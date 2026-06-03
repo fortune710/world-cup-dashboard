@@ -14,6 +14,8 @@ import type { LiveRushMatch, LiveRushMatchCardProps, MatchWinner } from "@/datat
 import { getMatchWinner } from "@/lib/helpers/match.helpers"
 import { cn } from "@/lib/utils"
 import { ClockIcon, RadioIcon } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 
 function MatchStatusBadge({ match }: { match: LiveRushMatch }) {
   const { t } = useTranslation()
@@ -63,16 +65,23 @@ const MatchScoreline = React.memo(function MatchScoreline({
 
   return (
     <>
+      {/* Mobile view */}
       <div className="flex w-full min-w-0 flex-col gap-1.5 @[360px]/card:hidden">
         <div className="flex min-w-0 items-center justify-between gap-3">
-          <span
-            className={cn(
-              "min-w-0 truncate font-semibold",
-              homeMuted && "text-muted-foreground"
-            )}
-          >
-            {match.homeTeam}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="size-4.5 rounded-xs border border-border/30 overflow-hidden shrink-0">
+              <AvatarImage src={getTeamFlagUrl({ teamName: match.homeTeam }, 20)} alt={match.homeTeam} className="object-cover" />
+              <AvatarFallback>{match.homeTeam.slice(0, 3).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span
+              className={cn(
+                "min-w-0 truncate font-semibold",
+                homeMuted && "text-muted-foreground"
+              )}
+            >
+              {match.homeTeam}
+            </span>
+          </div>
           {hasScores ? (
             <span
               className={cn(
@@ -88,14 +97,20 @@ const MatchScoreline = React.memo(function MatchScoreline({
           {t("common.vs")}
         </div>
         <div className="flex min-w-0 items-center justify-between gap-3">
-          <span
-            className={cn(
-              "min-w-0 truncate font-semibold",
-              awayMuted && "text-muted-foreground"
-            )}
-          >
-            {match.awayTeam}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="size-4.5 rounded-xs border border-border/30 overflow-hidden shrink-0">
+              <AvatarImage src={getTeamFlagUrl({ teamName: match.awayTeam }, 20)} alt={match.awayTeam} className="object-cover" />
+              <AvatarFallback>{match.awayTeam.slice(0, 3).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <span
+              className={cn(
+                "min-w-0 truncate font-semibold",
+                awayMuted && "text-muted-foreground"
+              )}
+            >
+              {match.awayTeam}
+            </span>
+          </div>
           {hasScores ? (
             <span
               className={cn(
@@ -109,17 +124,24 @@ const MatchScoreline = React.memo(function MatchScoreline({
         </div>
       </div>
 
+      {/* Desktop view */}
       <div className="hidden w-full min-w-0 @[360px]/card:block">
         {hasScores ? (
-          <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)] items-center gap-x-2">
-            <span
-              className={cn(
-                "truncate text-end font-semibold",
-                homeMuted && "text-muted-foreground"
-              )}
-            >
-              {match.homeTeam}
-            </span>
+          <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)] items-center gap-x-3">
+            <div className="flex items-center justify-end gap-2 min-w-0">
+              <span
+                className={cn(
+                  "truncate font-semibold text-end",
+                  homeMuted && "text-muted-foreground"
+                )}
+              >
+                {match.homeTeam}
+              </span>
+              <Avatar className="size-4.5 rounded-xs border border-border/30 overflow-hidden shrink-0">
+                <AvatarImage src={getTeamFlagUrl({ teamName: match.homeTeam }, 20)} alt={match.homeTeam} className="object-cover" />
+                <AvatarFallback>{match.homeTeam.slice(0, 3).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
             <span
               className={cn(
                 "tabular-nums font-semibold",
@@ -137,20 +159,38 @@ const MatchScoreline = React.memo(function MatchScoreline({
             >
               {awayScore}
             </span>
-            <span
-              className={cn(
-                "truncate text-start font-semibold",
-                awayMuted && "text-muted-foreground"
-              )}
-            >
-              {match.awayTeam}
-            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar className="size-4.5 rounded-xs border border-border/30 overflow-hidden shrink-0">
+                <AvatarImage src={getTeamFlagUrl({ teamName: match.awayTeam }, 20)} alt={match.awayTeam} className="object-cover" />
+                <AvatarFallback>{match.awayTeam.slice(0, 3).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span
+                className={cn(
+                  "truncate font-semibold text-start",
+                  awayMuted && "text-muted-foreground"
+                )}
+              >
+                {match.awayTeam}
+              </span>
+            </div>
           </div>
         ) : (
-          <div className="flex min-w-0 items-center justify-center gap-2">
-            <span className="truncate font-semibold">{match.homeTeam}</span>
-            <span className="shrink-0 text-muted-foreground">{t("common.vs")}</span>
-            <span className="truncate font-semibold">{match.awayTeam}</span>
+          <div className="flex min-w-0 items-center justify-center gap-3">
+            <div className="flex items-center gap-2 min-w-0 justify-end flex-1">
+              <span className="truncate font-semibold">{match.homeTeam}</span>
+              <Avatar className="size-4.5 rounded-xs border border-border/30 overflow-hidden shrink-0">
+                <AvatarImage src={getTeamFlagUrl({ teamName: match.homeTeam }, 20)} alt={match.homeTeam} className="object-cover" />
+                <AvatarFallback>{match.homeTeam.slice(0, 3).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground uppercase tracking-widest">{t("common.vs")}</span>
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Avatar className="size-4.5 rounded-xs border border-border/30 overflow-hidden shrink-0">
+                <AvatarImage src={getTeamFlagUrl({ teamName: match.awayTeam }, 20)} alt={match.awayTeam} className="object-cover" />
+                <AvatarFallback>{match.awayTeam.slice(0, 3).toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <span className="truncate font-semibold">{match.awayTeam}</span>
+            </div>
           </div>
         )}
       </div>
