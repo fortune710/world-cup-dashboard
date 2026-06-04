@@ -31,6 +31,20 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Dockerfile changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            airflow:
+              - 'backend/Dockerfile.airflow'
+              - 'backend/Dockerfile.airflow.webserver'
+            api:
+              - 'backend/Dockerfile'
+
       - name: Configure SSH key
         env:
           DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
@@ -118,41 +132,35 @@ jobs:
         env:
           DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
           DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
+          BUILD_AIRFLOW: ${{ steps.changes.outputs.airflow }}
+          BUILD_API: ${{ steps.changes.outputs.api }}
         run: |
-          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
+          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<EOF
           set -Eeuo pipefail
 
-          DEPLOY_DIR="$HOME/world-cup-dashboard"
-
-          compose_logs() {
-            cd "$DEPLOY_DIR/backend" >/dev/null 2>&1 || return 0
-
-            if docker compose version >/dev/null 2>&1; then
-              docker compose -f compose.prod.yaml ps || true
-              echo
-              docker compose -f compose.prod.yaml logs --no-color --tail=200 || true
-            elif command -v docker-compose >/dev/null 2>&1; then
-              docker-compose -f compose.prod.yaml ps || true
-              echo
-              docker-compose -f compose.prod.yaml logs --no-color --tail=200 || true
-            else
-              echo "No compose command available for log collection."
-            fi
-          }
+          DEPLOY_DIR="\$HOME/world-cup-dashboard"
+          cd "\$DEPLOY_DIR/backend"
 
           on_error() {
             echo "=== Deployment failed, collecting compose logs ==="
-            compose_logs
+            docker compose -f compose.prod.yaml ps || true
+            echo
+            docker compose -f compose.prod.yaml logs --no-color --tail=200 || true
           }
 
           trap on_error ERR
 
-          if [ ! -d "$DEPLOY_DIR/.git" ]; then
-            echo "Expected the repository to be checked out at $DEPLOY_DIR"
-            exit 1
+          if [ "$BUILD_AIRFLOW" == "true" ]; then
+            echo "Dockerfile.airflow changed. Rebuilding Airflow images..."
+            docker compose -f compose.prod.yaml build airflow-scheduler airflow-webserver
           fi
 
-          bash "$DEPLOY_DIR/backend/scripts/startup-prod.sh"
+          if [ "$BUILD_API" == "true" ]; then
+            echo "Dockerfile changed. Rebuilding API image..."
+            docker compose -f compose.prod.yaml build web
+          fi
+
+          bash scripts/startup-prod.sh
           EOF
 
       - name: Collect server logs on failure
