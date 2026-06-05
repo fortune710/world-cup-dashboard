@@ -35,6 +35,7 @@ class Player(Base):
     foot = Column(Enum(PlayerFoot))
     country_code = Column(String(3), ForeignKey("teams.code"), index=True, unique=False)
     market_value = Column(BigInteger)
+    image_url = Column(String, nullable=True)
 
     ## Statistics
     rating = Column(Float, index=True)
