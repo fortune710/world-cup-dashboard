@@ -20,7 +20,7 @@ class PlayersTransformations:
             return [self._to_kebab_case_keys(item) for item in payload]
         return payload
 
-    def transform_player_info(self, player_info, player_stats=None):
+    def transform_player_info(self, player_info, image_url=None, player_stats=None):
         """
         Transforms player information and statistics from Sofascore format to DB format.
         """
@@ -41,6 +41,7 @@ class PlayersTransformations:
             "foot": player.get("preferredFoot"), # Assumes model Enum matches (Left, Right)
             "country_code": player.get("country", {}).get("alpha3"),
             "market_value": player.get("proposedMarketValue"),
+            "image_url": image_url
         }
 
     def transform_player_stats(self, player_stats) -> tuple[float | None, dict[str, Any] | None]:

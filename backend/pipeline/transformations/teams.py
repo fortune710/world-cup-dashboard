@@ -45,7 +45,7 @@ class TeamsTransformations:
             })
         return transformed_teams
 
-    def transform_squad_player(self, player_raw, team_code):
+    def transform_squad_player(self, player_raw, team_code, image_url=None):
         """
         Transforms a player from the squad list (Sofascore) to DB format.
         """
@@ -60,11 +60,12 @@ class TeamsTransformations:
             "date_of_birth": dob,
             "classification": player_raw.get("position"),
             "club_name": (player_raw.get("team") or {}).get("name"),
-            "positions": ", ".join(player_raw.get("positionsDetailed")),
+            "positions": ", ".join(player_raw.get("positionsDetailed") or []),
             "weight_kg": player_raw.get("weight"),
             "height_cm": player_raw.get("height"),
             "foot": player_raw.get("preferredFoot"),
             "country_code": team_code, # Use the team code passed from the pipeline
             "market_value": player_raw.get("proposedMarketValue"),
-            "rating": player_raw.get("rating")
+            "rating": player_raw.get("rating"),
+            "image_url": image_url or player_raw.get("image_url")
         }

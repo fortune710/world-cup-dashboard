@@ -1,3 +1,4 @@
+from typing import Any
 from config.settings import Settings
 from sofascore_wrapper.api import SofascoreAPI
 from sofascore_wrapper.player import Player
@@ -172,14 +173,15 @@ class PlayersSource:
             league_id=self.settings.WC_LEAGUE_ID
         )
 
-    async def get_player_info(self, player_id: int = None):
+    async def get_player_info(self, player_id: int = None) -> tuple[dict[str, Any], str]:
         target_player = self.player
         if player_id:
             target_player = Player(self.api, player_id)
         
         player_data = await target_player.get_player()
+        image_url = await target_player.image()
         await self.api.close()
-        return player_data
+        return player_data, image_url
         """
          {
             "player": {
