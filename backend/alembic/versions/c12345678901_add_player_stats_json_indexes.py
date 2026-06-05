@@ -20,6 +20,15 @@ def upgrade() -> None:
     conn = op.get_bind()
     inspector = inspect(conn)
     
+    players_columns = inspector.get_columns('players')
+    stats_json_col = next((col for col in players_columns if col['name'] == 'stats_json'), None)
+    
+    # Check if stats_json needs to be converted to JSONB
+    if stats_json_col:
+        col_type = str(stats_json_col['type']).upper()
+        if 'JSONB' not in col_type:
+            op.execute(sa.text("ALTER TABLE players ALTER COLUMN stats_json TYPE JSONB USING stats_json::jsonb"))
+    
     players_indexes = [idx['name'] for idx in inspector.get_indexes('players')]
     
     # Define functional indexes for stats_json fields

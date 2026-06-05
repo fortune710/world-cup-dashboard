@@ -33,7 +33,7 @@ class Player(Base):
     weight_kg = Column(SmallInteger)
     height_cm = Column(SmallInteger)
     foot = Column(Enum(PlayerFoot))
-    country_code = Column(String(3), ForeignKey("teams.code"), index=True)
+    country_code = Column(String(3), ForeignKey("teams.code"), index=True, unique=False)
     market_value = Column(BigInteger)
 
     ## Statistics
