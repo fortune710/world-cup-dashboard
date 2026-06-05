@@ -3,6 +3,7 @@ from config.settings import Settings
 from sofascore_wrapper.league import League
 import requests
 from sofascore_wrapper.api import SofascoreAPI
+from pipeline.sources.stealth_api import StealthSofascoreAPI
 from sofascore_wrapper.team import Team
 
 
@@ -11,9 +12,9 @@ class TeamsSource:
     Source class for fetching World Cup 2026 data from the API.
     API Documentation: https://api.wc2026api.com/docs/json
     """
-    def __init__(self, api: SofascoreAPI = None):
+    def __init__(self, api: Any = None):
         self.settings = Settings()
-        self.sofascore_api = api if api else SofascoreAPI()
+        self.sofascore_api = api if api else StealthSofascoreAPI()
         self.BASE_URL = "https://api.wc2026api.com"
         self.API_KEY = self.settings.WC2026_API_KEY
 

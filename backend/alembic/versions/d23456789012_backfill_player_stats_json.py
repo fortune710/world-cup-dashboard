@@ -1,44 +1,23 @@
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Session
-from config.db import Base
-from db.models.teams import Team
-import enum
-import logging
-from typing import Iterable, Mapping, Any
+"""backfill player stats json nulls
 
-logger = logging.getLogger(__name__)
+Revision ID: d23456789012
+Revises: c12345678901
+Create Date: 2026-06-05 04:42:00.000000
 
-class PlayerClassification(enum.Enum):
-    G = "G"
-    D = "D"
-    M = "M"
-    F = "F"
+"""
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+import json
 
-class PlayerFoot(enum.Enum):
-    Left = "Left"
-    Right = "Right"
-    Both = "Both"
+# revision identifiers, used by Alembic.
+revision = 'd23456789012'
+down_revision = 'c12345678901'
+branch_labels = None
+depends_on = None
 
-class Player(Base):
-    __tablename__ = "players"
-
-    id = Column(BigInteger, primary_key=True, index=True)
-    name = Column(String, index=True)
-    date_of_birth = Column(Date)
-    classification = Column(Enum(PlayerClassification))
-    club_name = Column(String, index=True)
-    positions = Column(String)
-    weight_kg = Column(SmallInteger)
-    height_cm = Column(SmallInteger)
-    foot = Column(Enum(PlayerFoot))
-    country_code = Column(String(3), ForeignKey("teams.code"), index=True, unique=False)
-    market_value = Column(BigInteger)
-
-    ## Statistics
-    rating = Column(Float, index=True)
-    stats_json = Column(JSONB, default=lambda: {
+def upgrade() -> None:
+    default_stats = {
         "rating": 0,
         "total_rating": 0,
         "count_rating": 0,
@@ -149,45 +128,17 @@ class Player(Base):
         "ball_recovery": 0,
         "outfielder_blocks": 0,
         "appearances": 0
-    })
-
-    from sqlalchemy import Index
-    __table_args__ = (
-        Index('ix_players_stats_goals', stats_json['goals'].astext.cast(SmallInteger)),
-        Index('ix_players_stats_assists', stats_json['assists'].astext.cast(SmallInteger)),
-        Index('ix_players_stats_expected_goals', stats_json['expected_goals'].astext.cast(Float)),
-        Index('ix_players_stats_expected_assists', stats_json['expected_assists'].astext.cast(Float)),
-        Index('ix_players_stats_clean_sheet', stats_json['clean_sheet'].astext.cast(SmallInteger)),
-        Index('ix_players_stats_big_chances_created', stats_json['big_chances_created'].astext.cast(SmallInteger)),
-    )
-
-
-def upsert_players_batch(db: Session, players_data: Iterable[Mapping[str, Any]]) -> int:
-    players_list = [dict(player) for player in players_data]
-    if not players_list:
-        logger.info("No players data provided for batch upsert")
-        return 0
-
-    logger.info("Starting batch upsert for %d players", len(players_list))
-    insert_stmt = insert(Player).values(players_list)
-    update_columns = {
-        column.name: getattr(insert_stmt.excluded, column.name)
-        for column in Player.__table__.columns
-        if column.name != "id"
     }
-
-    upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[Player.id],
-        set_=update_columns,
+    
+    bind = op.get_bind()
+    # Batch update players with null stats_json
+    bind.execute(
+        sa.text("UPDATE players SET stats_json = :default_stats WHERE stats_json IS NULL"),
+        {"default_stats": json.dumps(default_stats)}
     )
 
-    try:
-        result = db.execute(upsert_stmt)
-        db.commit()
-        row_count = result.rowcount or 0
-        logger.info("Successfully upserted %d player records", row_count)
-        return row_count
-    except Exception as e:
-        db.rollback()
-        logger.error("Failed to batch upsert players: %s", str(e), exc_info=True)
-        raise
+def downgrade() -> None:
+    # We don't necessarily want to nullify data on downgrade, 
+    # but if we must, we'd only do it for those that were set to default.
+    # However, it's safer to do nothing or just pass.
+    pass
