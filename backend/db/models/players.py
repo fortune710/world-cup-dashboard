@@ -178,7 +178,7 @@ def upsert_players_batch(db: Session, players_data: Iterable[Mapping[str, Any]])
     }
 
     upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[Player.id],
+        index_elements=["id"],
         set_=update_columns,
     )
 
