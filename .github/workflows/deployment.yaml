@@ -80,6 +80,9 @@ jobs:
           PROMETHEUS_PORT: ${{ secrets.PROMETHEUS_PORT }}
           GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          PROXY_SERVER: ${{ secrets.PROXY_SERVER }}
+          PROXY_USER: ${{ secrets.PROXY_USER }}
+          PROXY_PASSWORD: ${{ secrets.PROXY_PASSWORD }}
         run: |
           env_file="$(mktemp)"
           {
@@ -100,6 +103,9 @@ jobs:
             printf '%s=%s\n' DROPLET_HOST "$DROPLET_HOST"
             printf '%s=%s\n' GRAFANA_ADMIN_USER "$GRAFANA_ADMIN_USER"
             printf '%s=%s\n' GRAFANA_ADMIN_PASSWORD "$GRAFANA_ADMIN_PASSWORD"
+            printf '%s=%s\n' PROXY_SERVER "$PROXY_SERVER"
+            printf '%s=%s\n' PROXY_USER "$PROXY_USER"
+            printf '%s=%s\n' PROXY_PASSWORD "$PROXY_PASSWORD"
           } > "$env_file"
 
           ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'mkdir -p ~/world-cup-dashboard/backend'

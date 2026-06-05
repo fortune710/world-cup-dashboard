@@ -69,6 +69,9 @@ services:
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - RABBITMQ_URL=${RABBITMQ_URL}
       - DATABASE_URL=${DATABASE_URL}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -95,6 +98,9 @@ services:
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - RABBITMQ_URL=${RABBITMQ_URL}
       - DATABASE_URL=${DATABASE_URL}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline

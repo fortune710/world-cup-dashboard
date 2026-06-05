@@ -1,7 +1,9 @@
+import os
 import logging
 import random
 import asyncio
 from typing import Any
+from config.settings import Settings
 from playwright.async_api import async_playwright
 from playwright_stealth import stealth_async
 from fake_useragent import UserAgent
@@ -15,7 +17,8 @@ class StealthSofascoreAPI:
     A stealthy version of SofascoreAPI designed to bypass 403 Forbidden 
     errors in production environments (datacenter IPs).
     """
-    def __init__(self):
+    def __init__(self, settings: Settings = None):
+        self.settings = settings if settings else Settings()
         self.browser = None
         self.context = None
         self.page = None
@@ -28,14 +31,30 @@ class StealthSofascoreAPI:
             self.playwright = await async_playwright().start()
             
             # Use extra launch args to further reduce bot detection
-            self.browser = await self.playwright.chromium.launch(
-                headless=True,
-                args=[
+            launch_kwargs = {
+                "headless": True,
+                "args": [
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
                     "--disable-setuid-sandbox"
                 ]
-            )
+            }
+
+            # Inject proxy if configured
+            proxy_server = self.settings.PROXY_SERVER
+            if proxy_server:
+                logger.info(f"Using proxy server: {proxy_server}")
+                proxy_config = {"server": proxy_server}
+                
+                proxy_user = self.settings.PROXY_USER
+                proxy_pass = self.settings.PROXY_PASSWORD
+                if proxy_user and proxy_pass:
+                    proxy_config["username"] = proxy_user
+                    proxy_config["password"] = proxy_pass
+                
+                launch_kwargs["proxy"] = proxy_config
+
+            self.browser = await self.playwright.chromium.launch(**launch_kwargs)
             
             # Create a context with a random User-Agent
             user_agent = self.ua.random

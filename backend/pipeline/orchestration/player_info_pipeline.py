@@ -174,13 +174,6 @@ with DAG(
     catchup=False
 ) as dag:
 
-    wait_for_team_details = ExternalTaskSensor(
-        task_id='wait_for_team_details_pipeline',
-        external_dag_id='world_cup_team_details_pipeline',
-        external_task_id='load_team_details',
-        allowed_states=['success'],
-        check_existence=True,
-    )
 
     task_fetch_team = PythonOperator(
         task_id='fetch_team_to_index',
@@ -202,4 +195,4 @@ with DAG(
         python_callable=load_player_info,
     )
 
-    wait_for_team_details >> task_fetch_team >> task_extract >> task_transform >> task_load
+    task_fetch_team >> task_extract >> task_transform >> task_load
