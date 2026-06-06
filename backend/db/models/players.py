@@ -177,14 +177,13 @@ def upsert_players_batch(db: Session, players_data: Iterable[Mapping[str, Any]])
         "message": "Starting batch upsert for players",
         "count": len(players_list),
     })
-    insert_stmt = insert(Player).values(players_list)
+    insert_query = insert(Player).values(players_list)
     update_columns = {
-        column.name: getattr(insert_stmt.excluded, column.name)
+        column.name: getattr(insert_query.excluded, column.name)
         for column in Player.__table__.columns
-        if column.name != "id"
     }
 
-    upsert_stmt = insert_stmt.on_conflict_do_update(
+    upsert_stmt = insert_query.on_conflict_do_update(
         index_elements=["id"],
         set_=update_columns,
     )
