@@ -18,7 +18,7 @@ from db.models.players import Player
 
 # revision identifiers, used by Alembic.
 revision = "4c6d8f2a91b7"
-down_revision = "d23456789012"
+down_revision = ("0f469d92e454", "e1d4a8f7c221")
 branch_labels = None
 depends_on = None
 
