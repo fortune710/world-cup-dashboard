@@ -1,6 +1,5 @@
 from datetime import datetime
 import logging
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -8,24 +7,6 @@ class TeamsTransformations:
     """
     Transformation layer for World Cup data.
     """
-
-    def _fetch_flagpedia_codes(self):
-        """
-        Fetches the country codes and names from Flagcdn/Flagpedia.
-        """
-        logger.info({"message": "Fetching country codes from Flagpedia API"})
-        try:
-            response = requests.get("https://flagcdn.com/en/codes.json", timeout=10)
-            response.raise_for_status()
-            codes = response.json()
-            logger.info({"message": "Successfully fetched Flagpedia codes", "count": len(codes)})
-            return codes
-        except Exception as e:
-            logger.error({
-                "message": "Failed to fetch Flagpedia codes",
-                "error": {"message": str(e), "type": type(e).__name__}
-            })
-            return {}
 
     def _get_flagpedia_code(self, name_to_code, team_name, team_code=None):
         """
@@ -102,14 +83,14 @@ class TeamsTransformations:
         })
         return "un"
 
-    def transform_team_data(self, teams):
+    def transform_team_data(self, teams, flag_codes=None):
         """
         Transforms team data from API format to DB format.
         - logo_url maps from flag_url fallback to Flagpedia API
         - group maps from group_name
         """
         logger.info({"message": "Starting transform_team_data", "count": len(teams)})
-        codes = self._fetch_flagpedia_codes()
+        codes = flag_codes or {}
         name_to_code = {v.lower().strip(): k for k, v in codes.items()}
 
         transformed_teams = []
@@ -139,29 +120,27 @@ class TeamsTransformations:
         logger.info({"message": "Completed transform_team_data", "count": len(transformed_teams)})
         return transformed_teams
 
-    def transform_team_details(self, teams):
+    def transform_team_details(self, teams, flag_codes=None):
         """
         Transforms detailed team data (standings) from Sofascore format to DB format.
         """
         logger.info({"message": "Starting transform_team_details", "count": len(teams)})
-        codes = self._fetch_flagpedia_codes()
+        codes = flag_codes or {}
         name_to_code = {v.lower().strip(): k for k, v in codes.items()}
 
         transformed_teams = []
         for team in teams:
             team_name = team.get("name", "")
             team_code = team.get("nameCode", "")
-            logo_url = team.get("image")
             
-            if not logo_url:
-                code = self._get_flagpedia_code(name_to_code, team_name, team_code)
-                logo_url = f"https://flagcdn.com/w80/{code}.png"
-                logger.info({
-                    "message": f"Generated Flagpedia logo_url for team detail {team_name}",
-                    "team": team_name,
-                    "code": code,
-                    "logo_url": logo_url
-                })
+            code = self._get_flagpedia_code(name_to_code, team_name, team_code)
+            logo_url = f"https://flagcdn.com/w80/{code}.png"
+            logger.info({
+                "message": f"Generated Flagpedia logo_url for team detail {team_name}",
+                "team": team_name,
+                "code": code,
+                "logo_url": logo_url
+            })
 
             transformed_teams.append({
                 "sofascore_id": team.get("id"),

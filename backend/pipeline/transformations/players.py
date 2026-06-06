@@ -1,7 +1,10 @@
+import logging
 from typing import Any
 from datetime import datetime
 import enum
 import re
+
+logger = logging.getLogger(__name__)
 
 class PlayersTransformations:
     @staticmethod
@@ -25,13 +28,22 @@ class PlayersTransformations:
         Transforms player information and statistics from Sofascore format to DB format.
         """
         player = player_info.get("player", {})
+        player_id = player.get("id")
+        player_name = player.get("name")
+
+        logger.info({
+            "message": "Starting transform_player_info",
+            "player_id": player_id,
+            "player_name": player_name,
+            "has_stats": player_stats is not None
+        })
         
         # Convert timestamp to date
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
 
-        return {
-            "id": player.get("id"),
-            "name": player.get("name"),
+        result = {
+            "id": player_id,
+            "name": player_name,
             "date_of_birth": dob,
             "classification": player.get("position"), # Assumes model Enum matches (G, D, M, F)
             "club_name": (player.get("team") or {}).get("name"),
@@ -43,13 +55,34 @@ class PlayersTransformations:
             "market_value": player.get("proposedMarketValue"),
         }
 
+        if player_stats:
+            rating, stats_json = self.transform_player_stats(player_stats)
+            result["rating"] = rating
+            result["stats_json"] = stats_json
+
+        logger.info({
+            "message": "Completed transform_player_info",
+            "player_id": player_id,
+            "player_name": player_name
+        })
+        return result
+
     def transform_player_stats(self, player_stats) -> tuple[float | None, dict[str, Any] | None]:
         """
         Extracts only the statistics fields.
         """
+        logger.info({"message": "Starting transform_player_stats"})
         if not player_stats or "statistics" not in player_stats:
+            logger.warning({"message": "No statistics key found in player_stats"})
             return None, None
         
         stats = player_stats["statistics"]
         rating = stats.get("rating")
-        return rating, self._to_kebab_case_keys(stats)
+        kebab_stats = self._to_kebab_case_keys(stats)
+
+        logger.info({
+            "message": "Completed transform_player_stats",
+            "rating": rating,
+            "stats_keys_count": len(kebab_stats) if kebab_stats else 0
+        })
+        return rating, kebab_stats

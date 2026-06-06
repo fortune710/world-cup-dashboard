@@ -23,8 +23,13 @@ def extract_teams(**context):
     source = TeamsSource()
     try:
         teams = source.get_teams()
-        logger.info({"message": "Successfully extracted teams", "count": len(teams)})
-        return teams
+        flag_codes = source.get_flagpedia_codes()
+        logger.info({
+            "message": "Successfully extracted teams and flag codes",
+            "teams_count": len(teams),
+            "flag_codes_count": len(flag_codes)
+        })
+        return {"teams": teams, "flag_codes": flag_codes}
     except Exception as e:
         logger.error({
             "message": "Failed to extract teams", 
@@ -34,15 +39,22 @@ def extract_teams(**context):
 
 def transform_teams(**context):
     logger.info({"message": "Starting teams transformation"})
-    raw_teams = context['ti'].xcom_pull(task_ids='extract_teams')
-    if not raw_teams:
+    extract_data = context['ti'].xcom_pull(task_ids='extract_teams')
+    if not extract_data:
         logger.warning({"message": "No raw teams data found for transformation", "count": 0})
         return []
+
+    if isinstance(extract_data, list):
+        raw_teams = extract_data
+        flag_codes = {}
+    else:
+        raw_teams = extract_data.get("teams", [])
+        flag_codes = extract_data.get("flag_codes", {})
 
     from pipeline.transformations.teams import TeamsTransformations
     transform = TeamsTransformations()
     try:
-        transformed_teams = transform.transform_team_data(raw_teams)
+        transformed_teams = transform.transform_team_data(raw_teams, flag_codes)
         logger.info({"message": "Successfully transformed teams", "count": len(transformed_teams)})
         return transformed_teams
     except Exception as e:
