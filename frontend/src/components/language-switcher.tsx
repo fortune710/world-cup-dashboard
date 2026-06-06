@@ -1,20 +1,20 @@
 import { useTranslation } from "react-i18next"
 import { LanguagesIcon } from "lucide-react"
 
+import { Button } from "@/components/ui/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { setLocale } from "@/lib/i18n/config"
 import {
   LOCALE_CONFIG,
   SUPPORTED_LOCALES,
   type SupportedLocale,
 } from "@/lib/i18n/locales"
-import { cn } from "@/lib/utils"
 
 type LanguageSwitcherProps = {
   className?: string
@@ -27,27 +27,31 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     : "en"
 
   return (
-    <Select
-      value={currentLocale}
-      onValueChange={(value) => {
-        setLocale(value)
-      }}
-    >
-      <SelectTrigger
-        size="sm"
-        className={cn("w-[10.5rem]", className)}
-        aria-label={t("language.label")}
-      >
-        <LanguagesIcon className="size-4 opacity-70" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent align="end">
-        {SUPPORTED_LOCALES.map((locale) => (
-          <SelectItem key={locale} value={locale}>
-            {LOCALE_CONFIG[locale].label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon-sm"
+          className={className}
+          aria-label={t("language.label")}
+        >
+          <LanguagesIcon className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuRadioGroup
+          value={currentLocale}
+          onValueChange={(value) => {
+            setLocale(value)
+          }}
+        >
+          {SUPPORTED_LOCALES.map((locale) => (
+            <DropdownMenuRadioItem key={locale} value={locale}>
+              {LOCALE_CONFIG[locale].label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

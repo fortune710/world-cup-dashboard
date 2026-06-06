@@ -14,16 +14,8 @@ export const LIVE_RUSH_TABS: LiveRushTabOption[] = [
 ]
 
 export const liveRushDemoMatches: LiveRushMatch[] = [
-  {
-    id: "wc26-041",
-    homeTeam: "Brazil",
-    awayTeam: "Morocco",
-    homeScore: 2,
-    awayScore: 1,
-    kickoffLabel: "FT",
-    status: "finished",
-    group: "C",
-  },
+
+
   {
     id: "wc26-042",
     homeTeam: "Qatar",
@@ -51,6 +43,26 @@ export const liveRushDemoMatches: LiveRushMatch[] = [
     kickoffLabel: "21:00",
     status: "upcoming",
     group: "D",
+  },
+  {
+    id: "wc26-045",
+    homeTeam: "USA",
+    awayTeam: "Iran",
+    homeScore: 1,
+    awayScore: 1,
+    kickoffLabel: "FT",
+    status: "finished",
+    group: "A",
+  },
+  {
+    id: "wc26-046",
+    homeTeam: "Mexico",
+    awayTeam: "Costa Rica",
+    homeScore: 0,
+    awayScore: 1,
+    kickoffLabel: "FT",
+    status: "finished",
+    group: "B",
   },
 ]
 

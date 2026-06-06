@@ -157,6 +157,97 @@ export function buildWc26TeamRows(fifaTeams: FifaRankingResult[]): Wc26TeamRow[]
   })
 }
 
+/**
+ * Maps a team name or FIFA country code to its 2-letter ISO 3166-1 alpha-2 code
+ * to fetch flag WebP images from flagcdn.com.
+ */
+export function getTeamFlagUrl(
+  team: { idCountry?: string | null; teamName: string },
+  width: 20 | 40 | 80 | 160 | 320 = 80
+): string {
+  const nameKey = team.teamName.toLowerCase().trim()
+  const idKey = team.idCountry?.toUpperCase().trim() ?? ""
+
+  const isoMap: Record<string, string> = {
+    // Group A
+    mexico: "mx", MEX: "mx",
+    "south korea": "kr", KOR: "kr",
+    "south africa": "za", RSA: "za",
+    czechia: "cz", "czech republic": "cz", CZE: "cz",
+    // Group B
+    canada: "ca", CAN: "ca",
+    switzerland: "ch", SUI: "ch",
+    qatar: "qa", QAT: "qa",
+    bosnia: "ba", "bosnia and herzegovina": "ba", BIH: "ba",
+    // Group C
+    brazil: "br", BRA: "br",
+    morocco: "ma", MAR: "ma",
+    scotland: "gb-sct", SCO: "gb-sct",
+    haiti: "ht", HAI: "ht",
+    // Group D
+    usa: "us", "united states": "us", USA: "us",
+    australia: "au", AUS: "au",
+    paraguay: "py", PAR: "py",
+    turkiye: "tr", "türkiye": "tr", turkey: "tr", TUR: "tr",
+    // Group E
+    germany: "de", GER: "de",
+    ecuador: "ec", ECU: "ec",
+    "ivory coast": "ci", "cote d'ivoire": "ci", "cote d ivoire": "ci", CIV: "ci",
+    curacao: "cw", curaçao: "cw", CUW: "cw",
+    // Group F
+    netherlands: "nl", NED: "nl",
+    japan: "jp", JPN: "jp",
+    tunisia: "tn", TUN: "tn",
+    sweden: "se", SWE: "se",
+    // Group G
+    belgium: "be", BEL: "be",
+    iran: "ir", IRN: "ir",
+    egypt: "eg", EGY: "eg",
+    "new zealand": "nz", NZL: "nz",
+    // Group H
+    spain: "es", ESP: "es",
+    uruguay: "uy", URU: "uy",
+    "saudi arabia": "sa", KSA: "sa",
+    "cape verde": "cv", "cabo verde": "cv", CPV: "cv",
+    // Group I
+    france: "fr", FRA: "fr",
+    senegal: "sn", SEN: "sn",
+    norway: "no", NOR: "no",
+    iraq: "iq", IRQ: "iq",
+    // Group J
+    argentina: "ar", ARG: "ar",
+    austria: "at", AUT: "at",
+    algeria: "dz", ALG: "dz",
+    jordan: "jo", JOR: "jo",
+    // Group K
+    portugal: "pt", POR: "pt",
+    colombia: "co", COL: "co",
+    uzbekistan: "uz", UZB: "uz",
+    "dr congo": "cd", "democratic republic of the congo": "cd", COD: "cd",
+    // Group L
+    england: "gb-eng", ENG: "gb-eng",
+    croatia: "hr", CRO: "hr",
+    panama: "pa", PAN: "pa",
+    ghana: "gh", GHA: "gh",
+    // Mock standings teams
+    poland: "pl", POL: "pl",
+    denmark: "dk", DNK: "dk",
+    "costa rica": "cr", CRC: "cr",
+    serbia: "rs", SRB: "rs",
+    cameroon: "cm", CMR: "cm",
+    italy: "it", ITA: "it",
+    chile: "cl", CHI: "cl",
+    nigeria: "ng", NGA: "ng",
+    peru: "pe", PER: "pe",
+    honduras: "hn", HON: "hn",
+    jamaica: "jm", JAM: "jm",
+    wales: "gb-wls", WAL: "gb-wls",
+  }
+
+  const code = isoMap[idKey] ?? isoMap[nameKey] ?? "un"
+  return `https://flagcdn.com/w${width}/${code}.webp`
+}
+
 export function getTeamRouteId(team: Pick<Wc26TeamRow, "idCountry" | "teamName">): string {
   return team.idCountry ?? team.teamName
 }

@@ -17,8 +17,8 @@ export function SectionCards() {
   const { t } = useTranslation()
 
   return (
-    <div className="grid grid-cols-1 gap-2 px-4 lg:px-6 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card@xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
-      <Card className="@container/card">
+    <div className="grid grid-cols-1 gap-3 @xl/main:grid-cols-3 @xl/main:gap-2 px-4 lg:px-6 ">
+      <Card className="@container/card ">
         <CardHeader>
           <CardDescription>{t("sectionCards.goalsToday")}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -41,29 +41,7 @@ export function SectionCards() {
           </div>
         </CardFooter>
       </Card>
-      <Card className="@container/card">
-        <CardHeader>
-          <CardDescription>{t("sectionCards.matchesPlayed")}</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            3/4
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon />
-              {t("sectionCards.matchesPlayedBadge")}
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {t("sectionCards.matchesPlayedTrend")}{" "}
-            <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-muted-foreground">
-            {t("sectionCards.matchesPlayedFootnote")}
-          </div>
-        </CardFooter>
-      </Card>
+
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>{t("sectionCards.topXgToday")}</CardDescription>

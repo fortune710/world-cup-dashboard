@@ -1,10 +1,13 @@
 from typing import Any
+import logging
 from config.settings import Settings
 from sofascore_wrapper.league import League
 import requests
 from sofascore_wrapper.api import SofascoreAPI
 from pipeline.sources.stealth_api import StealthSofascoreAPI
 from sofascore_wrapper.team import Team
+
+logger = logging.getLogger(__name__)
 
 
 class TeamsSource:
@@ -17,6 +20,25 @@ class TeamsSource:
         self.sofascore_api = api if api else StealthSofascoreAPI()
         self.BASE_URL = "https://api.wc2026api.com"
         self.API_KEY = self.settings.WC2026_API_KEY
+
+    def get_flagpedia_codes(self):
+        """
+        Fetches the country codes and names from Flagcdn/Flagpedia.
+        """
+        logger.info({"message": "Fetching country codes from Flagpedia API"})
+        try:
+            response = requests.get("https://flagcdn.com/en/codes.json", timeout=10)
+            response.raise_for_status()
+            codes = response.json()
+            logger.info({"message": "Successfully fetched Flagpedia codes", "count": len(codes)})
+            return codes
+        except Exception as e:
+            logger.error({
+                "message": "Failed to fetch Flagpedia codes",
+                "error": {"message": str(e), "type": type(e).__name__}
+            })
+            return {}
+
 
     def get_teams(self):
         """
@@ -296,23 +318,48 @@ class TeamsSource:
         return squad
 
     async def get_teams_details(self):
+        logger.info({"message": "Starting get_teams_details to fetch team standings"})
         league = League(self.sofascore_api, league_id=self.settings.WC_LEAGUE_ID)
-        standings_data = await league.standings(season=self.settings.WC_SEASON_ID_2026)
-        
+        try:
+            standings_data = await league.standings(season=self.settings.WC_SEASON_ID_2026)
+        except Exception as e:
+            logger.error({
+                "message": "Failed to fetch standings data from Sofascore",
+                "error": {"message": str(e), "type": type(e).__name__}
+            })
+            await self.sofascore_api.close()
+            raise
+
         if "standings" not in standings_data:
             await self.sofascore_api.close()
-            raise ValueError(f"Standings not found in the response. Keys present: {standings_data.keys()}")
+            err_msg = f"Standings not found in the response. Keys present: {list(standings_data.keys())}"
+            logger.error({"message": err_msg})
+            raise ValueError(err_msg)
 
         teams_data = []
         
         for group in standings_data["standings"]:
             group_name = group.get("name", "Tournament Table")
-            print(f"\n--- {group_name} ---")
+            logger.info({"message": "Processing standings group", "group_name": group_name})
             
             for row in group.get("rows", []):
                 team_info: dict[str, Any] = row.get("team", {})
                 team = Team(self.sofascore_api, team_id=team_info.get("id"))
-                team_image = await team.image()
+                try:
+                    team_image = await team.image()
+                    logger.info({
+                        "message": "Fetched team logo image from Sofascore",
+                        "team_id": team_info.get("id"),
+                        "team_name": team_info.get("name")
+                    })
+                except Exception as e:
+                    logger.warning({
+                        "message": "Failed to fetch team logo image from Sofascore, falling back to None",
+                        "team_id": team_info.get("id"),
+                        "team_name": team_info.get("name"),
+                        "error": {"message": str(e), "type": type(e).__name__}
+                    })
+                    team_image = None
                 
                 # Merge row stats into team info
                 data = {
@@ -331,4 +378,5 @@ class TeamsSource:
                 teams_data.append(data)
         
         await self.sofascore_api.close()
+        logger.info({"message": "Successfully retrieved team details standings", "teams_count": len(teams_data)})
         return teams_data

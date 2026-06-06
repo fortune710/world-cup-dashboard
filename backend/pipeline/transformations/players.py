@@ -1,7 +1,7 @@
+import logging
 from typing import Any
 from datetime import datetime
 import enum
-import logging
 import re
 
 logger = logging.getLogger(__name__)
@@ -27,18 +27,23 @@ class PlayersTransformations:
         """
         Transforms player information from Sofascore format to DB format.
         """
-        logger.info({
-            "message": "Transforming player info payload",
-            "has_image_url": image_url is not None,
-        })
         player = player_info.get("player", {})
+        player_id = player.get("id")
+        player_name = player.get("name")
+
+        logger.info({
+            "message": "Starting transform_player_info",
+            "player_id": player_id,
+            "player_name": player_name,
+            "has_image_url": image_url is not None
+        })
         
         # Convert timestamp to date
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
 
         transformed_player = {
-            "id": player.get("id"),
-            "name": player.get("name"),
+            "id": player_id,
+            "name": player_name,
             "date_of_birth": dob,
             "classification": player.get("position"), # Assumes model Enum matches (G, D, M, F)
             "club_name": (player.get("team") or {}).get("name"),
@@ -50,10 +55,11 @@ class PlayersTransformations:
             "market_value": player.get("proposedMarketValue"),
             "image_url": image_url
         }
+
         logger.info({
             "message": "Transformed player info payload",
             "player_id": transformed_player.get("id"),
-            "player_name": transformed_player.get("name"),
+            "player_name": transformed_player.get("name")
         })
         return transformed_player
 
@@ -66,7 +72,7 @@ class PlayersTransformations:
             "has_stats": bool(player_stats),
         })
         if not player_stats or "statistics" not in player_stats:
-            logger.info({
+            logger.warning({
                 "message": "Player stats payload missing statistics block",
             })
             return None, None
@@ -74,6 +80,7 @@ class PlayersTransformations:
         stats = player_stats["statistics"]
         rating = stats.get("rating")
         transformed_stats = self._to_kebab_case_keys(stats)
+
         logger.info({
             "message": "Transformed player stats payload",
             "has_rating": rating is not None,
