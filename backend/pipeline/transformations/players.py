@@ -41,7 +41,7 @@ class PlayersTransformations:
         # Convert timestamp to date
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
 
-        result = {
+        transformed_player = {
             "id": player_id,
             "name": player_name,
             "date_of_birth": dob,
@@ -56,33 +56,38 @@ class PlayersTransformations:
         }
 
         if player_stats:
-            rating, stats_json = self.transform_player_stats(player_stats)
-            result["rating"] = rating
-            result["stats_json"] = stats_json
+            rating, transformed_stats = self.transform_player_stats(player_stats)
+            transformed_player["rating"] = rating
+            transformed_player["stats_json"] = transformed_stats
 
         logger.info({
-            "message": "Completed transform_player_info",
-            "player_id": player_id,
-            "player_name": player_name
+            "message": "Transformed player info payload",
+            "player_id": transformed_player.get("id"),
+            "player_name": transformed_player.get("name")
         })
-        return result
+        return transformed_player
 
     def transform_player_stats(self, player_stats) -> tuple[float | None, dict[str, Any] | None]:
         """
         Extracts only the statistics fields.
         """
-        logger.info({"message": "Starting transform_player_stats"})
+        logger.info({
+            "message": "Transforming player stats payload",
+            "has_stats": bool(player_stats),
+        })
         if not player_stats or "statistics" not in player_stats:
-            logger.warning({"message": "No statistics key found in player_stats"})
+            logger.warning({
+                "message": "Player stats payload missing statistics block",
+            })
             return None, None
         
         stats = player_stats["statistics"]
         rating = stats.get("rating")
-        kebab_stats = self._to_kebab_case_keys(stats)
+        transformed_stats = self._to_kebab_case_keys(stats)
 
         logger.info({
-            "message": "Completed transform_player_stats",
-            "rating": rating,
-            "stats_keys_count": len(kebab_stats) if kebab_stats else 0
+            "message": "Transformed player stats payload",
+            "has_rating": rating is not None,
+            "field_count": len(transformed_stats) if isinstance(transformed_stats, dict) else 0,
         })
-        return rating, kebab_stats
+        return rating, transformed_stats
