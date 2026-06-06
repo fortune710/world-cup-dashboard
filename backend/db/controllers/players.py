@@ -1,4 +1,5 @@
 import logging
+import sqlalchemy as sa
 from sqlalchemy.orm import Session
 from db.models.players import Player, upsert_players_batch
 
@@ -60,3 +61,44 @@ def get_team_players(db: Session, team_code: str):
         Player.image_url,
         Player.positions
     ).filter(Player.country_code == team_code).all()
+
+
+def _get_top_players_by_stat(db: Session, stat_key: str, cast_sql: str, stat_label: str):
+    logger.info(
+        {
+            "message": "Fetching top players by stat",
+            "stat_key": stat_key,
+            "stat_label": stat_label,
+            "limit": 5,
+        }
+    )
+    stat_expression = sa.literal_column(
+        f"coalesce((players.stats_json ->> '{stat_key}')::{cast_sql}, 0)"
+    )
+    players = (
+        db.query(Player)
+        .order_by(stat_expression.desc(), Player.id.asc())
+        .limit(5)
+        .all()
+    )
+    logger.info(
+        {
+            "message": "Fetched top players by stat",
+            "stat_key": stat_key,
+            "stat_label": stat_label,
+            "count": len(players),
+        }
+    )
+    return players
+
+
+def get_top_players_by_goals(db: Session):
+    return _get_top_players_by_stat(db, "goals", "integer", "goals")
+
+
+def get_top_players_by_assists(db: Session):
+    return _get_top_players_by_stat(db, "assists", "integer", "assists")
+
+
+def get_top_players_by_rating(db: Session):
+    return _get_top_players_by_stat(db, "rating", "double precision", "rating")

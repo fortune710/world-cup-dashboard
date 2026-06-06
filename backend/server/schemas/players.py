@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, Dict, Any
 from datetime import date
 from db.models.players import PlayerClassification, PlayerFoot
@@ -33,6 +33,14 @@ class PlayerInfoResponse(BaseModel):
 class PlayerStatisticsResponse(BaseModel):
     id: int
     name: str
-    statistics: Dict[str, Any] = Field(alias="stats_json")
+    statistics: Dict[str, Any]
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class PlayerTopGoalsResponse(PlayerInfoResponse):
+    goals: int
+
+
+class PlayerTopAssistsResponse(PlayerInfoResponse):
+    assists: int
