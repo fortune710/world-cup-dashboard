@@ -1,11 +1,12 @@
 from fastapi import FastAPI
-from server.routes import predictions, teams, matches
+from server.routes import predictions, teams, matches, players
 
 app = FastAPI(title="World Cup Dashboard API")
 
 app.include_router(predictions.router)
 app.include_router(teams.router)
 app.include_router(matches.router)
+app.include_router(players.router)
 
 @app.get("/")
 def read_root():

@@ -51,8 +51,16 @@ def extract_player_info(**context):
         logger.warning({"message": "No team data received from previous task"})
         return None
 
-    team_id = team_data['sofascore_id']
-    team_code = team_data['code']
+    team_id = team_data.get('sofascore_id')
+    team_code = team_data.get('code')
+
+    if not team_id:
+        logger.warning({
+            "message": "Skipping player extraction: missing sofascore_id",
+            "team_code": team_code
+        })
+        return None
+
     logger.info({
         "message": "Indexing players for team",
         "team_code": team_code,
@@ -60,21 +68,49 @@ def extract_player_info(**context):
     })
 
     from pipeline.sources.teams import TeamsSource
-    from sofascore_wrapper.api import SofascoreAPI
+    from pipeline.sources.stealth_api import StealthSofascoreAPI
+    from sofascore_wrapper.player import Player
 
     async def run_extract():
-        api = SofascoreAPI()
+        api = StealthSofascoreAPI()
         try:
             teams_source = TeamsSource(api=api)
             squad = await teams_source.get_players(team_id)
-            return squad
+
+            if not squad:
+                logger.info({
+                    "message": "Empty squad returned from source",
+                    "team_code": team_code,
+                })
+                return []
+
+            async def attach_image_url(player: dict) -> dict:
+                player_id = player.get("id")
+                try:
+                    image_url = await Player(api, player_id).image()
+                    player["image_url"] = image_url
+                    logger.info({
+                        "message": "Fetched image URL for player",
+                        "player_id": player_id,
+                    })
+                except Exception as e:
+                    logger.warning({
+                        "message": "Failed to fetch image for player",
+                        "player_id": player_id,
+                        "error": str(e),
+                    })
+                    player["image_url"] = None
+                return player
+
+            squad_with_images = await asyncio.gather(*[attach_image_url(p) for p in squad])
+            return squad_with_images
         finally:
             await api.close()
 
     try:
         squad = asyncio.run(run_extract())
         logger.info({
-            "message": "Successfully extracted player info",
+            "message": "Successfully extracted base player info with image URLs",
             "team_code": team_code,
             "count": len(squad or []),
         })
@@ -102,7 +138,11 @@ def transform_player_info(**context):
     transformed_players = []
     for player_raw in squad:
         try:
-            transformed = transformations.transform_squad_player(player_raw, team_code)
+            transformed = transformations.transform_squad_player(
+                player_raw, 
+                team_code, 
+                image_url=player_raw.get("image_url")
+            )
             transformed_players.append(transformed)
         except Exception as e:
             logger.warning({
@@ -167,13 +207,6 @@ with DAG(
     catchup=False
 ) as dag:
 
-    # wait_for_team_details = ExternalTaskSensor(
-    #     task_id='wait_for_team_details_pipeline',
-    #     external_dag_id='world_cup_team_details_pipeline',
-    #     external_task_id='load_team_details',
-    #     allowed_states=['success'],
-    #     check_existence=True,
-    # )
 
     task_fetch_team = PythonOperator(
         task_id='fetch_team_to_index',

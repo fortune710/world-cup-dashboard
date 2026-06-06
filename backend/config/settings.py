@@ -16,3 +16,8 @@ class Settings:
     MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
     MLFLOW_EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "world-cup-match-outcome")
     MLFLOW_MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "world-cup-match-outcome-xgb")
+
+    # Proxy Configuration
+    PROXY_SERVER = os.getenv("PROXY_SERVER")
+    PROXY_USER = os.getenv("PROXY_USER")
+    PROXY_PASSWORD = os.getenv("PROXY_PASSWORD")

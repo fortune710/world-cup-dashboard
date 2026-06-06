@@ -33,7 +33,7 @@ def upgrade() -> None:
             
             players_indexes = [idx['name'] for idx in inspector.get_indexes('players')]
             if 'ix_players_country_code' not in players_indexes:
-                op.create_index(op.f('ix_players_country_code'), 'players', ['country_code'], unique=True)
+                op.create_index(op.f('ix_players_country_code'), 'players', ['country_code'], unique=False)
             
             try:
                 op.create_foreign_key(None, 'players', 'teams', ['country_code'], ['code'])

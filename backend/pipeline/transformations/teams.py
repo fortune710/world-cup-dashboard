@@ -170,7 +170,7 @@ class TeamsTransformations:
         logger.info({"message": "Completed transform_team_details", "count": len(transformed_teams)})
         return transformed_teams
 
-    def transform_squad_player(self, player_raw, team_code):
+    def transform_squad_player(self, player_raw, team_code, image_url=None):
         """
         Transforms a player from the squad list (Sofascore) to DB format.
         """
@@ -196,7 +196,8 @@ class TeamsTransformations:
             "foot": player_raw.get("preferredFoot"),
             "country_code": team_code, # Use the team code passed from the pipeline
             "market_value": player_raw.get("proposedMarketValue"),
-            "rating": player_raw.get("rating")
+            "rating": player_raw.get("rating"),
+            "image_url": image_url or player_raw.get("image_url")
         }
         
         logger.info({

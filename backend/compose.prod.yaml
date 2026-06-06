@@ -33,6 +33,9 @@ services:
       - AIRFLOW__WEBSERVER__WORKERS=1
       - RABBITMQ_URL=${RABBITMQ_URL}
       - DATABASE_URL=${DATABASE_URL}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -63,6 +66,9 @@ services:
       - AIRFLOW__WEBSERVER__ENABLE_PROXY_FIX=True
       - RABBITMQ_URL=${RABBITMQ_URL}
       - DATABASE_URL=${DATABASE_URL}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline

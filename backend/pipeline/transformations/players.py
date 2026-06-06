@@ -2,6 +2,7 @@ import logging
 from typing import Any
 from datetime import datetime
 import enum
+import logging
 import re
 
 logger = logging.getLogger(__name__)
@@ -23,10 +24,14 @@ class PlayersTransformations:
             return [self._to_kebab_case_keys(item) for item in payload]
         return payload
 
-    def transform_player_info(self, player_info, player_stats=None):
+    def transform_player_info(self, player_info, image_url=None):
         """
-        Transforms player information and statistics from Sofascore format to DB format.
+        Transforms player information from Sofascore format to DB format.
         """
+        logger.info({
+            "message": "Transforming player info payload",
+            "has_image_url": image_url is not None,
+        })
         player = player_info.get("player", {})
         player_id = player.get("id")
         player_name = player.get("name")
@@ -42,8 +47,8 @@ class PlayersTransformations:
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
 
         transformed_player = {
-            "id": player_id,
-            "name": player_name,
+            "id": player.get("id"),
+            "name": player.get("name"),
             "date_of_birth": dob,
             "classification": player.get("position"), # Assumes model Enum matches (G, D, M, F)
             "club_name": (player.get("team") or {}).get("name"),
@@ -53,7 +58,14 @@ class PlayersTransformations:
             "foot": player.get("preferredFoot"), # Assumes model Enum matches (Left, Right)
             "country_code": player.get("country", {}).get("alpha3"),
             "market_value": player.get("proposedMarketValue"),
+            "image_url": image_url
         }
+        logger.info({
+            "message": "Transformed player info payload",
+            "player_id": transformed_player.get("id"),
+            "player_name": transformed_player.get("name"),
+        })
+        return transformed_player
 
         if player_stats:
             rating, transformed_stats = self.transform_player_stats(player_stats)
