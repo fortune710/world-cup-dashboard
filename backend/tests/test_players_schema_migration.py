@@ -61,6 +61,18 @@ class TestPlayersSchemaMigration(unittest.TestCase):
             )
         )
 
+    def test_enum_using_expression_nullifies_invalid_values(self):
+        expression = self.migration._enum_using_expression(
+            "foot",
+            "playerfoot",
+            ("Left", "Right", "Both"),
+        )
+
+        self.assertIn("CASE WHEN", expression)
+        self.assertIn("btrim(foot::text)", expression)
+        self.assertIn("::playerfoot", expression)
+        self.assertIn("ELSE NULL END", expression)
+
     def test_players_schema_report_detects_missing_primary_key_and_bad_types(self):
         inspector = FakeInspector(
             table_names=["players"],

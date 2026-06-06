@@ -28,6 +28,23 @@ PLAYER_CLASSIFICATION_ENUM = sa.Enum("G", "D", "M", "F", name="playerclassificat
 PLAYER_FOOT_ENUM = sa.Enum("Left", "Right", "Both", name="playerfoot")
 PLAYER_STATS_JSON_TYPE = postgresql.JSONB(astext_type=sa.Text())
 
+
+def _enum_using_expression(column_name: str, enum_type_name: str, allowed_values: Iterable[str]) -> str:
+    allowed_values = tuple(allowed_values)
+    logger.info(
+        {
+            "message": "Building safe enum cast expression",
+            "column_name": column_name,
+            "enum_type_name": enum_type_name,
+            "allowed_values": list(allowed_values),
+        }
+    )
+    quoted_values = ", ".join(f"'{value}'" for value in allowed_values)
+    return (
+        f"CASE WHEN btrim({column_name}::text) IN ({quoted_values}) "
+        f"THEN btrim({column_name}::text)::{enum_type_name} ELSE NULL END"
+    )
+
 EXPECTED_COLUMN_SPECS = {
     "id": {
         "type": sa.BigInteger(),
@@ -44,7 +61,11 @@ EXPECTED_COLUMN_SPECS = {
     },
     "classification": {
         "type": PLAYER_CLASSIFICATION_ENUM,
-        "using": "classification::text::playerclassification",
+        "using": _enum_using_expression(
+            "classification",
+            "playerclassification",
+            ("G", "D", "M", "F"),
+        ),
     },
     "club_name": {
         "type": sa.String(),
@@ -64,7 +85,11 @@ EXPECTED_COLUMN_SPECS = {
     },
     "foot": {
         "type": PLAYER_FOOT_ENUM,
-        "using": "foot::text::playerfoot",
+        "using": _enum_using_expression(
+            "foot",
+            "playerfoot",
+            ("Left", "Right", "Both"),
+        ),
     },
     "country_code": {
         "type": sa.String(length=3),
