@@ -133,14 +133,22 @@ class TeamsTransformations:
             team_name = team.get("name", "")
             team_code = team.get("nameCode", "")
             
-            code = self._get_flagpedia_code(name_to_code, team_name, team_code)
-            logo_url = f"https://flagcdn.com/w80/{code}.png"
-            logger.info({
-                "message": f"Generated Flagpedia logo_url for team detail {team_name}",
-                "team": team_name,
-                "code": code,
-                "logo_url": logo_url
-            })
+            logo_url = team.get("image")
+            if logo_url:
+                logger.info({
+                    "message": f"Using extracted Sofascore logo_url for team detail {team_name}",
+                    "team": team_name,
+                    "logo_url": logo_url
+                })
+            else:
+                code = self._get_flagpedia_code(name_to_code, team_name, team_code)
+                logo_url = f"https://flagcdn.com/w80/{code}.png"
+                logger.info({
+                    "message": f"Generated Flagpedia logo_url for team detail {team_name}",
+                    "team": team_name,
+                    "code": code,
+                    "logo_url": logo_url
+                })
 
             transformed_teams.append({
                 "sofascore_id": team.get("id"),

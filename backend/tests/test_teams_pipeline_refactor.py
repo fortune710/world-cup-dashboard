@@ -60,6 +60,7 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
                 "id": 1,
                 "name": "Spain",
                 "nameCode": "ESP",
+                "image": None,
                 "country": {"alpha3": "ESP"},
                 "ranking": 3,
                 "position": 1,
@@ -79,3 +80,31 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
         # Assert
         self.assertEqual(len(transformed), 1)
         self.assertEqual(transformed[0]["logo_url"], "https://flagcdn.com/w80/es.png")
+
+    def test_transform_team_details_with_provided_image(self):
+        # Arrange
+        raw_details = [
+            {
+                "id": 1,
+                "name": "Spain",
+                "nameCode": "ESP",
+                "image": "https://sofascore.com/team-image.png",
+                "country": {"alpha3": "ESP"},
+                "ranking": 3,
+                "position": 1,
+                "matches": 3,
+                "wins": 2,
+                "draws": 1,
+                "losses": 0,
+                "scoresFor": 6,
+                "scoresAgainst": 1,
+                "points": 7
+            }
+        ]
+
+        # Act
+        transformed = self.transformations.transform_team_details(raw_details, self.mock_flag_codes)
+
+        # Assert
+        self.assertEqual(len(transformed), 1)
+        self.assertEqual(transformed[0]["logo_url"], "https://sofascore.com/team-image.png")

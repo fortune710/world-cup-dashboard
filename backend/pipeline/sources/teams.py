@@ -343,6 +343,22 @@ class TeamsSource:
             
             for row in group.get("rows", []):
                 team_info: dict[str, Any] = row.get("team", {})
+                team = Team(self.sofascore_api, team_id=team_info.get("id"))
+                try:
+                    team_image = await team.image()
+                    logger.info({
+                        "message": "Fetched team logo image from Sofascore",
+                        "team_id": team_info.get("id"),
+                        "team_name": team_info.get("name")
+                    })
+                except Exception as e:
+                    logger.warning({
+                        "message": "Failed to fetch team logo image from Sofascore, falling back to None",
+                        "team_id": team_info.get("id"),
+                        "team_name": team_info.get("name"),
+                        "error": {"message": str(e), "type": type(e).__name__}
+                    })
+                    team_image = None
                 
                 # Merge row stats into team info
                 data = {
@@ -355,6 +371,7 @@ class TeamsSource:
                     "goals_for": row.get("scoresFor"),
                     "goals_against": row.get("scoresAgainst"),
                     "points": row.get("points"),
+                    "image": team_image,
                     "group": group_name
                 }
                 teams_data.append(data)
