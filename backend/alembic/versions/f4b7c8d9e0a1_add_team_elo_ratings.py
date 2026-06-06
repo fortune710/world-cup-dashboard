@@ -30,8 +30,13 @@ def upgrade() -> None:
     if "teams" in tables:
         team_columns = {column["name"] for column in inspector.get_columns("teams")}
         if "elo_rating" not in team_columns:
-            op.add_column("teams", sa.Column("elo_rating", sa.Float(), nullable=True, server_default="1500"))
+            op.add_column("teams", sa.Column("elo_rating", sa.Float(), nullable=True, server_default="1500.0"))
+            op.execute("UPDATE teams SET elo_rating = 1500.0 WHERE elo_rating IS NULL")
+            op.alter_column("teams", "elo_rating", nullable=False)
             op.create_index(op.f("ix_teams_elo_rating"), "teams", ["elo_rating"], unique=False)
+        else:
+            op.execute("UPDATE teams SET elo_rating = 1500.0 WHERE elo_rating IS NULL")
+            op.alter_column("teams", "elo_rating", nullable=False, server_default="1500.0")
 
     if "team_elo_history" not in tables:
         op.create_table(
@@ -51,6 +56,7 @@ def upgrade() -> None:
             sa.ForeignKeyConstraint(["match_id"], ["matches.id"]),
             sa.ForeignKeyConstraint(["opponent_code"], ["teams.code"]),
             sa.ForeignKeyConstraint(["team_code"], ["teams.code"]),
+            sa.UniqueConstraint("match_id", "team_code", name="uq_team_elo_history_match_team"),
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index(op.f("ix_team_elo_history_id"), "team_elo_history", ["id"], unique=False)

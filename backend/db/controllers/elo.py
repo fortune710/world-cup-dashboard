@@ -41,10 +41,12 @@ def replace_elo_ratings(db: Session, team_ratings: dict[str, float], history: li
         db.query(Team).update({Team.elo_rating: DEFAULT_ELO_RATING}, synchronize_session=False)
 
         for team_code, rating in team_ratings.items():
-            db.query(Team).filter(Team.code == team_code).update(
+            updated_count = db.query(Team).filter(Team.code == team_code).update(
                 {Team.elo_rating: rating},
                 synchronize_session=False,
             )
+            if updated_count == 0:
+                raise ValueError(f"Team code {team_code} not found")
 
         if history:
             db.bulk_insert_mappings(TeamEloHistory, history)
@@ -76,8 +78,9 @@ def get_team_elo_history(db: Session, team_code: str) -> list[TeamEloHistory]:
     logger.info({"message": "Fetching team Elo history", "team_code": team_code})
     history = (
         db.query(TeamEloHistory)
+        .join(Match, TeamEloHistory.match_id == Match.id)
         .filter(TeamEloHistory.team_code == team_code)
-        .order_by(TeamEloHistory.match_id.asc(), TeamEloHistory.id.asc())
+        .order_by(Match.kickoff_utc.asc(), TeamEloHistory.match_id.asc(), TeamEloHistory.id.asc())
         .all()
     )
     logger.info({

@@ -23,7 +23,7 @@ def get_elo_table(db: Session = Depends(get_db)):
             rank=index + 1,
             team_code=team.code,
             team_name=team.name,
-            elo_rating=team.elo_rating or 1500.0,
+            elo_rating=team.elo_rating if team.elo_rating is not None else 1500.0,
         )
         for index, team in enumerate(teams)
     ]

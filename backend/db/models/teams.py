@@ -19,5 +19,5 @@ class Team(Base):
     matches_won = Column(SmallInteger, default=0)
     matches_drawn = Column(SmallInteger, default=0)
     matches_lost = Column(SmallInteger, default=0)
-    elo_rating = Column(Float, default=1500.0, index=True)
+    elo_rating = Column(Float, nullable=False, server_default="1500.0", index=True)
     players_indexed = Column(Boolean, default=False, index=True)
