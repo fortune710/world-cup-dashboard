@@ -25,7 +25,10 @@ def get_player_info(
         logger.warning("Player with id %d not found", player_id)
         raise HTTPException(status_code=404, detail=f"Player with id {player_id} not found.")
 
-    return player
+    return {
+        **player,
+        "image_url": player.image_url or f"https://img.sofascore.com/api/v1/player/{player.sofascore_id}/image"
+    }
 
 
 @router.get("/{player_id}/statistics", response_model=PlayerStatisticsResponse)
