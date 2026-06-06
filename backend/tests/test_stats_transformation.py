@@ -29,10 +29,10 @@ class TestStatsTransformation(unittest.TestCase):
         }
 
     def test_transform_player_info_with_stats(self):
-        result = self.transformer.transform_player_info(self.mock_info, self.mock_stats)
-        self.assertEqual(result["rating"], 7.5)
-        self.assertEqual(result["stats_json"]["goals"], 2)
+        result = self.transformer.transform_player_info(self.mock_info, image_url="https://example.com/player.png")
+        self.assertEqual(result["id"], 123)
         self.assertEqual(result["name"], "Test Player")
+        self.assertEqual(result["image_url"], "https://example.com/player.png")
 
     def test_transform_player_stats_only(self):
         rating, stats = self.transformer.transform_player_stats(self.mock_stats)

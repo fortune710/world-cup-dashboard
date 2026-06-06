@@ -68,6 +68,10 @@ services:
       - WC2026_API_KEY=${WC2026_API_KEY}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DATABASE_URL=${DATABASE_URL}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
@@ -93,6 +97,10 @@ services:
       - WC2026_API_KEY=${WC2026_API_KEY}
       - AIRFLOW__WEBSERVER__SECRET_KEY=${AIRFLOW_WEBSERVER_SECRET_KEY}
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - DATABASE_URL=${DATABASE_URL}
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     volumes:
       - ./pipeline/orchestration:/opt/airflow/dags
       - ./pipeline:/opt/airflow/backend/pipeline
