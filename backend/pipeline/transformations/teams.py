@@ -97,7 +97,7 @@ class TeamsTransformations:
         for team in teams:
             team_name = team.get("name", "")
             team_code = team.get("code", "")
-            logo_url = team.get("flag_url")
+            logo_url = team.get("image") or team.get("flag_url")
             
             # If API flag_url is empty, fetch dynamically from Flagpedia
             if not logo_url:
