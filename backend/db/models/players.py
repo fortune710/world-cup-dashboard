@@ -183,13 +183,13 @@ def upsert_players_batch(db: Session, players_data: Iterable[Mapping[str, Any]])
         for column in Player.__table__.columns
     }
 
-    upsert_stmt = insert_query.on_conflict_do_update(
+    upsert_query = insert_query.on_conflict_do_update(
         index_elements=["id"],
         set_=update_columns,
     )
 
     try:
-        result = db.execute(upsert_stmt)
+        result = db.execute(upsert_query)
         db.commit()
         row_count = result.rowcount or 0
         logger.info({
