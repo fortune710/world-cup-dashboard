@@ -5,19 +5,12 @@ import { useTranslation } from "react-i18next"
 
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -101,8 +94,6 @@ function TopPerformers({ className }: TopPerformersProps) {
     setActiveTab(value as PerformerTab)
   }, [])
 
-  const activeTabLabel =
-    performerTabs.find((tab) => tab.value === activeTab)?.label ?? activeTab
 
   return (
     <Tabs
@@ -118,34 +109,19 @@ function TopPerformers({ className }: TopPerformersProps) {
               <span className="hidden @[540px]/card:block">
                 {t("topPerformers.description")}
               </span>
-              <span className="@[540px]/card:hidden">{activeTabLabel}</span>
             </CardDescription>
-          </div>
-          <CardAction>
-            <TabsList className="hidden @[767px]/card:inline-flex">
+            <TabsList className="w-full">
               {performerTabs.map(({ value, label }) => (
-                <TabsTrigger key={value} value={value}>
+                <TabsTrigger key={value} value={value} className="w-full">
                   {label}
                 </TabsTrigger>
               ))}
             </TabsList>
-            <Select value={activeTab} onValueChange={handleTabChange}>
-              <SelectTrigger
-                className="flex w-36 @[767px]/card:hidden"
-                size="sm"
-                aria-label={t("common.selectPerformerCategory")}
-              >
-                <SelectValue placeholder={t("topPerformers.tabs.goals")} />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl">
-                {performerTabs.map(({ value, label }) => (
-                  <SelectItem key={value} value={value} className="rounded-lg">
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardAction>
+
+          </div>
+
+
+
         </CardHeader>
         <CardContent className="flex flex-1 flex-col pt-0">
           <TabsContent value="Goals" className="flex-1">
