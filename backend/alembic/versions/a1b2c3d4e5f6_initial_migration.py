@@ -29,7 +29,8 @@ def upgrade() -> None:
         sa.Column('code', sa.String(), nullable=True),
         sa.Column('logo_url', sa.String(), nullable=True),
         sa.Column('group', sa.String(), nullable=True),
-        sa.PrimaryKeyConstraint('id')
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('code')
         )
     
     # Refresh tables list

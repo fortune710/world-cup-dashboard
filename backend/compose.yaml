@@ -50,8 +50,13 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - RABBITMQ_URL=${RABBITMQ_URL}
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - PYTHONPATH=/app
     ports:
       - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
 
   airflow-webserver:
     build:
@@ -80,6 +85,9 @@ services:
       - ./services:/opt/airflow/backend/services
     ports:
       - "8080:8080"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
 
   airflow-scheduler:
     build:
@@ -107,6 +115,9 @@ services:
       - ./db:/opt/airflow/backend/db
       - ./config:/opt/airflow/backend/config
       - ./services:/opt/airflow/backend/services
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
 
   airflow-init:
     build:
@@ -116,6 +127,9 @@ services:
     container_name: airflow_init
     environment:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${AIRFLOW_DATABASE_URL}
+    depends_on:
+      airflow-db-bootstrap:
+        condition: service_completed_successfully
     entrypoint: /bin/bash
     command:
       - -c
