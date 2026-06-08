@@ -54,8 +54,8 @@ const LiveRushMatchGrid = React.memo(function LiveRushMatchGrid({
   return (
     <div
       className={cn(
-        "grid grid-cols-1 gap-2",
-        "@xl/main:grid-cols-12 @xl/main:gap-2"
+        "grid grid-cols-1 gap-3",
+        "@xl/main:grid-cols-12 @xl/main:gap-3"
       )}
     >
       {matches.map((match, index) => (

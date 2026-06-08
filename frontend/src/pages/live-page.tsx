@@ -11,11 +11,11 @@ export function LivePage() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex flex-col gap-4 py-4 md:gap-4 md:py-5">
+    <div className="flex flex-col gap-3 py-4 md:gap-4 md:py-5">
       <h1 className="sr-only">{t("routes.live")}</h1>
       <LiveRush />
       <SectionCards />
-      <div className="grid grid-cols-1 items-stretch gap-4 px-4 lg:grid-cols-3 lg:px-6">
+      <div className="grid grid-cols-1 items-stretch gap-3 px-4 lg:grid-cols-3 lg:px-6">
         <div className="col-span-1 flex lg:col-span-2">
           <GroupStageStandings className="flex-1" />
         </div>
