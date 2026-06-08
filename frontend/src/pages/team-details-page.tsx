@@ -8,20 +8,22 @@ import {
   TrendingUpIcon,
 } from "lucide-react"
 
-import { TeamForm } from "@/components/team-form"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { useWc26Teams } from "@/hooks/use-wc26-teams"
-import { findTeamByRouteId } from "@/lib/teams/wc26-teams"
-import { cn } from "@/lib/utils"
+import { findTeamByRouteId, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ChartRadarDots } from "@/components/radar-chart"
+import { ChartAreaLegend } from "@/components/bar-graph"
 
 const RankChangeBadge = React.memo(function RankChangeBadge({
   change,
@@ -73,7 +75,7 @@ export function TeamDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center h-full w-full gap-2 text-sm text-muted-foreground">
           <Spinner aria-label={t("teamsPage.loading")} />
           {t("teamsPage.loading")}
         </div>
@@ -124,61 +126,51 @@ export function TeamDetailsPage() {
 
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="tabular-nums">
+          <Avatar className="size-8 rounded-xs border border-border/50 overflow-hidden">
+            <AvatarImage src={getTeamFlagUrl(team, 80)} alt={team.teamName} className="object-cover" />
+            <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
+          </Avatar>
+          <Badge variant="default" className="tabular-nums">
             {team.fifaRank != null ? `#${team.fifaRank}` : "—"}
           </Badge>
           <h1 className="text-2xl font-semibold tracking-tight">{team.teamName}</h1>
           <RankChangeBadge change={team.rankChange} />
         </div>
         <p className="text-sm text-muted-foreground">
-          {team.idCountry ?? "—"} · {confed}
+          {team.idCountry ?? "—"} · {confed} · {t("teamsPage.group")} {team.group}
         </p>
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[140px] mt-2">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Upcoming Feature</CardTitle>
 
-      <Card
-        className={cn(
-          team.fifaRank != null && team.fifaRank <= 10 && "border-primary/30"
-        )}
-      >
-        <CardHeader>
-          <CardTitle>{t("teamDetailsPage.overviewTitle")}</CardTitle>
-          <CardDescription>{t("teamDetailsPage.overviewDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-            <span className="text-sm text-muted-foreground">{t("teamsPage.group")}</span>
-            <Badge variant="outline" className="tabular-nums">
-              {team.group}
-            </Badge>
-          </div>
-          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-            <span className="text-sm text-muted-foreground">
-              {t("teamsPage.fifaRank")}
-            </span>
-            <span className="font-medium tabular-nums">
-              {team.fifaRank != null ? team.fifaRank : "—"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-            <span className="text-sm text-muted-foreground">{t("teamsPage.points")}</span>
-            <span className="text-lg font-semibold tabular-nums">
-              {team.fifaPoints != null ? team.fifaPoints.toFixed(2) : "—"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
-            <span className="text-sm text-muted-foreground">
-              {t("teamsPage.groupStageElo")}
-            </span>
-            <span className="font-medium tabular-nums">
-              {team.groupStageElo != null ? team.groupStageElo : "—"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-3 rounded-lg border p-3 sm:col-span-2">
-            <span className="text-sm text-muted-foreground">{t("common.form")}</span>
-            <TeamForm form={team.form} adaptiveHover />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardHeader>
+          <CardContent>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Form </CardTitle>
+
+          </CardHeader>
+          <CardFooter>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.
+          </CardFooter>
+
+        </Card>
+
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows mt-2">
+        <ChartRadarDots />
+        <div className="col-span-1  ">
+          <ChartAreaLegend />
+        </div>
+
+      </div>
+
+
+    </div >
   )
 }

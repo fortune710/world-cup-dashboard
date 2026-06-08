@@ -34,6 +34,63 @@ import {
   isQualificationZone,
 } from "@/lib/helpers/standings.helpers"
 import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
+import { Badge } from "./ui/badge"
+const STANDINGS_TEAM_CODES: Record<string, string> = {
+  "Argentina": "ARG",
+  "Poland": "POL",
+  "Mexico": "MEX",
+  "Saudi Arabia": "KSA",
+  "England": "ENG",
+  "United States": "USA",
+  "Iran": "IRN",
+  "Wales": "WAL",
+  "France": "FRA",
+  "Australia": "AUS",
+  "Tunisia": "TUN",
+  "Denmark": "DEN",
+  "Japan": "JPN",
+  "Spain": "ESP",
+  "Germany": "GER",
+  "Costa Rica": "CRC",
+  "Morocco": "MAR",
+  "Croatia": "CRO",
+  "Belgium": "BEL",
+  "Canada": "CAN",
+  "Netherlands": "NED",
+  "Senegal": "SEN",
+  "Ecuador": "ECU",
+  "Qatar": "QAT",
+  "Brazil": "BRA",
+  "Switzerland": "SUI",
+  "Serbia": "SRB",
+  "Cameroon": "CMR",
+  "Portugal": "POR",
+  "South Korea": "KOR",
+  "Uruguay": "URU",
+  "Ghana": "GHA",
+  "Colombia": "COL",
+  "Italy": "ITA",
+  "Paraguay": "PAR",
+  "New Zealand": "NZL",
+  "Norway": "NOR",
+  "Egypt": "EGY",
+  "Chile": "CHI",
+  "Panama": "PAN",
+  "Nigeria": "NGA",
+  "Sweden": "SWE",
+  "Peru": "PER",
+  "Honduras": "HON",
+  "Czech Republic": "CZE",
+  "Austria": "AUT",
+  "Scotland": "SCO",
+  "Jamaica": "JAM",
+}
+
+function getTeamCode(teamName: string): string {
+  return STANDINGS_TEAM_CODES[teamName] ?? teamName.slice(0, 3).toUpperCase()
+}
 
 const StandingsTable = React.memo(function StandingsTable({
   group,
@@ -56,16 +113,35 @@ const StandingsTable = React.memo(function StandingsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((row) => (
-          <TableRow
-            key={row.team}
-            className={cn(isQualificationZone(row.position) && "bg-primary/5")}
-          >
-            <TableCell className="font-medium tabular-nums text-muted-foreground">
-              {row.position}
-            </TableCell>
-            <TableCell className="font-medium">{row.team}</TableCell>
-            <TableCell className="text-end tabular-nums">{row.played}</TableCell>
+        {rows.map((row) => {
+          const code = getTeamCode(row.team)
+          return (
+            <TableRow
+              key={row.team}
+              className={cn(isQualificationZone(row.position) && "bg-primary/5")}
+            >
+              <TableCell className="font-medium tabular-nums text-muted-foreground">
+                {row.position}
+              </TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2.5 min-w-32 sm:min-w-36">
+                  <Avatar className="size-6 rounded-xs border border-border/50 overflow-hidden shrink-0">
+                    <AvatarImage
+                      src={getTeamFlagUrl({ idCountry: code, teamName: row.team }, 40)}
+                      alt={row.team}
+                      className="object-cover"
+                    />
+                    <AvatarFallback>{code}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium line-clamp-1">{row.team}</span>
+                    <Badge variant="outline" className="w-fit px-1 py-0 text-[10px] text-muted-foreground leading-none">
+                      {code}
+                    </Badge>
+                  </div>
+                </div>
+              </TableCell>
+              <TableCell className="text-end tabular-nums">{row.played}</TableCell>
             <TableCell className="hidden text-end tabular-nums sm:table-cell">
               {row.won}
             </TableCell>
@@ -82,7 +158,8 @@ const StandingsTable = React.memo(function StandingsTable({
               {row.points}
             </TableCell>
           </TableRow>
-        ))}
+          )
+        })}
       </TableBody>
     </Table>
   )

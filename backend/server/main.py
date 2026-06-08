@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI
-from server.routes import predictions, teams, matches, ratings
+from server.routes import predictions, teams, matches, ratings, players
 
 
 logger = logging.getLogger(__name__)
@@ -12,6 +12,7 @@ app.include_router(predictions.router)
 app.include_router(teams.router)
 app.include_router(matches.router)
 app.include_router(ratings.router)
+app.include_router(players.router)
 
 @app.get("/")
 def read_root():

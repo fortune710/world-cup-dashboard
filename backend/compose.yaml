@@ -167,7 +167,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - RABBITMQ_URL=${RABBITMQ_URL}
       - WC2026_API_KEY=${WC2026_API_KEY}
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/backend
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -181,7 +181,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - RABBITMQ_URL=${RABBITMQ_URL}
       - WC2026_API_KEY=${WC2026_API_KEY}
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/backend
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -195,7 +195,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - RABBITMQ_URL=${RABBITMQ_URL}
       - WC2026_API_KEY=${WC2026_API_KEY}
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app/backend
     depends_on:
       db:
         condition: service_healthy

@@ -41,5 +41,5 @@ export function getLiveRushColSpanClass(
   matchCount: number,
   index: number
 ): string {
-  return cn("col-span-12", colSpanClass[colSpanAtXl(matchCount, index)])
+  return cn("w-full", colSpanClass[colSpanAtXl(matchCount, index)])
 }

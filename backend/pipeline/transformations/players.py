@@ -1,7 +1,10 @@
+import logging
 from typing import Any
 from datetime import datetime
 import enum
 import re
+
+logger = logging.getLogger(__name__)
 
 class PlayersTransformations:
     @staticmethod
@@ -20,18 +23,27 @@ class PlayersTransformations:
             return [self._to_kebab_case_keys(item) for item in payload]
         return payload
 
-    def transform_player_info(self, player_info, player_stats=None):
+    def transform_player_info(self, player_info, image_url=None):
         """
-        Transforms player information and statistics from Sofascore format to DB format.
+        Transforms player information from Sofascore format to DB format.
         """
         player = player_info.get("player", {})
+        player_id = player.get("id")
+        player_name = player.get("name")
+
+        logger.info({
+            "message": "Starting transform_player_info",
+            "player_id": player_id,
+            "player_name": player_name,
+            "has_image_url": image_url is not None
+        })
         
         # Convert timestamp to date
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
 
-        return {
-            "id": player.get("id"),
-            "name": player.get("name"),
+        transformed_player = {
+            "id": player_id,
+            "name": player_name,
             "date_of_birth": dob,
             "classification": player.get("position"), # Assumes model Enum matches (G, D, M, F)
             "club_name": (player.get("team") or {}).get("name"),
@@ -41,15 +53,37 @@ class PlayersTransformations:
             "foot": player.get("preferredFoot"), # Assumes model Enum matches (Left, Right)
             "country_code": player.get("country", {}).get("alpha3"),
             "market_value": player.get("proposedMarketValue"),
+            "image_url": image_url
         }
+
+        logger.info({
+            "message": "Transformed player info payload",
+            "player_id": transformed_player.get("id"),
+            "player_name": transformed_player.get("name")
+        })
+        return transformed_player
 
     def transform_player_stats(self, player_stats) -> tuple[float | None, dict[str, Any] | None]:
         """
         Extracts only the statistics fields.
         """
+        logger.info({
+            "message": "Transforming player stats payload",
+            "has_stats": bool(player_stats),
+        })
         if not player_stats or "statistics" not in player_stats:
+            logger.warning({
+                "message": "Player stats payload missing statistics block",
+            })
             return None, None
         
         stats = player_stats["statistics"]
         rating = stats.get("rating")
-        return rating, self._to_kebab_case_keys(stats)
+        transformed_stats = self._to_kebab_case_keys(stats)
+
+        logger.info({
+            "message": "Transformed player stats payload",
+            "has_rating": rating is not None,
+            "field_count": len(transformed_stats) if isinstance(transformed_stats, dict) else 0,
+        })
+        return rating, transformed_stats

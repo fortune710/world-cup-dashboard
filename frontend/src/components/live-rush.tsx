@@ -27,14 +27,6 @@ import {
 } from "@/lib/helpers/live-rush.helpers"
 import { cn } from "@/lib/utils"
 import { CalendarDaysIcon } from "lucide-react"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card"
 
 export { liveRushDemoMatches } from "@/lib/helpers/live-rush.helpers"
 
@@ -53,7 +45,7 @@ const LiveRushMatchGrid = React.memo(function LiveRushMatchGrid({
 
   if (matches.length === 0) {
     return (
-      <p className="px-4 py-6 text-sm text-muted-foreground lg:px-6">
+      <p className="py-6 text-sm text-muted-foreground">
         {t("liveRush.noMatches")}
       </p>
     )
@@ -63,7 +55,7 @@ const LiveRushMatchGrid = React.memo(function LiveRushMatchGrid({
     <div
       className={cn(
         "grid grid-cols-1 gap-2",
-        "@xl/main:grid-cols-12"
+        "@xl/main:grid-cols-12 @xl/main:gap-2"
       )}
     >
       {matches.map((match, index) => (
@@ -110,77 +102,59 @@ export const LiveRush = React.memo(function LiveRush({
     setActiveTab(value as LiveRushTab)
   }, [])
 
-  const activeTabLabel =
-    rushTabs.find((tab) => tab.value === activeTab)?.label ?? t("common.all")
-
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 px-4 py-2 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CalendarDaysIcon className="size-4 shrink-0" />
-          {resolvedDateLabel}
-        </p>
-      </div>
+    <section className="flex flex-col gap-4 px-4 lg:px-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={handleTabChange}
+        className="flex flex-col gap-4"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">{t("liveRush.title")}</h2>
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <CalendarDaysIcon className="size-3.5 shrink-0" />
+              {resolvedDateLabel}
+            </p>
+          </div>
 
-      <div className="flex flex-col px-4 lg:px-6">
-        <Tabs
-          value={activeTab}
-          onValueChange={handleTabChange}
-          className="flex flex-col gap-4"
-        >
-          <Card className="@container/card">
-            <CardHeader>
-              <div className="flex flex-col gap-2">
-                <CardTitle>{t("liveRush.title")}</CardTitle>
-                <CardDescription>
-                  <span className="hidden @[540px]/card:block">
-                    {t("liveRush.description")}
-                  </span>
-                  <span className="@[540px]/card:hidden">
-                    {tabTriggerLabel(activeTab, activeTabLabel, counts)}
-                  </span>
-                </CardDescription>
-              </div>
-              <CardAction>
-                <TabsList className="hidden max-w-full overflow-x-auto @[767px]/card:inline-flex">
-                  {rushTabs.map(({ value, label }) => (
-                    <TabsTrigger key={value} value={value}>
-                      {tabTriggerLabel(value, label, counts)}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <Select value={activeTab} onValueChange={handleTabChange}>
-                  <SelectTrigger
-                    className="flex w-40 @[767px]/card:hidden"
-                    size="sm"
-                    aria-label={t("common.selectMatchFilter")}
-                  >
-                    <SelectValue placeholder={t("common.allMatches")} />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {rushTabs.map(({ value, label }) => (
-                      <SelectItem
-                        key={value}
-                        value={value}
-                        className="rounded-lg"
-                      >
-                        {tabTriggerLabel(value, label, counts)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardAction>
-            </CardHeader>
-            <CardContent>
-              {LIVE_RUSH_TABS.map(({ value }) => (
-                <TabsContent key={value} value={value} className="mt-2">
-                  <LiveRushMatchGrid matches={tabMatches[value]} />
-                </TabsContent>
+          <div className="flex items-center gap-3">
+            <TabsList className="hidden max-w-full overflow-x-auto sm:inline-flex">
+              {rushTabs.map(({ value, label }) => (
+                <TabsTrigger key={value} value={value}>
+                  {tabTriggerLabel(value, label)}
+                </TabsTrigger>
               ))}
-            </CardContent>
-          </Card>
-        </Tabs>
-      </div>
+            </TabsList>
+            <Select value={activeTab} onValueChange={handleTabChange}>
+              <SelectTrigger
+                className="flex w-40 sm:hidden"
+                size="sm"
+                aria-label={t("common.selectMatchFilter")}
+              >
+                <SelectValue placeholder={t("common.allMatches")} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                {rushTabs.map(({ value, label }) => (
+                  <SelectItem
+                    key={value}
+                    value={value}
+                    className="rounded-lg"
+                  >
+                    {tabTriggerLabel(value, label, counts)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {LIVE_RUSH_TABS.map(({ value }) => (
+          <TabsContent key={value} value={value} className="mt-0">
+            <LiveRushMatchGrid matches={tabMatches[value]} />
+          </TabsContent>
+        ))}
+      </Tabs>
     </section>
   )
 })

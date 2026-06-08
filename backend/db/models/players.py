@@ -1,6 +1,7 @@
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
 from config.db import Base
 from db.models.teams import Team
@@ -35,6 +36,7 @@ class Player(Base):
     foot = Column(Enum(PlayerFoot))
     country_code = Column(String(3), ForeignKey("teams.code"), index=True, unique=False)
     market_value = Column(BigInteger)
+    image_url = Column(String, nullable=True)
 
     ## Statistics
     rating = Column(Float, index=True)
@@ -165,29 +167,78 @@ class Player(Base):
 def upsert_players_batch(db: Session, players_data: Iterable[Mapping[str, Any]]) -> int:
     players_list = [dict(player) for player in players_data]
     if not players_list:
-        logger.info("No players data provided for batch upsert")
+        logger.info({
+            "message": "No players data provided for batch upsert",
+            "count": 0,
+        })
         return 0
 
-    logger.info("Starting batch upsert for %d players", len(players_list))
-    insert_stmt = insert(Player).values(players_list)
+    logger.info({
+        "message": "Starting batch upsert for players",
+        "count": len(players_list),
+    })
+    insert_query = insert(Player).values(players_list)
     update_columns = {
-        column.name: getattr(insert_stmt.excluded, column.name)
+        column.name: getattr(insert_query.excluded, column.name)
         for column in Player.__table__.columns
-        if column.name != "id"
     }
 
-    upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[Player.id],
+    upsert_query = insert_query.on_conflict_do_update(
+        index_elements=["id"],
         set_=update_columns,
     )
 
     try:
-        result = db.execute(upsert_stmt)
+        result = db.execute(upsert_query)
         db.commit()
         row_count = result.rowcount or 0
-        logger.info("Successfully upserted %d player records", row_count)
+        logger.info({
+            "message": "Successfully upserted players via conflict update",
+            "count": row_count,
+        })
         return row_count
-    except Exception as e:
+    except ProgrammingError as exc:
         db.rollback()
-        logger.error("Failed to batch upsert players: %s", str(e), exc_info=True)
-        raise
+        error_message = str(exc)
+        if "there is no unique or exclusion constraint matching the ON CONFLICT specification" not in error_message:
+            logger.error({
+                "message": "Failed to batch upsert players",
+                "error": {
+                    "message": error_message,
+                    "type": type(exc).__name__,
+                },
+            }, exc_info=True)
+            raise
+
+        logger.warning({
+            "message": "Batch upsert conflict target missing; falling back to merge",
+            "count": len(players_list),
+            "error": {
+                "message": error_message,
+                "type": type(exc).__name__,
+            },
+        })
+
+        merged_count = 0
+        try:
+            for player_data in players_list:
+                db.merge(Player(**player_data))
+                merged_count += 1
+
+            db.commit()
+            logger.info({
+                "message": "Successfully upserted players via merge fallback",
+                "count": merged_count,
+            })
+            return merged_count
+        except Exception as fallback_exc:
+            db.rollback()
+            logger.error({
+                "message": "Failed to merge player batch after conflict-upsert fallback",
+                "count": len(players_list),
+                "error": {
+                    "message": str(fallback_exc),
+                    "type": type(fallback_exc).__name__,
+                },
+            }, exc_info=True)
+            raise

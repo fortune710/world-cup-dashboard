@@ -87,6 +87,9 @@ import {
   TrendingUpIcon,
 } from "lucide-react"
 
+import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
+import { AvatarImage, AvatarFallback, Avatar } from "./ui/avatar"
+
 export { powerRankingSchema as schema } from "@/datatypes"
 
 const CONFEDERATION_VALUES: ConfederationFilter[] = [
@@ -126,12 +129,12 @@ const EloRatingCell = React.memo(function EloRatingCell({
         {t("powerRanking.eloTooltip.base", { elo: row.baseElo })}
         {penalty > 0
           ? t("powerRanking.eloTooltip.discipline", {
-              penalty,
-              yellow: row.yellowCards,
-              yellowPenalty: ELO_YELLOW_CARD_PENALTY,
-              red: row.redCards,
-              redPenalty: ELO_RED_CARD_PENALTY,
-            })
+            penalty,
+            yellow: row.yellowCards,
+            yellowPenalty: ELO_YELLOW_CARD_PENALTY,
+            red: row.redCards,
+            redPenalty: ELO_RED_CARD_PENALTY,
+          })
           : t("powerRanking.eloTooltip.none")}
       </TooltipContent>
     </Tooltip>
@@ -218,11 +221,21 @@ function createPowerRankingColumns(t: TFunction): ColumnDef<PowerRankingRow>[] {
       accessorKey: "team",
       header: t("common.team"),
       cell: ({ row }) => (
-        <div className="flex min-w-32 flex-col gap-1 sm:min-w-36">
-          <span className="font-medium">{row.original.team}</span>
-          <Badge variant="outline" className="w-fit px-1.5 text-muted-foreground">
-            {row.original.code}
-          </Badge>
+        <div className="flex items-center gap-2.5 min-w-32 sm:min-w-36">
+          <Avatar className="size-6 rounded-xs border border-border/50 overflow-hidden shrink-0">
+            <AvatarImage
+              src={getTeamFlagUrl({ idCountry: row.original.code, teamName: row.original.team }, 40)}
+              alt={row.original.team}
+              className="object-cover"
+            />
+            <AvatarFallback>{row.original.code}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-0.5">
+            <span className="font-medium line-clamp-1">{row.original.team}</span>
+            <Badge variant="outline" className="w-fit px-1 py-0 text-[10px] text-muted-foreground leading-none">
+              {row.original.code}
+            </Badge>
+          </div>
         </div>
       ),
       enableHiding: false,
@@ -483,9 +496,9 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -502,15 +515,15 @@ export const PowerRankingTable = React.memo(function PowerRankingTable({
                         key={row.id}
                         className={cn(
                           isTopTier &&
-                            "border-l-2 border-l-primary bg-primary/5",
+                          "border-l-2 border-l-primary bg-primary/5",
                           rank === 1 && "border-l-[3px] bg-primary/10"
                         )}
                         aria-label={
                           isTopTier
                             ? t("powerRanking.topRankAria", {
-                                team: row.original.team,
-                                threshold: TOP_POWER_RANK_THRESHOLD,
-                              })
+                              team: row.original.team,
+                              threshold: TOP_POWER_RANK_THRESHOLD,
+                            })
                             : undefined
                         }
                       >
