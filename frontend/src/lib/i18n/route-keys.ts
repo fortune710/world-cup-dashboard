@@ -23,5 +23,9 @@ export function getRouteTranslationKey(pathname: string): RouteTranslationKey {
     return "teams"
   }
 
+  if (pathname.startsWith("/players/") && pathname.length > "/players/".length) {
+    return "players"
+  }
+
   return ROUTE_TRANSLATION_KEYS[pathname] ?? "notFound"
 }

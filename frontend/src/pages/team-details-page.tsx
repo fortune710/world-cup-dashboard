@@ -23,7 +23,6 @@ import { findTeamByRouteId, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ChartRadarDots } from "@/components/radar-chart"
-import { ChartAreaLegend } from "@/components/bar-graph"
 
 const RankChangeBadge = React.memo(function RankChangeBadge({
   change,
@@ -165,7 +164,6 @@ export function TeamDetailsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows mt-2">
         <ChartRadarDots />
         <div className="col-span-1  ">
-          <ChartAreaLegend />
         </div>
 
       </div>

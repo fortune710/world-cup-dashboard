@@ -1,0 +1,253 @@
+import * as React from "react"
+import { useTranslation } from "react-i18next"
+import { Link, useParams } from "react-router"
+import {
+  ArrowLeftIcon,
+  TargetIcon,
+  AwardIcon,
+  StarIcon,
+  ClockIcon,
+  ActivityIcon,
+  TrendingUpIcon,
+  ExternalLinkIcon,
+} from "lucide-react"
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { findPlayerById } from "@/pages/players-page"
+import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
+import { useMemo } from "react"
+import { ChartRadarGridCircle } from "@/components/player-radar"
+import { ChartAreaInteractive } from "@/components/bar-graph"
+import { ChartBarMixed } from "@/components/player-bars"
+
+export function PlayerDetailsPage() {
+  const { t } = useTranslation()
+  const { playerId } = useParams<{ playerId: string }>()
+
+  const player = React.useMemo(() => {
+    const id = Number(playerId)
+    if (!Number.isFinite(id)) return undefined
+    return findPlayerById(id)
+  }, [playerId])
+
+  if (!player) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+        <Button variant="ghost" size="sm" className="w-fit" asChild>
+          <Link to="/players">
+            <ArrowLeftIcon data-icon="inline-start" />
+            {t("playerDetailsPage.backToPlayers", { defaultValue: "Back to players" })}
+          </Link>
+        </Button>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
+        </h1>
+      </div>
+    )
+  }
+
+  const initials = useMemo(
+    () =>
+      player.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2),
+    [player.name]
+  )
+  const flagUrl = getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
+
+  return (
+    <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
+      <Button variant="ghost" size="sm" className="w-fit" asChild>
+        <Link to="/players">
+          <ArrowLeftIcon data-icon="inline-start" />
+          {t("playerDetailsPage.backToPlayers", { defaultValue: "Back to players" })}
+        </Link>
+      </Button>
+
+      <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Avatar className="size-10 rounded-full border border-border/50 overflow-hidden">
+            <AvatarImage src={player.avatar} alt={player.name} className="object-cover" />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+          <Badge variant="outline" className="font-semibold border-primary/50 bg-primary/10 text-primary">
+            {player.position}
+          </Badge>
+          <h1 className="text-2xl font-semibold tracking-tight">{player.name}</h1>
+        </div>
+        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+          <Link
+            to={getTeamHref({ idCountry: player.country, teamName: player.country })}
+            className="inline-flex items-center gap-1.5 rounded-md  py-0.5 underline cursor-pointer hover:underline-dashed hover:underline-primary"
+          >
+            <Avatar className="size-5 rounded-xs border border-border/50 overflow-hidden shrink-0">
+              <AvatarImage src={flagUrl} alt={player.country} className="object-cover" />
+              <AvatarFallback>{player.country}</AvatarFallback>
+            </Avatar>
+            <span className="font-medium group-hover:underline">{player.country}</span>
+          </Link>
+          <span>
+            · {player.federation} · Group {player.group}
+          </span>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <Card className="@container/card">
+          <CardHeader>
+            <CardDescription>{t("playerDetailsPage.goals", { defaultValue: "Goals" })}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {player.goals}
+            </CardTitle>
+            <CardAction>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <TargetIcon className="size-3" />
+                xG {player.xg.toFixed(2)}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex items-center gap-2 font-medium">
+              Expected Goals (xG) <TrendingUpIcon className="size-4 text-emerald-500" />
+            </div>
+            <div className="text-muted-foreground">
+              Avg {player.gamesPlayed > 0 ? (player.goals / player.gamesPlayed).toFixed(2) : "0.00"} per game
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card className="@container/card">
+          <CardHeader>
+            <CardDescription>{t("playerDetailsPage.assists", { defaultValue: "Assists" })}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {player.assists}
+            </CardTitle>
+            <CardAction>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <AwardIcon className="size-3" />
+                xA {player.xa.toFixed(2)}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex items-center gap-2 font-medium">
+              Expected Assists (xA) <TrendingUpIcon className="size-4 text-emerald-500" />
+            </div>
+            <div className="text-muted-foreground">
+              Avg {player.gamesPlayed > 0 ? (player.assists / player.gamesPlayed).toFixed(2) : "0.00"} per game
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card className="@container/card">
+          <CardHeader>
+            <CardDescription>{t("playerDetailsPage.apps", { defaultValue: "Apps" })}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {player.gamesPlayed}
+            </CardTitle>
+            <CardAction>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <ActivityIcon className="size-3" />
+                Starts
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex items-center gap-2 font-medium">
+              Appearances <TrendingUpIcon className="size-4 text-emerald-500" />
+            </div>
+            <div className="text-muted-foreground">
+              Active tournament matches
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card className="@container/card">
+          <CardHeader>
+            <CardDescription>{t("playerDetailsPage.rating", { defaultValue: "Rating" })}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {player.rating.toFixed(2)}
+            </CardTitle>
+            <CardAction>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <StarIcon className="size-3" />
+                {player.rating >= 9.0 ? "Elite" : player.rating >= 8.5 ? "Very Good" : "Good"}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex items-center gap-2 font-medium">
+              Match Average <TrendingUpIcon className="size-4 text-emerald-500" />
+            </div>
+            <div className="text-muted-foreground">
+              Top performer in the squad
+            </div>
+          </CardFooter>
+        </Card>
+
+        <Card className="@container/card">
+          <CardHeader>
+            <CardDescription>{t("playerDetailsPage.minutes", { defaultValue: "Minutes" })}</CardDescription>
+            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+              {player.minutesPlayed}
+            </CardTitle>
+            <CardAction>
+              <Badge variant="outline" className="flex items-center gap-1">
+                <ClockIcon className="size-3" />
+                avg {player.gamesPlayed > 0 ? Math.round(player.minutesPlayed / player.gamesPlayed) : 0}'
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardFooter className="flex-col items-start gap-1.5 text-sm">
+            <div className="line-clamp-1 flex items-center gap-2 font-medium">
+              Minutes Played <ClockIcon className="size-4 text-muted-foreground" />
+            </div>
+            <div className="text-muted-foreground">
+              Avg {player.gamesPlayed > 0 ? Math.round(player.minutesPlayed / player.gamesPlayed) : 0}m per game
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+
+
+      <ChartAreaInteractive player={player} />
+
+
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <ChartRadarGridCircle player={player} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Movement maps</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Card content</p>
+          </CardContent>
+        </Card>
+
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Heatmap</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Card content</p>
+          </CardContent>
+        </Card>
+
+      </div>
+    </div>
+  )
+}

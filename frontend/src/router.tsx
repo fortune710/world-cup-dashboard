@@ -6,6 +6,7 @@ import { HelpPage } from "@/pages/help-page"
 import { LivePage } from "@/pages/live-page"
 import { MatchesPage } from "@/pages/matches-page"
 import { NotFoundPage } from "@/pages/not-found-page"
+import { PlayerDetailsPage } from "@/pages/player-details-page"
 import { PlayersPage } from "@/pages/players-page"
 import { RouteErrorPage } from "@/pages/route-error-page"
 import { SettingsPage } from "@/pages/settings-page"
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { path: "teams", element: <TeamsPage /> },
       { path: "teams/:teamId", element: <TeamDetailsPage /> },
       { path: "players", element: <PlayersPage /> },
+      { path: "players/:playerId", element: <PlayerDetailsPage /> },
       { path: "matches", element: <MatchesPage /> },
       { path: "bracket", element: <BracketPage /> },
       { path: "settings", element: <SettingsPage /> },
