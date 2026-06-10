@@ -166,6 +166,9 @@ const getPlayerStatValue = (p: PlayerRow, key: string): number => {
         case "aerialWin":
             return Math.max(55, Math.min(92, 68 + (p.rating - 8.0) * 12 + random(seed + 1) * 5))
         case "aerialWins":
+            if (getDetailedPosition(p) === "ST") {
+                return Math.max(0.5, 1.8 + (p.rating - 8.0) * 1.5 + random(seed + 6) * 0.6)
+            }
             return Math.max(1.2, 2.5 + (p.rating - 8.0) * 1.5 + random(seed + 2) * 0.5)
         case "tacklesInterceptions": {
             const tkl = history.reduce((acc, m) => acc + (m.tackles || 0), 0)
@@ -220,8 +223,6 @@ const getPlayerStatValue = (p: PlayerRow, key: string): number => {
         // ST Specific
         case "shotTouch":
             return Math.max(8, Math.min(40, 18 + goalsPer90 * 8 + random(seed + 4) * 4))
-        case "aerialWins":
-            return Math.max(0.5, 1.8 + (p.rating - 8.0) * 1.5 + random(seed + 6) * 0.6)
 
         case "contributions":
             return goalsPer90 + assistsPer90
@@ -412,9 +413,9 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
             const sorted = [...peerVals].sort((a, b) => a - b)
             const percentile = computePercentile(playerVal, sorted)
 
-            // Normalize relative to maximum (avoid division by zero)
-            const playerNormalized = maxVal > 0 ? (playerVal / maxVal) * 100 : 0
-            const avgNormalized = maxVal > 0 ? (avgVal / maxVal) * 100 : 0
+            // Normalize using min-max scaling (avoid division by zero if max === min)
+            const playerNormalized = maxVal !== minVal ? ((playerVal - minVal) / (maxVal - minVal)) * 100 : 50
+            const avgNormalized = maxVal !== minVal ? ((avgVal - minVal) / (maxVal - minVal)) * 100 : 50
 
             return {
                 subject: metric.label,
@@ -451,9 +452,15 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
     return (
         <Card className="flex flex-col h-full">
             <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-bold tracking-tight">Position Profile</CardTitle>
+                <CardTitle className="text-xl font-bold tracking-tight">
+                    {t("playerDetailsPage.positionProfile", { defaultValue: "Position Profile" })}
+                </CardTitle>
                 <CardDescription>
-                    Comparing {player.name} to {positionNameMap[pos]}s (Per 90 mins)
+                    {t("playerDetailsPage.comparingPlayers", {
+                        playerName: player.name,
+                        position: positionNameMap[pos],
+                        defaultValue: "Comparing {{playerName}} to {{position}}s (Per 90 mins)"
+                    })}
                 </CardDescription>
             </CardHeader>
             <CardContent className="pb-0 flex-1 flex flex-col justify-between">
@@ -549,10 +556,18 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
                         <div>
                             <h4 className="text-xs font-bold tracking-tight text-foreground uppercase flex items-center gap-1.5">
                                 <Info className="size-3.5 text-primary" />
-                                {activeMetricData.subject} Rank
+                                {t("playerDetailsPage.metricRank", {
+                                    subject: activeMetricData.subject,
+                                    defaultValue: "{{subject}} Rank"
+                                })}
                             </h4>
                             <p className="text-[10px] text-muted-foreground">
-                                Relative to {positionPlayers.length} peers in position
+                                {t("playerDetailsPage.relativeToPeers", {
+                                    count: positionPlayers.length,
+                                    playerName: player.name,
+                                    position: positionNameMap[pos],
+                                    defaultValue: "Relative to {{count}} {{position}} peers"
+                                })}
                             </p>
                         </div>
                         <div className="text-right">

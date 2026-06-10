@@ -1053,7 +1053,7 @@ export function PlayersPage() {
                             : column.id === "cleanSheets"
                               ? "Clean Sheets"
                               : column.id === "gamesPlayed"
-                                ? "APPs"
+                                ? "Apps"
                                 : column.id === "minutesPlayed"
                                   ? "Mins"
                                   : column.id}
@@ -1109,7 +1109,7 @@ export function PlayersPage() {
                         tabIndex={0}
                         className={cn(
                           "group cursor-pointer transition-colors",
-                          "hover:bg-primary/10!",
+                          "hover:!bg-primary/10",
                           "focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         )}
                         onClick={handleRowNavigate}

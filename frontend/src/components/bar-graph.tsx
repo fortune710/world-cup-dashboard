@@ -182,6 +182,7 @@ const getAvailableStats = (position: string, t: any): StatOption[] => {
 }
 
 const CustomTooltip = ({ active, payload, position }: any) => {
+    const { t } = useTranslation()
     if (active && payload && payload.length) {
         const data = payload[0].payload
         return (
@@ -191,22 +192,30 @@ const CustomTooltip = ({ active, payload, position }: any) => {
                     <span className="text-muted-foreground">vs. {data.opponent}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Rating:</span>
+                    <span className="text-muted-foreground">
+                        {t("playerDetailsPage.rating", { defaultValue: "Rating" })}:
+                    </span>
                     <span className="font-semibold text-emerald-500 font-mono">{data.rating.toFixed(2)}</span>
                 </div>
 
                 {position === "DEF" && (
                     <>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Tackles:</span>
+                            <span className="text-muted-foreground">
+                                {t("playerDetailsPage.tackles", { defaultValue: "Tackles" })}:
+                            </span>
                             <span className="font-semibold text-blue-500 font-mono">{data.tackles}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Interceptions:</span>
+                            <span className="text-muted-foreground">
+                                {t("playerDetailsPage.interceptions", { defaultValue: "Interceptions" })}:
+                            </span>
                             <span className="font-semibold text-blue-500 font-mono">{data.interceptions}</span>
                         </div>
                         <div className="flex justify-between items-center border-t border-border/20 pt-1 mt-1 font-semibold text-foreground">
-                            <span>Def. Actions:</span>
+                            <span>
+                                {t("playerDetailsPage.defActions", { defaultValue: "Def. Actions" })}:
+                            </span>
                             <span className="font-mono">{data.defensiveActions}</span>
                         </div>
                     </>
@@ -214,7 +223,9 @@ const CustomTooltip = ({ active, payload, position }: any) => {
 
                 {position === "GK" && (
                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Saves:</span>
+                        <span className="text-muted-foreground">
+                            {t("playerDetailsPage.saves", { defaultValue: "Saves" })}:
+                        </span>
                         <span className="font-semibold text-amber-500 font-mono">{data.saves}</span>
                     </div>
                 )}
@@ -222,15 +233,21 @@ const CustomTooltip = ({ active, payload, position }: any) => {
                 {(position === "FWD" || position === "MID") && (
                     <>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Goals:</span>
+                            <span className="text-muted-foreground">
+                                {t("playerDetailsPage.goals", { defaultValue: "Goals" })}:
+                            </span>
                             <span className="font-semibold text-rose-500 font-mono">⚽ {data.goals}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Assists:</span>
+                            <span className="text-muted-foreground">
+                                {t("playerDetailsPage.assists", { defaultValue: "Assists" })}:
+                            </span>
                             <span className="font-semibold text-rose-500 font-mono">👟 {data.assists}</span>
                         </div>
                         <div className="flex justify-between items-center border-t border-border/20 pt-1 mt-1 font-semibold text-foreground">
-                            <span>G/A:</span>
+                            <span>
+                                {t("playerDetailsPage.gaLabel", { defaultValue: "G/A" })}:
+                            </span>
                             <span className="font-mono">{data.ga}</span>
                         </div>
                     </>
@@ -238,12 +255,20 @@ const CustomTooltip = ({ active, payload, position }: any) => {
 
                 {data.cleanSheet !== undefined && (
                     <div className="flex justify-between items-center text-[10px] border-t border-border/20 pt-1">
-                        <span className="text-muted-foreground">Clean Sheet:</span>
-                        <span className="font-medium text-foreground">{data.cleanSheet === 1 ? "✅ Yes" : "❌ No"}</span>
+                        <span className="text-muted-foreground">
+                            {t("playerDetailsPage.cleanSheet", { defaultValue: "Clean Sheet" })}:
+                        </span>
+                        <span className="font-medium text-foreground">
+                            {data.cleanSheet === 1
+                                ? `✅ ${t("playerDetailsPage.yes", { defaultValue: "Yes" })}`
+                                : `❌ ${t("playerDetailsPage.no", { defaultValue: "No" })}`}
+                        </span>
                     </div>
                 )}
                 <div className="flex justify-between items-center text-[10px] text-muted-foreground border-t border-border/20 pt-1">
-                    <span>Minutes Played:</span>
+                    <span>
+                        {t("playerDetailsPage.minutesPlayedLabel", { defaultValue: "Minutes Played" })}:
+                    </span>
                     <span>⏱️ {data.minutesPlayed}'</span>
                 </div>
             </div>
@@ -265,6 +290,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
     React.useEffect(() => {
         if (player) {
             setActiveChart("rating")
+            setStage("all")
         }
     }, [player?.position])
 
@@ -338,9 +364,9 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                     <Select value={stage} onValueChange={setStage}>
                         <SelectTrigger
                             className="w-[160px] rounded-lg lg:ml-auto"
-                            aria-label="Select tournament stage"
+                            aria-label={t("playerDetailsPage.selectStage", { defaultValue: "Select tournament stage" })}
                         >
-                            <SelectValue placeholder="All Matches" />
+                            <SelectValue placeholder={t("playerDetailsPage.allMatches", { defaultValue: "All Matches" })} />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
                             <SelectItem value="all" className="rounded-lg">

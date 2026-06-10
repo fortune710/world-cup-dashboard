@@ -151,7 +151,10 @@ export function PlayerPerformanceCard({ playerPerformance }: PlayerPerformanceCa
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
             {playerPerformance.map((player) => {
                 return (
-                    <Card key={player.category} className="@container/card relative overflow-hidden">
+                    <Card key={`${player.category}-${player.name}`} className="@container/card relative overflow-hidden">
+                        {player.category === "Top Goalscorer" && <GoalscorerSvg />}
+                        {player.category === "Most Assists" && <AssistsSvg />}
+                        {player.category === "Top Rated" && <TopRatedSvg />}
 
                         <CardHeader>
                             <CardDescription>{player.category}</CardDescription>

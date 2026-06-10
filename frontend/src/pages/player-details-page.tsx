@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/card"
 import { findPlayerById } from "@/pages/players-page"
 import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
-import { useMemo } from "react"
+
 import { ChartRadarGridCircle } from "@/components/player-radar"
 import { ChartAreaInteractive } from "@/components/bar-graph"
 import { ChartBarMixed } from "@/components/player-bars"
@@ -40,6 +40,17 @@ export function PlayerDetailsPage() {
     if (!Number.isFinite(id)) return undefined
     return findPlayerById(id)
   }, [playerId])
+
+  const initials = player
+    ? player.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+    : ""
+  const flagUrl = player
+    ? getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
+    : ""
 
   if (!player) {
     return (
@@ -57,16 +68,6 @@ export function PlayerDetailsPage() {
     )
   }
 
-  const initials = useMemo(
-    () =>
-      player.name
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2),
-    [player.name]
-  )
-  const flagUrl = getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
@@ -114,16 +115,16 @@ export function PlayerDetailsPage() {
             <CardAction>
               <Badge variant="outline" className="flex items-center gap-1">
                 <TargetIcon className="size-3" />
-                xG {player.xg.toFixed(2)}
+                {t("playerDetailsPage.xgBadge", { defaultValue: "xG" })} {player.xg.toFixed(2)}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              Expected Goals (xG) <TrendingUpIcon className="size-4 text-emerald-500" />
+              {t("playerDetailsPage.expectedGoals", { defaultValue: "Expected Goals (xG)" })} <TrendingUpIcon className="size-4 text-emerald-500" />
             </div>
             <div className="text-muted-foreground">
-              Avg {player.gamesPlayed > 0 ? (player.goals / player.gamesPlayed).toFixed(2) : "0.00"} per game
+              {t("playerDetailsPage.goalsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? (player.goals / player.gamesPlayed).toFixed(2) : "0.00" })}
             </div>
           </CardFooter>
         </Card>
@@ -137,16 +138,16 @@ export function PlayerDetailsPage() {
             <CardAction>
               <Badge variant="outline" className="flex items-center gap-1">
                 <AwardIcon className="size-3" />
-                xA {player.xa.toFixed(2)}
+                {t("playerDetailsPage.xaBadge", { defaultValue: "xA" })} {player.xa.toFixed(2)}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              Expected Assists (xA) <TrendingUpIcon className="size-4 text-emerald-500" />
+              {t("playerDetailsPage.expectedAssists", { defaultValue: "Expected Assists (xA)" })} <TrendingUpIcon className="size-4 text-emerald-500" />
             </div>
             <div className="text-muted-foreground">
-              Avg {player.gamesPlayed > 0 ? (player.assists / player.gamesPlayed).toFixed(2) : "0.00"} per game
+              {t("playerDetailsPage.assistsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? (player.assists / player.gamesPlayed).toFixed(2) : "0.00" })}
             </div>
           </CardFooter>
         </Card>
@@ -160,16 +161,16 @@ export function PlayerDetailsPage() {
             <CardAction>
               <Badge variant="outline" className="flex items-center gap-1">
                 <ActivityIcon className="size-3" />
-                Starts
+                {t("playerDetailsPage.appearancesBadge", { defaultValue: "Appearances" })}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              Appearances <TrendingUpIcon className="size-4 text-emerald-500" />
+              {t("playerDetailsPage.appearancesTitle", { defaultValue: "Appearances" })} <TrendingUpIcon className="size-4 text-emerald-500" />
             </div>
             <div className="text-muted-foreground">
-              Active tournament matches
+              {t("playerDetailsPage.activeMatches", { defaultValue: "Active tournament matches" })}
             </div>
           </CardFooter>
         </Card>
@@ -183,16 +184,20 @@ export function PlayerDetailsPage() {
             <CardAction>
               <Badge variant="outline" className="flex items-center gap-1">
                 <StarIcon className="size-3" />
-                {player.rating >= 9.0 ? "Elite" : player.rating >= 8.5 ? "Very Good" : "Good"}
+                {player.rating >= 9.0
+                  ? t("playerDetailsPage.ratingElite", { defaultValue: "Elite" })
+                  : player.rating >= 8.5
+                    ? t("playerDetailsPage.ratingVeryGood", { defaultValue: "Very Good" })
+                    : t("playerDetailsPage.ratingGood", { defaultValue: "Good" })}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              Match Average <TrendingUpIcon className="size-4 text-emerald-500" />
+              {t("playerDetailsPage.matchAverage", { defaultValue: "Match Average" })} <TrendingUpIcon className="size-4 text-emerald-500" />
             </div>
             <div className="text-muted-foreground">
-              Top performer in the squad
+              {t("playerDetailsPage.topPerformer", { defaultValue: "Top performer in the squad" })}
             </div>
           </CardFooter>
         </Card>
@@ -206,16 +211,19 @@ export function PlayerDetailsPage() {
             <CardAction>
               <Badge variant="outline" className="flex items-center gap-1">
                 <ClockIcon className="size-3" />
-                avg {player.gamesPlayed > 0 ? Math.round(player.minutesPlayed / player.gamesPlayed) : 0}'
+                {t("playerDetailsPage.avgMinutesBadge", {
+                  defaultValue: "avg {{mins}}'",
+                  mins: player.gamesPlayed > 0 ? Math.round(player.minutesPlayed / player.gamesPlayed) : 0
+                })}
               </Badge>
             </CardAction>
           </CardHeader>
           <CardFooter className="flex-col items-start gap-1.5 text-sm">
             <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              Minutes Played <ClockIcon className="size-4 text-muted-foreground" />
+              {t("playerDetailsPage.minutesPlayed", { defaultValue: "Minutes Played" })} <ClockIcon className="size-4 text-muted-foreground" />
             </div>
             <div className="text-muted-foreground">
-              Avg {player.gamesPlayed > 0 ? Math.round(player.minutesPlayed / player.gamesPlayed) : 0}m per game
+              {t("playerDetailsPage.avgMinutesPerGame", { defaultValue: "Avg {{mins}}m per game", mins: player.gamesPlayed > 0 ? Math.round(player.minutesPlayed / player.gamesPlayed) : 0 })}
             </div>
           </CardFooter>
         </Card>
@@ -230,20 +238,20 @@ export function PlayerDetailsPage() {
         <ChartRadarGridCircle player={player} />
         <Card>
           <CardHeader>
-            <CardTitle>Movement maps</CardTitle>
+            <CardTitle>{t("playerDetailsPage.movementMaps", { defaultValue: "Movement maps" })}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Card content</p>
+            <p>{t("playerDetailsPage.cardContent", { defaultValue: "Card content" })}</p>
           </CardContent>
         </Card>
 
 
         <Card>
           <CardHeader>
-            <CardTitle>Heatmap</CardTitle>
+            <CardTitle>{t("playerDetailsPage.heatmap", { defaultValue: "Heatmap" })}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>Card content</p>
+            <p>{t("playerDetailsPage.cardContent", { defaultValue: "Card content" })}</p>
           </CardContent>
         </Card>
 
