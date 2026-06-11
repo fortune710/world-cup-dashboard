@@ -1,13 +1,24 @@
 import logging
-from datetime import timezone
+from datetime import date, datetime, timezone
+from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import Float, Integer, func, text
 from sqlalchemy.orm import Session, joinedload
 
+from db.models.matchday_stats import MatchdayStats
 from db.models.matches import Match, MatchStatus
-from datetime import datetime
+from db.models.players import Player
 
 logger = logging.getLogger(__name__)
+
+MATCHDAY_STAT_LEADER_SPECS = (
+    ("rating", MatchdayStats.statistics["rating"].astext.cast(Float)),
+    (
+        "goal_contributions",
+        MatchdayStats.statistics["goal_contributions"].astext.cast(Integer),
+    ),
+    ("pass_accuracy", MatchdayStats.statistics["pass_accuracy"].astext.cast(Integer)),
+)
 
 def upsert_match(db: Session, match_data: dict):
     # Handle datetime conversion if it's a string
@@ -182,4 +193,124 @@ def get_matches_for_matchday_stats_queue(db: Session):
             "message": "Failed to look up matches for matchday stats queue",
             "error": {"message": str(exc), "type": type(exc).__name__},
         })
+        raise
+
+
+def _coerce_matchday_stat_value(stat_name: str, raw_value: Any) -> int | float:
+    logger.info(
+        {
+            "message": "Coercing matchday stat leader value",
+            "stat_name": stat_name,
+            "raw_value": raw_value,
+        }
+    )
+    if stat_name == "rating":
+        value = float(raw_value or 0)
+    else:
+        value = int(raw_value or 0)
+
+    logger.info(
+        {
+            "message": "Coerced matchday stat leader value",
+            "stat_name": stat_name,
+            "value": value,
+        }
+    )
+    return value
+
+
+def _fetch_top_matchday_stat_leader(
+    db: Session,
+    match_date: date,
+    stat_name: str,
+    value_expression,
+):
+    logger.info(
+        {
+            "message": "Fetching top matchday stat leader",
+            "stat_name": stat_name,
+            "match_date": match_date.isoformat(),
+        }
+    )
+    row = (
+        db.query(
+            Player.name.label("player_name"),
+            value_expression.label("value"),
+        )
+        .join(MatchdayStats, Player.id == MatchdayStats.player_id)
+        .filter(func.date(MatchdayStats.match_date) == match_date)
+        .order_by(value_expression.desc(), Player.name.asc(), Player.id.asc())
+        .limit(1)
+        .first()
+    )
+
+    if row is None:
+        logger.warning(
+            {
+                "message": "No matchday stat leader found for date",
+                "stat_name": stat_name,
+                "match_date": match_date.isoformat(),
+            }
+        )
+        return None
+
+    player_name = getattr(row, "player_name", None)
+    raw_value = getattr(row, "value", None)
+    if not player_name:
+        logger.warning(
+            {
+                "message": "Skipping matchday stat leader with missing player name",
+                "stat_name": stat_name,
+                "match_date": match_date.isoformat(),
+            }
+        )
+        return None
+
+    payload = {
+        "stat_name": stat_name,
+        "value": _coerce_matchday_stat_value(stat_name, raw_value),
+        "player_name": player_name,
+    }
+    logger.info(
+        {
+            "message": "Resolved top matchday stat leader",
+            "stat_name": stat_name,
+            "match_date": match_date.isoformat(),
+            "player_name": player_name,
+            "value": payload["value"],
+        }
+    )
+    return payload
+
+
+def get_matchday_statistics_by_date(db: Session, match_date: date):
+    logger.info(
+        {
+            "message": "Fetching matchday statistics by date",
+            "match_date": match_date.isoformat(),
+        }
+    )
+    try:
+        leaders = []
+        for stat_name, value_expression in MATCHDAY_STAT_LEADER_SPECS:
+            leader = _fetch_top_matchday_stat_leader(db, match_date, stat_name, value_expression)
+            if leader is not None:
+                leaders.append(leader)
+
+        logger.info(
+            {
+                "message": "Resolved matchday statistics by date",
+                "match_date": match_date.isoformat(),
+                "count": len(leaders),
+            }
+        )
+        return leaders
+    except Exception as exc:
+        logger.error(
+            {
+                "message": "Failed to fetch matchday statistics by date",
+                "error": {"message": str(exc), "type": type(exc).__name__},
+                "match_date": match_date.isoformat(),
+            }
+        )
         raise
