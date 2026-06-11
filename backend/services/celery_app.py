@@ -8,6 +8,7 @@ celery_app = Celery(
     include=[
         'services.player_stats_worker',
         'services.player_db_update_worker',
+        'services.matchday_stats_worker',
     ],
 )
 
@@ -27,10 +28,15 @@ celery_app.conf.update(
             'task': 'services.player_db_update_worker.run_db_update_batch',
             'schedule': 180.0,
         },
+        'run-matchday-stats-every-3-min': {
+            'task': 'services.matchday_stats_worker.run_matchday_stats_batch',
+            'schedule': 180.0,
+        },
     },
     # Use separate Celery queue per worker type to avoid cross-consumption
     task_routes={
         'services.player_stats_worker.*': {'queue': 'worker_fetch'},
         'services.player_db_update_worker.*': {'queue': 'worker_db'},
+        'services.matchday_stats_worker.*': {'queue': 'worker_matchday_stats'},
     },
 )
