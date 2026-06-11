@@ -18,6 +18,7 @@ def load_matches_pipeline_module():
         "airflow.operators": types.ModuleType("airflow.operators"),
         "airflow.operators.python": types.ModuleType("airflow.operators.python"),
         "config.db": types.ModuleType("config.db"),
+        "db.controllers.matches": types.ModuleType("db.controllers.matches"),
         "db.controllers.players": types.ModuleType("db.controllers.players"),
         "pipeline.sources.matches": types.ModuleType("pipeline.sources.matches"),
         "pipeline.transformations.matches": types.ModuleType("pipeline.transformations.matches"),
@@ -44,6 +45,7 @@ def load_matches_pipeline_module():
     )
     fake_modules["airflow.operators.python"].PythonOperator = type("FakePythonOperator", (FakeChainedObject,), {})
     fake_modules["config.db"].SessionLocal = lambda: None
+    fake_modules["db.controllers.matches"].get_matches_for_matchday_stats_queue = lambda *args, **kwargs: []
     fake_modules["db.controllers.players"].get_players_by_team = lambda *args, **kwargs: []
     fake_modules["pipeline.sources.matches"].MatchesSource = type("MatchesSource", (), {})
     fake_modules["pipeline.transformations.matches"].MatchesTransformations = type(
@@ -73,16 +75,25 @@ class TestMatchesPipelineQueueUnit(TestCase):
         self.completed_match = {
             "id": 1,
             "status": "completed",
+            "sofascore_id": 101,
             "home_team_code": "KSA",
             "away_team_code": "JPN",
+        }
+        self.live_match = {
+            "id": 3,
+            "status": "live",
+            "sofascore_id": 103,
+            "home_team_code": "MEX",
+            "away_team_code": "RSA",
         }
         self.scheduled_match = {
             "id": 2,
             "status": "scheduled",
+            "sofascore_id": 102,
             "home_team_code": "BRA",
             "away_team_code": "ARG",
         }
-        self.transformed_matches = [self.completed_match, self.scheduled_match]
+        self.transformed_matches = [self.completed_match, self.live_match, self.scheduled_match]
         self.fake_ti = SimpleNamespace(
             xcom_pull=lambda task_ids: self.transformed_matches if task_ids == "transform_matches" else None
         )
@@ -140,13 +151,91 @@ class TestMatchesPipelineQueueUnit(TestCase):
         fake_db.close.assert_not_called()
         fake_queue.close.assert_not_called()
 
+    def test_enqueue_matchday_stats_publishes_live_and_completed_matches(self):
+        matches_pipeline = load_matches_pipeline_module()
+        fake_db = Mock()
+        fake_queue = Mock()
+        fake_matches = [
+            SimpleNamespace(
+                id=11,
+                sofascore_id=111,
+                status="live",
+                home_team_code="KSA",
+                away_team_code="JPN",
+            ),
+            SimpleNamespace(
+                id=12,
+                sofascore_id=112,
+                status="completed",
+                home_team_code="MEX",
+                away_team_code="RSA",
+            ),
+            SimpleNamespace(
+                id=13,
+                sofascore_id=None,
+                status="completed",
+                home_team_code="BRA",
+                away_team_code="ARG",
+            ),
+        ]
+
+        with patch.object(matches_pipeline, "SessionLocal", return_value=fake_db), patch.object(
+            matches_pipeline,
+            "get_matches_for_matchday_stats_queue",
+            return_value=fake_matches,
+        ), patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
+            Settings, "MATCHDAY_STATS_QUEUE", "unit_test_matchday_stats"
+        ):
+            matches_pipeline.enqueue_matchday_stats(ti=self.fake_ti)
+
+        published_messages = {
+            (
+                call.kwargs["queue_name"],
+                call.kwargs["message"]["sofascore_id"],
+                call.kwargs["message"]["id"],
+                call.kwargs["message"]["home_team_code"],
+                call.kwargs["message"]["away_team_code"],
+            )
+            for call in fake_queue.publish.call_args_list
+        }
+
+        self.assertEqual(
+            published_messages,
+            {
+                ("unit_test_matchday_stats", 111, 11, "KSA", "JPN"),
+                ("unit_test_matchday_stats", 112, 12, "MEX", "RSA"),
+            },
+        )
+        fake_db.close.assert_called_once()
+        fake_queue.close.assert_called_once()
+
+    def test_enqueue_matchday_stats_skips_scheduled_matches(self):
+        matches_pipeline = load_matches_pipeline_module()
+        fake_db = Mock()
+        fake_queue = Mock()
+        fake_matches = []
+
+        with patch.object(matches_pipeline, "SessionLocal", return_value=fake_db), patch.object(
+            matches_pipeline,
+            "get_matches_for_matchday_stats_queue",
+            return_value=fake_matches,
+        ), patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
+            Settings, "MATCHDAY_STATS_QUEUE", "unit_test_matchday_stats"
+        ):
+            matches_pipeline.enqueue_matchday_stats(ti=self.fake_ti)
+
+        fake_queue.publish.assert_not_called()
+        fake_db.close.assert_called_once()
+        fake_queue.close.assert_called_once()
+
 
 class TestMatchesPipelineQueueIntegration(TestCase):
     def setUp(self):
-        self.queue_name = f"test_player_stats_updates_{os.getpid()}"
+        self.queue_name = f"test_matchday_stats_updates_{os.getpid()}"
         self.completed_match = {
             "id": 99,
             "status": "completed",
+            "sofascore_id": 199,
             "home_team_code": "KSA",
             "away_team_code": "JPN",
         }
@@ -194,6 +283,57 @@ class TestMatchesPipelineQueueIntegration(TestCase):
                     (201, "KSA Player 1"),
                     (202, "KSA Player 2"),
                     (301, "JPN Player 1"),
+                },
+            )
+
+            for message in messages:
+                queue_service.ack(message["delivery_tag"])
+        finally:
+            queue_service.close()
+
+    def test_enqueue_matchday_stats_writes_messages_to_rabbitmq(self):
+        settings = Settings()
+        params = pika.URLParameters(settings.RABBITMQ_URL)
+        params.connection_attempts = 1
+        params.socket_timeout = 3
+
+        try:
+            probe_connection = pika.BlockingConnection(params)
+            probe_connection.close()
+        except Exception as exc:
+            self.skipTest(f"RabbitMQ is unavailable for integration testing: {exc}")
+
+        fake_db = Mock()
+        queue_service = QueueService()
+        try:
+            matches_pipeline = load_matches_pipeline_module()
+            fake_matches = [
+                SimpleNamespace(id=991, sofascore_id=1991, status="live", home_team_code="KSA", away_team_code="JPN"),
+                SimpleNamespace(id=992, sofascore_id=1992, status="completed", home_team_code="MEX", away_team_code="RSA"),
+            ]
+            with patch.object(matches_pipeline, "SessionLocal", return_value=fake_db), patch.object(
+                matches_pipeline,
+                "get_matches_for_matchday_stats_queue",
+                return_value=fake_matches,
+            ), patch.object(Settings, "MATCHDAY_STATS_QUEUE", self.queue_name):
+                matches_pipeline.enqueue_matchday_stats(ti=self.fake_ti)
+
+            messages = queue_service.consume(self.queue_name, count=10)
+            payloads = {
+                (
+                    message["body"]["sofascore_id"],
+                    message["body"]["id"],
+                    message["body"]["home_team_code"],
+                    message["body"]["away_team_code"],
+                )
+                for message in messages
+            }
+
+            self.assertEqual(
+                payloads,
+                {
+                    (1991, 991, "KSA", "JPN"),
+                    (1992, 992, "MEX", "RSA"),
                 },
             )
 

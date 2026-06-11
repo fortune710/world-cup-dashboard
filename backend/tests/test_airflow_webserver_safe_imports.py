@@ -17,6 +17,7 @@ class TestAirflowWebserverSafeImports(unittest.TestCase):
             "pipeline.orchestration.teams_pipeline",
             "pipeline.orchestration.team_details_pipeline",
             "pipeline.orchestration.player_info_pipeline",
+            "pipeline.orchestration.map_match_id_pipeline",
         ]
         blocked_prefixes = ("sofascore_wrapper",)
         original_import = builtins.__import__
@@ -71,10 +72,13 @@ class TestAirflowWebserverSafeImports(unittest.TestCase):
         fake_modules["dotenv"].load_dotenv = lambda *args, **kwargs: None
         fake_modules["db.controllers.teams"].get_next_team_to_index = lambda *args, **kwargs: None
         fake_modules["db.controllers.teams"].mark_team_as_indexed = lambda *args, **kwargs: None
+        fake_modules["db.controllers.teams"].get_all_teams = lambda *args, **kwargs: []
         fake_modules["db.controllers.players"].upsert_player = lambda *args, **kwargs: None
         fake_modules["db.controllers.players"].upsert_players = lambda *args, **kwargs: 0
         fake_modules["db.controllers.players"].get_players_by_team = lambda *args, **kwargs: []
         fake_modules["db.controllers.matches"].upsert_match = lambda *args, **kwargs: None
+        fake_modules["db.controllers.matches"].update_match_sofascore_id = lambda *args, **kwargs: None
+        fake_modules["db.controllers.matches"].get_matches_for_matchday_stats_queue = lambda *args, **kwargs: []
         fake_modules["requests"].get = lambda *args, **kwargs: None
 
         saved_modules = {}
