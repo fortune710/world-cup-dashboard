@@ -85,3 +85,22 @@ jobs:
           cd "$DEPLOY_DIR/backend"
           docker compose -f compose.prod.yaml run --rm --build --no-deps web bash scripts/migrate.sh
           EOF
+
+      - name: Verify Alembic has a single head
+        env:
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_PORT: ${{ secrets.DROPLET_PORT || 22 }}
+        run: |
+          ssh -i ~/.ssh/droplet_key -p "$DROPLET_PORT" "deployment-admin@$DROPLET_HOST" 'bash -s' <<'EOF'
+          set -Eeuo pipefail
+
+          DEPLOY_DIR="$HOME/world-cup-dashboard"
+
+          if [ ! -d "$DEPLOY_DIR/.git" ]; then
+            echo "Expected the repository to be checked out at $DEPLOY_DIR"
+            exit 1
+          fi
+
+          cd "$DEPLOY_DIR/backend"
+          docker compose -f compose.prod.yaml run --rm --build --no-deps web alembic heads
+          EOF
