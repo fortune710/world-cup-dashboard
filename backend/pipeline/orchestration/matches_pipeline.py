@@ -7,6 +7,7 @@ from pipeline.sources.matches import MatchesSource
 from pipeline.transformations.matches import MatchesTransformations
 from pipeline.load.matches import MatchesLoader
 from config.db import SessionLocal
+from db.controllers.matches import get_matches_for_matchday_stats_queue
 from db.controllers.players import get_players_by_team
 
 logger = logging.getLogger(__name__)
@@ -65,6 +66,57 @@ def load_matches(**context):
         raise
 
 
+def enqueue_matchday_stats(**context):
+    logger.info({"message": "Starting matchday stats enqueue"})
+    db = SessionLocal()
+    from config.settings import Settings
+    from services.queue_service import QueueService
+
+    queue = QueueService()
+    settings = Settings()
+    try:
+        matches = get_matches_for_matchday_stats_queue(db)
+        if not matches:
+            logger.info({"message": "No live or completed matches found in this run"})
+            return
+
+        queued_count = 0
+        for match in matches:
+            if getattr(match, "sofascore_id", None) is None:
+                logger.warning({
+                    "message": "Skipping match without sofascore id for matchday stats enqueue",
+                    "match_id": match.id,
+                    "home_team_code": match.home_team_code,
+                    "away_team_code": match.away_team_code,
+                })
+                continue
+
+            queue.publish(
+                queue_name=settings.MATCHDAY_STATS_QUEUE,
+                message={
+                    "sofascore_id": match.sofascore_id,
+                    "id": match.id,
+                    "home_team_code": match.home_team_code,
+                    "away_team_code": match.away_team_code,
+                },
+            )
+            queued_count += 1
+
+        logger.info({
+            "message": "Completed matchday stats enqueue",
+            "queued_count": queued_count,
+        })
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to enqueue matchday stats",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
+    finally:
+        db.close()
+        queue.close()
+
+
 def enqueue_player_stats(**context):
     logger.info({"message": "Starting player stats enqueue"})
     transformed_matches = context['ti'].xcom_pull(task_ids='transform_matches')
@@ -120,7 +172,7 @@ with DAG(
     'world_cup_matches_pipeline',
     default_args=default_args,
     description='ETL pipeline for World Cup matches',
-    schedule=timedelta(hours=6),
+    schedule=timedelta(minutes=30),
     catchup=False
 ) as dag:
 
@@ -139,9 +191,14 @@ with DAG(
         python_callable=load_matches,
     )
 
+    task_enqueue_matchday_stats = PythonOperator(
+        task_id='enqueue_matchday_stats',
+        python_callable=enqueue_matchday_stats,
+    )
+
     task_enqueue = PythonOperator(
         task_id='enqueue_player_stats',
         python_callable=enqueue_player_stats,
     )
 
-    task_extract >> task_transform >> task_load >> task_enqueue
+    task_extract >> task_transform >> task_load >> task_enqueue_matchday_stats >> task_enqueue
