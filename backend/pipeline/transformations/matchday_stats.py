@@ -119,14 +119,23 @@ def _resolve_pass_accuracy(statistics_payload: dict[str, Any]) -> int:
         {
             "message": "Resolving matchday stats pass accuracy",
             "has_accurate_passes_percentage": "accurate_passes_percentage" in statistics_payload,
+            "has_accurate_pass": "accurate_pass" in statistics_payload,
             "has_accurate_passes": "accurate_passes" in statistics_payload,
+            "has_total_pass": "total_pass" in statistics_payload,
             "has_total_passes": "total_passes" in statistics_payload,
         }
     )
     accuracy_value = _coerce_numeric_scalar(statistics_payload.get("accurate_passes_percentage"), "accurate_passes_percentage")
     if accuracy_value is None:
-        accurate_passes = float(_coerce_numeric_scalar(statistics_payload.get("accurate_passes"), "accurate_passes") or 0)
-        total_passes = float(_coerce_numeric_scalar(statistics_payload.get("total_passes"), "total_passes") or 0)
+        accurate_passes_value = statistics_payload.get("accurate_pass")
+        if accurate_passes_value is None:
+            accurate_passes_value = statistics_payload.get("accurate_passes")
+        total_passes_value = statistics_payload.get("total_pass")
+        if total_passes_value is None:
+            total_passes_value = statistics_payload.get("total_passes")
+
+        accurate_passes = float(_coerce_numeric_scalar(accurate_passes_value, "accurate_pass") or 0)
+        total_passes = float(_coerce_numeric_scalar(total_passes_value, "total_pass") or 0)
         if total_passes > 0:
             accuracy_value = (accurate_passes / total_passes) * 100
         else:
