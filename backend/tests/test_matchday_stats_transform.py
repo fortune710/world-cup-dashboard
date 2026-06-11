@@ -24,8 +24,8 @@ class TestMatchdayStatsTransformations(unittest.TestCase):
                         "rating": "7.4",
                         "goals": "2",
                         "goalAssist": "1",
-                        "accuratePasses": "24",
-                        "totalPasses": "32",
+                        "accuratePass": "24",
+                        "totalPass": "32",
                         "bigChancesCreated": "1",
                         "expectedGoals": "0.7",
                         "assists": "1",
@@ -42,8 +42,8 @@ class TestMatchdayStatsTransformations(unittest.TestCase):
                     "statistics": {
                         "rating": 6.2,
                         "goals": 0,
-                        "accuratePasses": 19,
-                        "totalPasses": 30,
+                        "accuratePass": 19,
+                        "totalPass": 30,
                         "bigChancesCreated": 3,
                         "expected_goals": 0.1,
                         "assists": 0,
@@ -65,29 +65,29 @@ class TestMatchdayStatsTransformations(unittest.TestCase):
         self.assertEqual(rows[0]["statistics"]["total_pass"], 32)
         self.assertEqual(rows[0]["statistics"]["goal_contributions"], 1)
         self.assertEqual(rows[0]["statistics"]["pass_accuracy"], 75)
+        self.assertEqual(rows[0]["statistics"]["field"], "F")
         self.assertEqual(rows[0]["statistics"]["shot_off_target"], 0)
         self.assertEqual(rows[0]["statistics"]["expected_goals"], 0.7)
         self.assertNotIn("statisticsType", rows[0]["statistics"])
         self.assertNotIn("ratingVersions", rows[0]["statistics"])
-        self.assertNotIn("field", rows[0]["statistics"])
 
         self.assertEqual(rows[1]["player_id"], 202)
         self.assertEqual(rows[1]["statistics"]["accurate_pass"], 19)
         self.assertEqual(rows[1]["statistics"]["total_pass"], 30)
         self.assertEqual(rows[1]["statistics"]["goal_contributions"], 0)
         self.assertEqual(rows[1]["statistics"]["pass_accuracy"], 63)
-        self.assertNotIn("field", rows[1]["statistics"])
+        self.assertEqual(rows[1]["statistics"]["field"], "D")
 
     def test_transform_matchday_stats_skips_duplicate_player_ids(self):
         home_lineup = {
             "players": [
                 {
                     "player": {"id": 303, "position": "M"},
-                    "statistics": {"rating": 6.0, "accuratePasses": 10, "totalPasses": 20},
+                    "statistics": {"rating": 6.0, "accuratePass": 10, "totalPass": 20},
                 },
                 {
                     "player": {"id": 303, "position": "M"},
-                    "statistics": {"rating": 7.0, "accuratePasses": 11, "totalPasses": 22},
+                    "statistics": {"rating": 7.0, "accuratePass": 11, "totalPass": 22},
                 },
             ]
         }

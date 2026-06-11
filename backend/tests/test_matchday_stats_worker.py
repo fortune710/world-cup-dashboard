@@ -34,8 +34,8 @@ class TestMatchdayStatsWorker(unittest.TestCase):
                             "rating": "7.5",
                             "goals": "1",
                             "goalAssist": "1",
-                            "accuratePasses": "24",
-                            "totalPasses": "32",
+                            "accuratePass": "24",
+                            "totalPass": "32",
                             "bigChancesCreated": "2",
                             "expected_goals": "0.8",
                             "assists": "0",
@@ -51,8 +51,8 @@ class TestMatchdayStatsWorker(unittest.TestCase):
                         "statistics": {
                             "rating": 6.9,
                             "goals": 0,
-                            "accuratePasses": 19,
-                            "totalPasses": 30,
+                            "accuratePass": 19,
+                            "totalPass": 30,
                             "bigChancesCreated": 1,
                             "expectedGoals": 0.2,
                             "assists": 1,
@@ -172,7 +172,7 @@ class TestMatchdayStatsWorkerIntegration(unittest.TestCase):
                     "players": [
                         {
                             "player": {"id": 7001, "position": "D"},
-                            "statistics": {"rating": 6.8, "goals": 0, "accuratePasses": 18, "totalPasses": 36},
+                            "statistics": {"rating": 6.8, "goals": 0, "accuratePass": 18, "totalPass": 36},
                         }
                     ]
                 },
@@ -180,7 +180,7 @@ class TestMatchdayStatsWorkerIntegration(unittest.TestCase):
                     "players": [
                         {
                             "player": {"id": 7002, "position": "F"},
-                            "statistics": {"rating": 7.2, "goals": 1, "assists": 1, "accuratePasses": 12, "totalPasses": 20},
+                            "statistics": {"rating": 7.2, "goals": 1, "assists": 1, "accuratePass": 12, "totalPass": 20},
                         }
                     ]
                 },

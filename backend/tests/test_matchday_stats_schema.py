@@ -3,6 +3,8 @@ import importlib.util
 from pathlib import Path
 import unittest
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
@@ -200,6 +202,15 @@ class TestMatchdayStatsSchema(unittest.TestCase):
             self.migration.verify_matchday_feature_schema(object())
         finally:
             self.migration.sa.inspect = original_inspect
+
+    def test_alembic_has_a_single_head_revision(self):
+        config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
+        script_directory = ScriptDirectory.from_config(config)
+
+        heads = script_directory.get_heads()
+
+        self.assertEqual(len(heads), 1)
+        self.assertEqual(heads[0], "6c2d7f8a9b1e")
 
 
 if __name__ == "__main__":
