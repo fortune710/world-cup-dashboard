@@ -9,3 +9,6 @@ __pycache__
 
 *debug*.py
 key.txt
+
+.uv-cache
+.uv-python
