@@ -1,6 +1,6 @@
 from typing import Any
 from config.settings import Settings
-from sofascore_wrapper.api import SofascoreAPI
+from pipeline.sources.stealth_api import StealthSofascoreAPI
 from sofascore_wrapper.player import Player
 
 """
@@ -159,8 +159,8 @@ from sofascore_wrapper.player import Player
 """
 
 class PlayersSource:
-    def __init__(self, player_id: int = None, api: SofascoreAPI = None):
-        self.api = api if api else SofascoreAPI()
+    def __init__(self, player_id: int = None, api: Any = None):
+        self.api = api if api else StealthSofascoreAPI()
         self.player_id = player_id
         self.player = Player(self.api, player_id) if player_id else None
         self.settings = Settings()

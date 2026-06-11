@@ -29,10 +29,10 @@ async def fetch_match_lineups(sofascore_id: int) -> dict:
         "message": "Starting Sofascore match lineup fetch",
         "sofascore_id": sofascore_id,
     })
-    from sofascore_wrapper.api import SofascoreAPI
+    from pipeline.sources.stealth_api import StealthSofascoreAPI
     from sofascore_wrapper.match import Match
 
-    api = SofascoreAPI()
+    api = StealthSofascoreAPI()
     try:
         match = Match(api, match_id=sofascore_id)
         home_lineup, away_lineup = await asyncio.gather(match.lineups_home(), match.lineups_away())
