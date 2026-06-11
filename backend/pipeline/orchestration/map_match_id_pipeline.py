@@ -57,11 +57,11 @@ def extract_teams(**context):
 async def fetch_2026_wc_fixtures():
     ## Move this into separate source class
     logger.info({"message": "Starting Sofascore fixture extraction for match id mapping"})
-    from sofascore_wrapper.api import SofascoreAPI
+    from pipeline.sources.stealth_api import StealthSofascoreAPI
     from sofascore_wrapper.league import League
 
     settings = Settings()
-    api = SofascoreAPI()
+    api = StealthSofascoreAPI()
     try:
         league = League(api, league_id=settings.WC_LEAGUE_ID)
         rounds_payload = await league.rounds(settings.WC_SEASON_ID_2026)

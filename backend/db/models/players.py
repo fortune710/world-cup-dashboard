@@ -1,5 +1,5 @@
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey
+from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey, Index, func
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
@@ -153,7 +153,6 @@ class Player(Base):
         "appearances": 0
     })
 
-    from sqlalchemy import Index
     __table_args__ = (
         Index('ix_players_stats_goals', stats_json['goals'].astext.cast(SmallInteger)),
         Index('ix_players_stats_assists', stats_json['assists'].astext.cast(SmallInteger)),
@@ -161,6 +160,7 @@ class Player(Base):
         Index('ix_players_stats_expected_assists', stats_json['expected_assists'].astext.cast(Float)),
         Index('ix_players_stats_clean_sheet', stats_json['clean_sheet'].astext.cast(SmallInteger)),
         Index('ix_players_stats_big_chances_created', stats_json['big_chances_created'].astext.cast(SmallInteger)),
+        Index('ix_players_name_search', func.to_tsvector('english', name), postgresql_using='gin'),
     )
 
 

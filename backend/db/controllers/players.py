@@ -1,7 +1,8 @@
 import logging
 import sqlalchemy as sa
 from sqlalchemy.orm import Session
-from db.models.players import Player, upsert_players_batch
+from db.models.players import Player, PlayerClassification, upsert_players_batch
+from db.models.teams import Team
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +103,98 @@ def get_top_players_by_assists(db: Session):
 
 def get_top_players_by_rating(db: Session):
     return _get_top_players_by_stat(db, "rating", "double precision", "rating")
+
+
+def get_top_players_by_clean_sheets(db: Session):
+    return _get_top_players_by_stat(db, "clean_sheet", "integer", "clean_sheets")
+
+
+def get_players_leaderboard(
+    db: Session,
+    limit: int,
+    search: str | None = None,
+    classification: PlayerClassification | None = None,
+):
+    logger.info(
+        {
+            "message": "Fetching players leaderboard",
+            "limit": limit,
+            "search": search,
+            "classification": getattr(classification, "value", None) if classification else None,
+        }
+    )
+    rating_expression = sa.literal_column(
+        "coalesce((players.stats_json ->> 'rating')::double precision, 0)"
+    )
+    query = (
+        db.query(Player, Team.logo_url, Team.group)
+        .outerjoin(Team, Player.country_code == Team.code)
+    )
+
+    if search:
+        search_term = search.strip()
+        if search_term:
+            query = query.filter(
+                sa.func.to_tsvector(
+                    "english",
+                    sa.func.coalesce(Player.name, ""),
+                ).op("@@")(
+                    sa.func.plainto_tsquery("english", search_term)
+                )
+            )
+
+    if classification is not None:
+        query = query.filter(Player.classification == classification)
+
+    rows = (
+        query.order_by(rating_expression.desc(), Player.id.asc())
+        .limit(limit)
+        .all()
+    )
+    logger.info(
+        {
+            "message": "Fetched players leaderboard",
+            "count": len(rows),
+            "limit": limit,
+            "search": search,
+            "classification": getattr(classification, "value", None) if classification else None,
+        }
+    )
+    payload = []
+    for player, team_image, group in rows:
+        stats_json = player.stats_json or {}
+        if isinstance(stats_json, str):
+            import json
+
+            stats_json = json.loads(stats_json)
+
+        payload.append(
+            {
+                "id": player.id,
+                "player_name": player.name,
+                "country_code": player.country_code,
+                "team_image": team_image,
+                "group": group,
+                "statistics": {
+                    "appearances": int(stats_json.get("appearances", 0) or 0),
+                    "minutes_played": int(stats_json.get("minutes_played", 0) or 0),
+                    "clean_sheets": int(stats_json.get("clean_sheet", 0) or 0),
+                    "goals": int(stats_json.get("goals", 0) or 0),
+                    "assists": int(stats_json.get("assists", 0) or 0),
+                    "expected_goals": float(stats_json.get("expected_goals", 0) or 0),
+                    "expected_assists": float(stats_json.get("expected_assists", 0) or 0),
+                    "rating": float(stats_json.get("rating", 0) or 0),
+                },
+            }
+        )
+
+    logger.info(
+        {
+            "message": "Built players leaderboard payload",
+            "count": len(payload),
+            "limit": limit,
+            "search": search,
+            "classification": getattr(classification, "value", None) if classification else None,
+        }
+    )
+    return payload

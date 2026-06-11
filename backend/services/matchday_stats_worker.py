@@ -29,10 +29,10 @@ async def fetch_match_lineups(sofascore_id: int) -> dict:
         "message": "Starting Sofascore match lineup fetch",
         "sofascore_id": sofascore_id,
     })
-    from sofascore_wrapper.api import SofascoreAPI
+    from pipeline.sources.stealth_api import StealthSofascoreAPI
     from sofascore_wrapper.match import Match
 
-    api = SofascoreAPI()
+    api = StealthSofascoreAPI()
     try:
         match = Match(api, match_id=sofascore_id)
         home_lineup, away_lineup = await asyncio.gather(match.lineups_home(), match.lineups_away())
@@ -91,10 +91,13 @@ def run_matchday_stats_batch() -> dict:
             })
 
             try:
-                if sofascore_id is None:
-                    raise ValueError("Queue payload missing sofascore_id")
+                if sofascore_id is None and internal_match_id is None:
+                    raise ValueError("Queue payload missing both sofascore_id and internal match id")
 
-                db_match = get_match_by_sofascore_id(db, sofascore_id)
+                db_match = None
+                if sofascore_id is not None:
+                    db_match = get_match_by_sofascore_id(db, sofascore_id)
+                
                 if not db_match and internal_match_id is not None:
                     db_match = db.query(Match).filter(Match.id == internal_match_id).first()
                     if db_match:
@@ -103,9 +106,15 @@ def run_matchday_stats_batch() -> dict:
                             "match_id": internal_match_id,
                             "sofascore_id": sofascore_id,
                         })
+                        # Update sofascore_id from DB if it was missing in payload
+                        if sofascore_id is None:
+                            sofascore_id = getattr(db_match, "sofascore_id", None)
+
+                if sofascore_id is None:
+                    raise ValueError(f"Could not resolve sofascore_id for match (internal_id={internal_match_id})")
 
                 match_context = {
-                    "id": data.get("id"),
+                    "id": data.get("id") or getattr(db_match, "id", None),
                     "sofascore_id": sofascore_id,
                     "home_team_code": data.get("home_team_code"),
                     "away_team_code": data.get("away_team_code"),

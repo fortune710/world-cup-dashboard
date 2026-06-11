@@ -210,7 +210,7 @@ class TestMatchdayStatsSchema(unittest.TestCase):
         heads = script_directory.get_heads()
 
         self.assertEqual(len(heads), 1)
-        self.assertEqual(heads[0], "6c2d7f8a9b1e")
+        self.assertEqual(heads[0], "d9f8e7c6b5a4")
 
 
 if __name__ == "__main__":

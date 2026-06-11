@@ -1,9 +1,14 @@
-from fastapi import APIRouter, Depends, Query
+import logging
+from datetime import date as Date
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 from config.db import get_db
-from db.controllers.matches import get_all_matches
-from server.schemas.matches import MatchResponse
-from typing import List, Optional
+from db.controllers.matches import get_all_matches, get_matchday_statistics_by_date
+from server.schemas.matches import MatchResponse, MatchdayStatisticResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/matches", tags=["matches"])
 
@@ -18,3 +23,28 @@ def get_matches(
     Get list of matches (paginated and sorted by kickoff time), optionally filtered by status.
     """
     return get_all_matches(db, status=status, page=page, page_size=page_size)
+
+
+@router.get("/{date}/statistics", response_model=List[MatchdayStatisticResponse])
+def get_matchday_statistics(
+    date: Date = Path(..., description="Match date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get the top matchday stats leaders for a single match date.
+    """
+    logger.info(
+        {
+            "message": "Fetching matchday statistics leaders",
+            "match_date": date.isoformat(),
+        }
+    )
+    result = get_matchday_statistics_by_date(db, date)
+    logger.info(
+        {
+            "message": "Returning matchday statistics leaders",
+            "match_date": date.isoformat(),
+            "count": len(result),
+        }
+    )
+    return result
