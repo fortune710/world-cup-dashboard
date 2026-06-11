@@ -130,6 +130,48 @@ function TopRatedSvg() {
 }
 
 /** Gloves / shield — Most Clean Sheets */
+function CleanSheetsSvg() {
+    return (
+        <svg
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-4 -top-4 size-40 text-foreground opacity-[0.07]"
+            viewBox="0 0 200 200"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            {/* Shield outline */}
+            <path
+                d="M100 15 L170 50 L170 110 C170 150 140 180 100 195 C60 180 30 150 30 110 L30 50 Z"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                fill="currentColor"
+                opacity="0.15"
+            />
+            {/* Inner shield */}
+            <path
+                d="M100 35 L150 60 L150 105 C150 138 128 162 100 175 C72 162 50 138 50 105 L50 60 Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+            />
+            {/* Checkmark */}
+            <path
+                d="M72 100 L92 120 L130 75"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                opacity="0.5"
+            />
+            {/* Glove fingers (top) */}
+            <path d="M65 55 L65 38" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M80 45 L80 28" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M120 45 L120 28" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path d="M135 55 L135 38" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+    )
+}
 
 function getStatValue(player: PlayerPerformance): React.ReactNode {
     switch (player.category) {
@@ -155,6 +197,7 @@ export function PlayerPerformanceCard({ playerPerformance }: PlayerPerformanceCa
                         {player.category === "Top Goalscorer" && <GoalscorerSvg />}
                         {player.category === "Most Assists" && <AssistsSvg />}
                         {player.category === "Top Rated" && <TopRatedSvg />}
+                        {player.category === "Most Clean Sheets" && <CleanSheetsSvg />}
 
                         <CardHeader>
                             <CardDescription>{player.category}</CardDescription>
