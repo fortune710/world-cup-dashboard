@@ -17,7 +17,7 @@ export function SectionCards() {
   const { t } = useTranslation()
 
   return (
-    <div className="grid grid-cols-1 gap-3 @xl/main:grid-cols-3 @xl/main:gap-2 px-4 lg:px-6 ">
+    <div className="grid grid-cols-1 gap-3 @xl/main:grid-cols-3 @xl/main:gap-3 px-4 lg:px-6 ">
       <Card className="@container/card ">
         <CardHeader>
           <CardDescription>{t("sectionCards.goalsToday")}</CardDescription>

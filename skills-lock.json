@@ -6,6 +6,18 @@
       "sourceType": "github",
       "skillPath": "skills/coding-standards/SKILL.md",
       "computedHash": "ebb4d173fb97f0189986097bcf0c4c4bfa64f0dd713ec094947ccf7b549efbe4"
+    },
+    "premium-frontend-ui": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "skillPath": "skills/premium-frontend-ui/SKILL.md",
+      "computedHash": "e7f3d02a0233beafdd6fe5335427388109b9699ebcdc6a8782a8bada2826d916"
+    },
+    "senior-frontend": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "skillPath": "engineering-team/skills/senior-frontend/SKILL.md",
+      "computedHash": "ca02ec6926e9f516dea055ae56c6845fbb9b3e9f3e92f8bbde8797a4425e4620"
     }
   }
 }

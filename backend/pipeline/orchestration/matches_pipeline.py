@@ -5,9 +5,12 @@ from airflow.operators.python import PythonOperator
 
 from pipeline.sources.matches import MatchesSource
 from pipeline.transformations.matches import MatchesTransformations
+from pipeline.transformations.elo import EloTransformations
 from pipeline.load.matches import MatchesLoader
+from pipeline.load.elo import EloLoader
 from config.db import SessionLocal
 from db.controllers.matches import get_matches_for_matchday_stats_queue
+from db.controllers.elo import get_elo_inputs
 from db.controllers.players import get_players_by_team
 
 logger = logging.getLogger(__name__)
@@ -39,6 +42,9 @@ def extract_matches(**context):
 def transform_matches(**context):
     logger.info({"message": "Starting matches transformation"})
     raw_matches = context['ti'].xcom_pull(task_ids='extract_matches')
+    if not raw_matches:
+        logger.warning({"message": "No raw matches data found for transformation", "count": 0})
+        return []
     transform = MatchesTransformations()
     try:
         transformed_matches = transform.transform_match_data(raw_matches)
@@ -54,6 +60,9 @@ def transform_matches(**context):
 def load_matches(**context):
     logger.info({"message": "Starting matches load"})
     transformed_matches = context['ti'].xcom_pull(task_ids='transform_matches')
+    if not transformed_matches:
+        logger.warning({"message": "No transformed matches data found for loading", "count": 0})
+        return
     loader = MatchesLoader()
     try:
         loader.load_matches(transformed_matches)
@@ -115,6 +124,93 @@ def enqueue_matchday_stats(**context):
     finally:
         db.close()
         queue.close()
+
+
+def extract_elo_inputs(**context):
+    logger.info({"message": "Starting Elo input extraction"})
+    db = SessionLocal()
+    try:
+        teams, matches = get_elo_inputs(db)
+        team_payloads = [
+            {"code": team.code, "elo_rating": team.elo_rating}
+            for team in teams
+        ]
+        match_payloads = [
+            {
+                "id": match.id,
+                "round": match.round,
+                "home_team_code": match.home_team_code,
+                "away_team_code": match.away_team_code,
+                "kickoff_utc": match.kickoff_utc.isoformat() if match.kickoff_utc else None,
+                "status": match.status,
+                "home_score": match.home_score,
+                "away_score": match.away_score,
+                "home_pen": match.home_pen,
+                "away_pen": match.away_pen,
+            }
+            for match in matches
+        ]
+        logger.info({
+            "message": "Successfully extracted Elo inputs",
+            "team_count": len(team_payloads),
+            "completed_match_count": len(match_payloads),
+        })
+        return {"teams": team_payloads, "matches": match_payloads}
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to extract Elo inputs",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
+    finally:
+        db.close()
+
+
+def transform_elo_ratings(**context):
+    logger.info({"message": "Starting Elo transformation"})
+    elo_inputs = context['ti'].xcom_pull(task_ids='extract_elo_inputs')
+    if not elo_inputs:
+        logger.warning({"message": "No Elo inputs found for transformation"})
+        return {"team_ratings": {}, "history": []}
+    try:
+        transformer = EloTransformations()
+        result = transformer.calculate_ratings(
+            elo_inputs.get("teams", []),
+            elo_inputs.get("matches", []),
+        )
+        logger.info({
+            "message": "Successfully transformed Elo ratings",
+            "team_rating_count": len(result.get("team_ratings", {})),
+            "history_count": len(result.get("history", [])),
+        })
+        return result
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to transform Elo ratings",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
+
+
+def load_elo_ratings(**context):
+    logger.info({"message": "Starting Elo ratings load task"})
+    elo_result = context['ti'].xcom_pull(task_ids='transform_elo_ratings')
+    if not elo_result:
+        logger.warning({"message": "No Elo ratings data found for loading"})
+        return
+    try:
+        loader = EloLoader()
+        inserted_count = loader.load_elo_ratings(elo_result)
+        logger.info({
+            "message": "Successfully loaded Elo ratings task",
+            "inserted_history_count": inserted_count,
+        })
+    except Exception as exc:
+        logger.error({
+            "message": "Failed to load Elo ratings task",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        raise
 
 
 def enqueue_player_stats(**context):
@@ -195,10 +291,25 @@ with DAG(
         task_id='enqueue_matchday_stats',
         python_callable=enqueue_matchday_stats,
     )
+    
+    task_extract_elo = PythonOperator(
+        task_id='extract_elo_inputs',
+        python_callable=extract_elo_inputs,
+    )
+
+    task_transform_elo = PythonOperator(
+        task_id='transform_elo_ratings',
+        python_callable=transform_elo_ratings,
+    )
+
+    task_load_elo = PythonOperator(
+        task_id='load_elo_ratings',
+        python_callable=load_elo_ratings,
+    )
 
     task_enqueue = PythonOperator(
         task_id='enqueue_player_stats',
         python_callable=enqueue_player_stats,
     )
 
-    task_extract >> task_transform >> task_load >> task_enqueue_matchday_stats >> task_enqueue
+    task_extract >> task_transform >> task_load >> task_enqueue_matchday_stats >> task_extract_elo >> task_transform_elo >> task_load_elo >> task_enqueue

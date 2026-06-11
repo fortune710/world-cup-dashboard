@@ -1,6 +1,19 @@
 import * as React from "react"
+import type { TFunction } from "i18next"
 import { useTranslation } from "react-i18next"
 import { Link, useNavigate } from "react-router"
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+} from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,6 +24,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -31,6 +51,12 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
 import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+  Columns3Icon,
   LayoutGridIcon,
   ListIcon,
   MinusIcon,
@@ -41,11 +67,11 @@ import {
 import { TeamForm } from "@/components/team-form"
 import { useWc26Teams } from "@/hooks/use-wc26-teams"
 import { getTeamHref, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
+import type { Wc26TeamRow } from "@/lib/teams/wc26-teams"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type TeamsViewMode = "list" | "cards"
 
-const DEFAULT_PAGE_SIZE = 24
 const PAGE_SIZES = [12, 24, 48, 96] as const
 
 const RankChangeBadge = React.memo(function RankChangeBadge({
@@ -85,27 +111,171 @@ const RankChangeBadge = React.memo(function RankChangeBadge({
   )
 })
 
+function createTeamsColumns(t: TFunction): ColumnDef<Wc26TeamRow>[] {
+  return [
+    {
+      id: "serial",
+      header: () => <div className="w-10">#</div>,
+      cell: ({ row }) => (
+        <span className="font-medium tabular-nums">
+          {row.index + 1}
+        </span>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "teamName",
+      header: t("common.team"),
+      cell: ({ row }) => {
+        const team = row.original
+        return (
+          <div className="flex items-center gap-2.5 min-w-40">
+            <Avatar className="size-6 rounded-xs border border-border/30 overflow-hidden shrink-0 group-hover:border-primary/30">
+              <AvatarImage
+                src={getTeamFlagUrl(team, 40)}
+                alt={team.teamName}
+                className="object-cover"
+              />
+              <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
+            </Avatar>
+            <div>
+              <span className="block truncate font-medium">
+                {team.teamName}
+              </span>
+              <span className="block text-xs text-muted-foreground group-hover:text-foreground">
+                {team.idCountry}
+              </span>
+            </div>
+          </div>
+        )
+      },
+      enableHiding: false,
+    },
+    {
+      accessorKey: "group",
+      header: t("teamsPage.group"),
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="tabular-nums group-hover:border-primary/40 group-hover:text-primary"
+        >
+          {row.original.group}
+        </Badge>
+      ),
+    },
+    {
+      accessorKey: "fifaRank",
+      header: () => <div className="text-end">{t("teamsPage.fifaRank")}</div>,
+      cell: ({ row }) => (
+        <div className="text-end font-medium tabular-nums">
+          {row.original.fifaRank != null ? row.original.fifaRank : "—"}
+        </div>
+      ),
+    },
+    {
+      id: "rankChange",
+      header: () => <span className="sr-only">{t("common.rankChange")}</span>,
+      cell: ({ row }) => <RankChangeBadge change={row.original.rankChange} />,
+      enableSorting: false,
+    },
+    {
+      accessorKey: "confederation",
+      header: () => (
+        <div className="hidden text-end sm:table-cell">
+          {t("common.confederation")}
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="hidden text-end text-muted-foreground sm:table-cell">
+          {row.original.confederation ?? "—"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "fifaPoints",
+      header: () => <div className="text-end">{t("teamsPage.points")}</div>,
+      cell: ({ row }) => (
+        <div className="text-end font-medium tabular-nums">
+          {row.original.fifaPoints != null
+            ? row.original.fifaPoints.toFixed(2)
+            : "—"}
+        </div>
+      ),
+    },
+    {
+      id: "form",
+      header: () => (
+        <div>
+          <span>{t("common.form")}</span>
+          <span className="sr-only">{t("common.formLast5SrOnly")}</span>
+        </div>
+      ),
+      cell: ({ row }) => <TeamForm form={row.original.form} />,
+      enableSorting: false,
+    },
+    {
+      accessorKey: "groupStageElo",
+      header: () => (
+        <div className="hidden text-end lg:table-cell">
+          {t("teamsPage.groupStageElo")}
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="hidden text-end font-medium tabular-nums lg:table-cell">
+          {row.original.groupStageElo != null ? row.original.groupStageElo : "—"}
+        </div>
+      ),
+    },
+  ]
+}
+
 export function TeamsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [viewMode, setViewMode] = React.useState<TeamsViewMode>("list")
   const { teams: sortedTeams, errorMessage, isLoading } = useWc26Teams()
 
-  const [pageIndex, setPageIndex] = React.useState(0)
-  const [pageSize, setPageSize] = React.useState<number>(DEFAULT_PAGE_SIZE)
+  const columns = React.useMemo(() => createTeamsColumns(t), [t])
 
-  const pageCount = Math.max(1, Math.ceil(sortedTeams.length / pageSize))
-  const safePageIndex = Math.min(pageIndex, pageCount - 1)
+  const [sorting, setSorting] = React.useState<SortingState>([
+    { id: "fifaRank", desc: false },
+  ])
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({})
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  )
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 24,
+  })
 
-  const pagedTeams = React.useMemo(() => {
-    const start = safePageIndex * pageSize
-    return sortedTeams.slice(start, start + pageSize)
-  }, [pageSize, safePageIndex, sortedTeams])
+  const table = useReactTable({
+    data: sortedTeams,
+    columns,
+    state: {
+      sorting,
+      columnVisibility,
+      columnFilters,
+      pagination,
+    },
+    getRowId: (row) => `${row.group}-${row.teamName}`,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onColumnVisibilityChange: setColumnVisibility,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  })
 
-  const handlePageSizeChange = React.useCallback((value: string) => {
-    setPageSize(Number(value))
-    setPageIndex(0)
-  }, [])
+  // For cards view, use the same paginated data from the table
+  const pagedTeams = React.useMemo(
+    () => table.getRowModel().rows.map((row) => row.original),
+    [table.getRowModel().rows]
+  )
 
   return (
     <div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:px-6 md:py-6">
@@ -143,20 +313,32 @@ export function TeamsPage() {
                 </ToggleGroupItem>
               </ToggleGroup>
 
-              <Select value={`${pageSize}`} onValueChange={handlePageSizeChange}>
-                <SelectTrigger size="sm" className="w-28">
-                  <SelectValue placeholder={pageSize} />
-                </SelectTrigger>
-                <SelectContent side="bottom">
-                  <SelectGroup>
-                    {PAGE_SIZES.map((size) => (
-                      <SelectItem key={size} value={`${size}`}>
-                        {t("teamsPage.rowsPerPage", { count: size })}
-                      </SelectItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Columns3Icon data-icon="inline-start" />
+                    {t("common.columns")}
+                    <ChevronDownIcon data-icon="inline-end" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  {table
+                    .getAllColumns()
+                    .filter((column) => column.getCanHide())
+                    .map((column) => (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
                     ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardHeader>
@@ -185,108 +367,70 @@ export function TeamsPage() {
             <div className="overflow-x-auto rounded-lg border">
               <Table aria-label={t("teamsPage.tableAriaLabel")}>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">{t("teamsPage.serial")}</TableHead>
-                    <TableHead>{t("common.team")}</TableHead>
-                    <TableHead className="hidden w-16 sm:table-cell">
-                      {t("teamsPage.group")}
-                    </TableHead>
-                    <TableHead className="hidden w-28 sm:table-cell">
-                      {t("teamsPage.fifaRank")}
-                    </TableHead>
-                    <TableHead className="hidden w-28 sm:table-cell">
-                      {t("common.rankChange")}
-                    </TableHead>
-                    <TableHead className="hidden text-end sm:table-cell">
-                      {t("common.confederation")}
-                    </TableHead>
-                    <TableHead className="text-end">{t("teamsPage.points")}</TableHead>
-                    <TableHead className="hidden md:table-cell">
-                      {t("common.form")}
-                    </TableHead>
-                    <TableHead className="hidden text-end lg:table-cell">
-                      {t("teamsPage.groupStageElo")}
-                    </TableHead>
-                  </TableRow>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} colSpan={header.colSpan}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
                 </TableHeader>
                 <TableBody>
-                  {pagedTeams.map((team, index) => {
-                    const confed = team.confederation ?? "—"
-                    const serial = safePageIndex * pageSize + index + 1
-                    const teamHref = getTeamHref(team)
+                  {table.getRowModel().rows.length ? (
+                    table.getRowModel().rows.map((row) => {
+                      const team = row.original
+                      const teamHref = getTeamHref(team)
 
-                    const handleRowNavigate = () => {
-                      navigate(teamHref)
-                    }
+                      const handleRowNavigate = () => {
+                        navigate(teamHref)
+                      }
 
-                    return (
-                      <TableRow
-                        key={`${team.group}-${team.teamName}`}
-                        role="link"
-                        tabIndex={0}
-                        className={cn(
-                          "group cursor-pointer transition-colors",
-                          "hover:bg-primary! hover:text-primary-foreground",
-                          "focus-visible:bg-primary focus-visible:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                          "hover:[&_td]:text-primary-foreground",
-                          "hover:[&_.text-muted-foreground]:text-primary-foreground/90"
-                        )}
-                        onClick={handleRowNavigate}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault()
-                            handleRowNavigate()
-                          }
-                        }}
+                      return (
+                        <TableRow
+                          key={row.id}
+                          role="link"
+                          tabIndex={0}
+                          className={cn(
+                            "group cursor-pointer transition-colors",
+                            "hover:bg-primary/10!",
+                            "focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          )}
+                          onClick={handleRowNavigate}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault()
+                              handleRowNavigate()
+                            }
+                          }}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center text-muted-foreground"
                       >
-                        <TableCell className="font-medium tabular-nums">
-                          {serial}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2.5 min-w-40">
-                            <Avatar className="size-6 rounded-xs border border-border/30 overflow-hidden shrink-0 group-hover:border-primary-foreground/30">
-                              <AvatarImage src={getTeamFlagUrl(team, 40)} alt={team.teamName} className="object-cover" />
-                              <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <span className="block truncate font-medium">
-                                {team.teamName}
-                              </span>
-                              <span className="block text-xs text-muted-foreground group-hover:text-primary-foreground/80">
-                                {team.idCountry}
-                              </span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge
-                            variant="outline"
-                            className="tabular-nums group-hover:border-primary-foreground/40 group-hover:text-primary-foreground"
-                          >
-                            {team.group}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="hidden font-medium tabular-nums sm:table-cell">
-                          {team.fifaRank != null ? team.fifaRank : "—"}
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <RankChangeBadge change={team.rankChange} />
-                        </TableCell>
-                        <TableCell className="hidden text-end sm:table-cell">
-                          <span className="text-muted-foreground">{confed}</span>
-                        </TableCell>
-                        <TableCell className="text-end font-medium tabular-nums">
-                          {team.fifaPoints != null ? team.fifaPoints.toFixed(2) : "—"}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <TeamForm form={team.form} adaptiveHover />
-                        </TableCell>
-                        <TableCell className="hidden text-end font-medium tabular-nums lg:table-cell">
-                          {team.groupStageElo != null ? team.groupStageElo : "—"}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
+                        {t("teamsPage.noTeams", { defaultValue: "No teams found." })}
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -304,18 +448,17 @@ export function TeamsPage() {
                   >
                     <Card
                       className={cn(
-                        "transition-colors group-hover:bg-primary group-hover:text-primary-foreground",
-                        "group-hover:[&_.text-muted-foreground]:text-primary-foreground/90",
+                        "transition-colors group-hover:bg-primary/10",
                         team.fifaRank != null &&
                           team.fifaRank <= 10 &&
-                          "border-primary/30 group-hover:border-primary-foreground/40"
+                          "border-primary/30 group-hover:border-primary/50"
                       )}
                     >
                       <CardHeader className="space-y-0">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <Avatar className="size-6 rounded-xs border border-border/30 overflow-hidden shrink-0 group-hover:border-primary-foreground/30">
+                              <Avatar className="size-6 rounded-xs border border-border/30 overflow-hidden shrink-0 group-hover:border-primary/30">
                                 <AvatarImage src={getTeamFlagUrl(team, 40)} alt={team.teamName} className="object-cover" />
                                 <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
                               </Avatar>
@@ -357,7 +500,7 @@ export function TeamsPage() {
                             <span className="text-muted-foreground">
                               {t("common.form")}
                             </span>
-                            <TeamForm form={team.form} adaptiveHover />
+                            <TeamForm form={team.form} />
                           </div>
                           <div className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-muted-foreground">
@@ -377,59 +520,88 @@ export function TeamsPage() {
           )}
 
           {!isLoading && !errorMessage ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
                 {t("common.teamsRankedSorted", {
                   count: sortedTeams.length,
-                  sort: "rank",
+                  sort: sorting[0]?.id ?? "rank",
                 })}
               </p>
-              <div className="flex items-center justify-between gap-2 sm:justify-end">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="teams-page-size" className="text-sm font-medium">
+                    {t("common.rows")}
+                  </Label>
+                  <Select
+                    value={`${table.getState().pagination.pageSize}`}
+                    onValueChange={(value) => table.setPageSize(Number(value))}
+                  >
+                    <SelectTrigger
+                      size="sm"
+                      className="w-20"
+                      id="teams-page-size"
+                    >
+                      <SelectValue
+                        placeholder={table.getState().pagination.pageSize}
+                      />
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      <SelectGroup>
+                        {PAGE_SIZES.map((size) => (
+                          <SelectItem key={size} value={`${size}`}>
+                            {size}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="text-sm font-medium tabular-nums">
-                  {t("common.pageOf", { current: safePageIndex + 1, total: pageCount })}
+                  {t("common.pageOf", {
+                    current: table.getState().pagination.pageIndex + 1,
+                    total: table.getPageCount(),
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
-                    className="size-8"
+                    className="hidden size-8 lg:flex"
                     size="icon"
-                    onClick={() => setPageIndex(0)}
-                    disabled={safePageIndex === 0}
+                    onClick={() => table.setPageIndex(0)}
+                    disabled={!table.getCanPreviousPage()}
                   >
                     <span className="sr-only">{t("common.goToFirstPage")}</span>
-                    {"<<"}
+                    <ChevronsLeftIcon />
                   </Button>
                   <Button
                     variant="outline"
                     className="size-8"
                     size="icon"
-                    onClick={() => setPageIndex((current) => Math.max(0, current - 1))}
-                    disabled={safePageIndex === 0}
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
                   >
                     <span className="sr-only">{t("common.goToPreviousPage")}</span>
-                    {"<"}
+                    <ChevronLeftIcon />
                   </Button>
                   <Button
                     variant="outline"
                     className="size-8"
                     size="icon"
-                    onClick={() =>
-                      setPageIndex((current) => Math.min(pageCount - 1, current + 1))
-                    }
-                    disabled={safePageIndex >= pageCount - 1}
+                    onClick={() => table.nextPage()}
+                    disabled={!table.getCanNextPage()}
                   >
                     <span className="sr-only">{t("common.goToNextPage")}</span>
-                    {">"}
+                    <ChevronRightIcon />
                   </Button>
                   <Button
                     variant="outline"
-                    className="size-8"
+                    className="hidden size-8 lg:flex"
                     size="icon"
-                    onClick={() => setPageIndex(pageCount - 1)}
-                    disabled={safePageIndex >= pageCount - 1}
+                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                    disabled={!table.getCanNextPage()}
                   >
                     <span className="sr-only">{t("common.goToLastPage")}</span>
-                    {">>"}
+                    <ChevronsRightIcon />
                   </Button>
                 </div>
               </div>

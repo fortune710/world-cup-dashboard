@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, SmallInteger
+from sqlalchemy import Column, Integer, String, Boolean, SmallInteger, Float
 from config.db import Base
 
 class Team(Base):
@@ -19,5 +19,5 @@ class Team(Base):
     matches_won = Column(SmallInteger, default=0)
     matches_drawn = Column(SmallInteger, default=0)
     matches_lost = Column(SmallInteger, default=0)
+    elo_rating = Column(Float, nullable=False, server_default="1500.0", index=True)
     players_indexed = Column(Boolean, default=False, index=True)
-
