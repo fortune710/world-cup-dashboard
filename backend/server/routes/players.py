@@ -1,16 +1,23 @@
 import logging
-from fastapi import APIRouter, Depends, Path, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Path, HTTPException, Query
 from sqlalchemy.orm import Session
 from config.db import get_db
 from db.controllers.players import (
     get_player_by_id,
+    get_players_leaderboard,
+    get_top_players_by_clean_sheets,
     get_top_players_by_assists,
     get_top_players_by_goals,
     get_top_players_by_rating,
 )
 from server.schemas.players import (
+    PlayerClassification,
     PlayerInfoResponse,
+    PlayerLeaderboardResponse,
     PlayerStatisticsResponse,
+    PlayerTopCleanSheetsResponse,
     PlayerTopAssistsResponse,
     PlayerTopGoalsResponse,
 )
@@ -71,6 +78,27 @@ def _player_info_payload(player):
         }
     )
     return payload
+
+
+def _player_stat_value(player, stat_key: str, cast_type):
+    logger.info(
+        {
+            "message": "Extracting player stat value",
+            "player_id": getattr(player, "id", None),
+            "stat_key": stat_key,
+        }
+    )
+    stats_json = _player_stats_dict(player)
+    stat_value = cast_type(stats_json.get(stat_key, 0) or 0)
+    logger.info(
+        {
+            "message": "Extracted player stat value",
+            "player_id": getattr(player, "id", None),
+            "stat_key": stat_key,
+            "value": stat_value,
+        }
+    )
+    return stat_value
 
 
 @router.get("/{player_id}/info", response_model=PlayerInfoResponse)
@@ -169,3 +197,67 @@ def get_top_rating(
 
     logger.info({"message": "Returning top players by rating", "count": len(payload)})
     return payload
+
+
+@router.get("/top/clean-sheets", response_model=list[PlayerTopCleanSheetsResponse])
+def get_top_clean_sheets(
+    db: Session = Depends(get_db)
+):
+    logger.info({"message": "Fetching top players by clean sheets", "limit": 5})
+    players = get_top_players_by_clean_sheets(db)
+    payload = []
+    for player in players:
+        player_payload = _player_info_payload(player)
+        player_payload["clean_sheets"] = _player_stat_value(player, "clean_sheet", int)
+        payload.append(player_payload)
+
+    logger.info({"message": "Returning top players by clean sheets", "count": len(payload)})
+    return payload
+
+
+@router.get(
+    "",
+    response_model=list[PlayerLeaderboardResponse],
+    summary="List players ordered by rating",
+    description=(
+        "Return players ordered by descending rating with optional name search and "
+        "classification filtering. The response includes team image and group metadata."
+    ),
+)
+def list_players(
+    limit: int = Query(10, ge=1, le=100, description="Maximum number of players to return"),
+    search: Optional[str] = Query(
+        None,
+        min_length=1,
+        description="Full-text search term for player name",
+    ),
+    classification: Optional[PlayerClassification] = Query(
+        None,
+        description="Filter players by classification",
+    ),
+    db: Session = Depends(get_db),
+):
+    logger.info(
+        {
+            "message": "Fetching players leaderboard",
+            "limit": limit,
+            "search": search,
+            "classification": getattr(classification, "value", None) if classification else None,
+        }
+    )
+    leaderboard = get_players_leaderboard(
+        db=db,
+        limit=limit,
+        search=search,
+        classification=classification,
+    )
+    logger.info(
+        {
+            "message": "Returning players leaderboard",
+            "count": len(leaderboard),
+            "limit": limit,
+            "search": search,
+            "classification": getattr(classification, "value", None) if classification else None,
+        }
+    )
+    return leaderboard

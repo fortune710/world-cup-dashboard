@@ -44,3 +44,31 @@ class PlayerTopGoalsResponse(PlayerInfoResponse):
 
 class PlayerTopAssistsResponse(PlayerInfoResponse):
     assists: int
+
+
+class PlayerTopCleanSheetsResponse(PlayerInfoResponse):
+    clean_sheets: int
+
+
+class PlayerLeaderboardStatisticsResponse(BaseModel):
+    appearances: int
+    minutes_played: int
+    clean_sheets: int
+    goals: int
+    assists: int
+    expected_goals: float
+    expected_assists: float
+    rating: float
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PlayerLeaderboardResponse(BaseModel):
+    id: int
+    player_name: str
+    country_code: str
+    team_image: Optional[str] = None
+    group: Optional[str] = None
+    statistics: PlayerLeaderboardStatisticsResponse
+
+    model_config = ConfigDict(from_attributes=True)
