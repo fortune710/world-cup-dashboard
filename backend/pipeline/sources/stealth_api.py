@@ -5,7 +5,6 @@ import asyncio
 from typing import Any
 from config.settings import Settings
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth_async
 from fake_useragent import UserAgent
 
 logger = logging.getLogger(__name__)
@@ -29,6 +28,14 @@ class StealthSofascoreAPI:
         if self.playwright is None:
             logger.info("Initializing stealthy browser session")
             self.playwright = await async_playwright().start()
+            try:
+                from playwright_stealth import stealth_async
+            except Exception as exc:
+                stealth_async = None
+                logger.warning({
+                    "message": "playwright_stealth unavailable; continuing without stealth patch",
+                    "error": {"message": str(exc), "type": type(exc).__name__},
+                })
             
             # Use extra launch args to further reduce bot detection
             launch_kwargs = {
@@ -66,7 +73,10 @@ class StealthSofascoreAPI:
             self.page = await self.context.new_page()
             
             # Apply stealth plugin
-            await stealth_async(self.page)
+            if stealth_async is not None:
+                await stealth_async(self.page)
+            else:
+                logger.info({"message": "Skipping stealth patch because playwright_stealth is unavailable"})
             
             # Add some extra headers to mimic a real browser
             await self.page.set_extra_http_headers({
