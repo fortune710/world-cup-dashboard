@@ -21,19 +21,65 @@ MATCHDAY_STAT_LEADER_SPECS = (
 )
 
 def upsert_match(db: Session, match_data: dict):
-    # Handle datetime conversion if it's a string
-    if isinstance(match_data.get('kickoff_utc'), str):
-        match_data['kickoff_utc'] = datetime.fromisoformat(match_data['kickoff_utc'].replace('Z', '+00:00'))
+    logger.info(
+        {
+            "message": "Upserting match",
+            "match_id": match_data.get("id"),
+            "has_kickoff_utc": match_data.get("kickoff_utc") is not None,
+            "home_score": match_data.get("home_score"),
+            "away_score": match_data.get("away_score"),
+        }
+    )
 
-    db_match = db.query(Match).filter(Match.id == match_data['id']).first()
+    normalized_match_data = {**match_data}
+
+    kickoff_utc = normalized_match_data.get("kickoff_utc")
+    if isinstance(kickoff_utc, str):
+        kickoff_utc = datetime.fromisoformat(kickoff_utc.replace("Z", "+00:00"))
+    if isinstance(kickoff_utc, datetime) and kickoff_utc.tzinfo is not None:
+        kickoff_utc = kickoff_utc.astimezone(timezone.utc).replace(tzinfo=None)
+    normalized_match_data["kickoff_utc"] = kickoff_utc
+
+    for score_field in ("home_score", "away_score"):
+        score_value = normalized_match_data.get(score_field)
+        if score_value is not None:
+            score_value = int(score_value or 0)
+        normalized_match_data[score_field] = score_value if score_value is not None else 0
+
+    logger.info(
+        {
+            "message": "Normalized match payload",
+            "match_id": normalized_match_data.get("id"),
+            "kickoff_utc_type": type(normalized_match_data.get("kickoff_utc")).__name__
+            if normalized_match_data.get("kickoff_utc") is not None
+            else None,
+            "home_score_type": type(normalized_match_data.get("home_score")).__name__
+            if normalized_match_data.get("home_score") is not None
+            else None,
+            "away_score_type": type(normalized_match_data.get("away_score")).__name__
+            if normalized_match_data.get("away_score") is not None
+            else None,
+        }
+    )
+
+    db_match = db.query(Match).filter(Match.id == normalized_match_data["id"]).first()
     if db_match:
-        for key, value in match_data.items():
+        for key, value in normalized_match_data.items():
             setattr(db_match, key, value)
     else:
-        db_match = Match(**match_data)
+        db_match = Match(**normalized_match_data)
         db.add(db_match)
     db.commit()
     db.refresh(db_match)
+    logger.info(
+        {
+            "message": "Upserted match",
+            "match_id": db_match.id,
+            "kickoff_utc": db_match.kickoff_utc,
+            "home_score": db_match.home_score,
+            "away_score": db_match.away_score,
+        }
+    )
     return db_match
 
 def get_all_matches(db: Session, status: str = None, page: int = 1, page_size: int = 5):
@@ -63,13 +109,20 @@ def get_match_by_fixture_identity(db: Session, match_identity: dict):
             query = query.filter(Match.home_team_code == match_identity["home_team_code"])
         if match_identity.get("away_team_code"):
             query = query.filter(Match.away_team_code == match_identity["away_team_code"])
-        
-        ## Temporarily disabling kickoff_utc filter due to DB type mismatch (VARCHAR vs TIMESTAMP)
-        # if match_identity.get("kickoff_utc") is not None:
-        #     kickoff_utc = match_identity["kickoff_utc"]
-        #     if isinstance(kickoff_utc, datetime) and kickoff_utc.tzinfo is not None:
-        #         kickoff_utc = kickoff_utc.astimezone(timezone.utc).replace(tzinfo=None)
-        #     query = query.filter(Match.kickoff_utc == kickoff_utc)
+
+        kickoff_utc = match_identity.get("kickoff_utc")
+        if kickoff_utc is not None:
+            if isinstance(kickoff_utc, str):
+                kickoff_utc = datetime.fromisoformat(kickoff_utc.replace("Z", "+00:00"))
+            if isinstance(kickoff_utc, datetime) and kickoff_utc.tzinfo is not None:
+                kickoff_utc = kickoff_utc.astimezone(timezone.utc).replace(tzinfo=None)
+            logger.info(
+                {
+                    "message": "Applying kickoff_utc filter for match lookup",
+                    "kickoff_utc": kickoff_utc,
+                }
+            )
+            query = query.filter(Match.kickoff_utc == kickoff_utc)
 
         db_match = query.first()
         if db_match:

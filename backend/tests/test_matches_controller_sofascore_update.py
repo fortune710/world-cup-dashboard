@@ -117,6 +117,53 @@ class TestMatchesControllerSofascoreUpdate(unittest.TestCase):
         self.assertEqual(existing_match.stadium, "Updated Stadium")
         self.assertEqual(existing_match.home_score, 1)
 
+    def test_upsert_match_coerces_string_kickoff_and_score_fields(self):
+        existing_match = SimpleNamespace(
+            id=99,
+            round="1",
+            group="A",
+            home_team_code="MEX",
+            away_team_code="RSA",
+            stadium="Stadium",
+            kickoff_utc=datetime(2026, 6, 11, 19, 0),
+            status="scheduled",
+            phase="group",
+            home_score=0,
+            away_score=0,
+            home_pen=None,
+            away_pen=None,
+            sofascore_id=15186710,
+        )
+        fake_query = FakeQuery(match=existing_match)
+        fake_db = Mock()
+        fake_db.query.return_value = fake_query
+        fake_db.commit = Mock()
+        fake_db.refresh = Mock()
+
+        payload = {
+            "id": 99,
+            "round": "1",
+            "group": "A",
+            "home_team_code": "MEX",
+            "away_team_code": "RSA",
+            "stadium": "Updated Stadium",
+            "kickoff_utc": "2026-06-11T19:00:00Z",
+            "status": "scheduled",
+            "phase": "group",
+            "home_score": "1",
+            "away_score": "0",
+            "home_pen": None,
+            "away_pen": None,
+        }
+
+        result = upsert_match(fake_db, payload)
+
+        self.assertIs(result, existing_match)
+        self.assertEqual(existing_match.kickoff_utc, datetime(2026, 6, 11, 19, 0))
+        self.assertIsNone(existing_match.kickoff_utc.tzinfo)
+        self.assertEqual(existing_match.home_score, 1)
+        self.assertEqual(existing_match.away_score, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
