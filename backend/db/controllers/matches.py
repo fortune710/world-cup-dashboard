@@ -63,11 +63,13 @@ def get_match_by_fixture_identity(db: Session, match_identity: dict):
             query = query.filter(Match.home_team_code == match_identity["home_team_code"])
         if match_identity.get("away_team_code"):
             query = query.filter(Match.away_team_code == match_identity["away_team_code"])
-        if match_identity.get("kickoff_utc") is not None:
-            kickoff_utc = match_identity["kickoff_utc"]
-            if isinstance(kickoff_utc, datetime) and kickoff_utc.tzinfo is not None:
-                kickoff_utc = kickoff_utc.astimezone(timezone.utc).replace(tzinfo=None)
-            query = query.filter(Match.kickoff_utc == kickoff_utc)
+        
+        ## Temporarily disabling kickoff_utc filter due to DB type mismatch (VARCHAR vs TIMESTAMP)
+        # if match_identity.get("kickoff_utc") is not None:
+        #     kickoff_utc = match_identity["kickoff_utc"]
+        #     if isinstance(kickoff_utc, datetime) and kickoff_utc.tzinfo is not None:
+        #         kickoff_utc = kickoff_utc.astimezone(timezone.utc).replace(tzinfo=None)
+        #     query = query.filter(Match.kickoff_utc == kickoff_utc)
 
         db_match = query.first()
         if db_match:
