@@ -142,7 +142,7 @@ def extract_elo_inputs(**context):
                 "home_team_code": match.home_team_code,
                 "away_team_code": match.away_team_code,
                 "kickoff_utc": match.kickoff_utc.isoformat() if match.kickoff_utc else None,
-                "status": match.status,
+                "status": match.status.value if hasattr(match.status, "value") else match.status,
                 "home_score": match.home_score,
                 "away_score": match.away_score,
                 "home_pen": match.home_pen,
@@ -312,4 +312,4 @@ with DAG(
         python_callable=enqueue_player_stats,
     )
 
-    task_extract >> task_transform >> task_load >> task_enqueue_matchday_stats >> task_extract_elo >> task_transform_elo >> task_load_elo >> task_enqueue
+    task_extract >> task_transform >> task_load >> task_enqueue_matchday_stats >> task_enqueue >> task_extract_elo >> task_transform_elo >> task_load_elo 

@@ -1,7 +1,9 @@
+import json
 import importlib
 import os
 import sys
 import types
+from enum import Enum
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import Mock, patch
@@ -18,11 +20,13 @@ def load_matches_pipeline_module():
         "airflow.operators": types.ModuleType("airflow.operators"),
         "airflow.operators.python": types.ModuleType("airflow.operators.python"),
         "config.db": types.ModuleType("config.db"),
+        "db.controllers.elo": types.ModuleType("db.controllers.elo"),
         "db.controllers.matches": types.ModuleType("db.controllers.matches"),
         "db.controllers.players": types.ModuleType("db.controllers.players"),
         "pipeline.sources.matches": types.ModuleType("pipeline.sources.matches"),
         "pipeline.transformations.matches": types.ModuleType("pipeline.transformations.matches"),
         "pipeline.load.matches": types.ModuleType("pipeline.load.matches"),
+        "pipeline.load.elo": types.ModuleType("pipeline.load.elo"),
     }
 
     class FakeChainedObject:
@@ -45,6 +49,8 @@ def load_matches_pipeline_module():
     )
     fake_modules["airflow.operators.python"].PythonOperator = type("FakePythonOperator", (FakeChainedObject,), {})
     fake_modules["config.db"].SessionLocal = lambda: None
+    fake_modules["db.controllers.elo"].get_elo_inputs = lambda *args, **kwargs: ([], [])
+    fake_modules["db.controllers.elo"].replace_elo_ratings = lambda *args, **kwargs: 0
     fake_modules["db.controllers.matches"].get_matches_for_matchday_stats_queue = lambda *args, **kwargs: []
     fake_modules["db.controllers.players"].get_players_by_team = lambda *args, **kwargs: []
     fake_modules["pipeline.sources.matches"].MatchesSource = type("MatchesSource", (), {})
@@ -54,6 +60,7 @@ def load_matches_pipeline_module():
         {},
     )
     fake_modules["pipeline.load.matches"].MatchesLoader = type("MatchesLoader", (), {})
+    fake_modules["pipeline.load.elo"].EloLoader = type("EloLoader", (), {})
 
     saved_modules = {}
     module_name = "pipeline.orchestration.matches_pipeline"
@@ -227,6 +234,39 @@ class TestMatchesPipelineQueueUnit(TestCase):
         fake_queue.publish.assert_not_called()
         fake_db.close.assert_called_once()
         fake_queue.close.assert_called_once()
+
+    def test_extract_elo_inputs_serializes_match_status_for_xcom(self):
+        matches_pipeline = load_matches_pipeline_module()
+        fake_db = Mock()
+        class FakeMatchStatus(Enum):
+            COMPLETED = "completed"
+
+        fake_teams = [SimpleNamespace(code="ARG", elo_rating=1600.0)]
+        fake_matches = [
+            SimpleNamespace(
+                id=21,
+                round="group",
+                home_team_code="ARG",
+                away_team_code="BRA",
+                kickoff_utc=None,
+                status=FakeMatchStatus.COMPLETED,
+                home_score=2,
+                away_score=1,
+                home_pen=None,
+                away_pen=None,
+            )
+        ]
+
+        with patch.object(matches_pipeline, "SessionLocal", return_value=fake_db), patch.object(
+            matches_pipeline,
+            "get_elo_inputs",
+            return_value=(fake_teams, fake_matches),
+        ):
+            result = matches_pipeline.extract_elo_inputs()
+
+        self.assertEqual(result["matches"][0]["status"], "completed")
+        json.dumps(result)
+        fake_db.close.assert_called_once()
 
 
 class TestMatchesPipelineQueueIntegration(TestCase):
