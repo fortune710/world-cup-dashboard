@@ -61,6 +61,7 @@ ${COMPOSE_CMD} -f compose.prod.yaml up -d --build --remove-orphans \
   celery-beat \
   celery-worker-fetch \
   celery-worker-db \
+  celery-worker-matchday-stats \
   rabbitmq \
   prometheus \
   grafana \
