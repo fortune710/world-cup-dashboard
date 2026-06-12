@@ -202,6 +202,25 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  celery-worker-matchday-stats:
+    build: .
+    container_name: world_cup_celery_worker_matchday_stats
+    command: celery -A services.celery_app worker --loglevel=info -Q worker_matchday_stats --concurrency=2
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - WC2026_API_KEY=${WC2026_API_KEY}
+      - PYTHONPATH=/app/backend
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   prometheus:
     image: prom/prometheus:latest
     container_name: world_cup_prometheus
