@@ -81,7 +81,12 @@ class StealthSofascoreAPI:
             # Add some extra headers to mimic a real browser
             await self.page.set_extra_http_headers({
                 "Accept-Language": "en-US,en;q=0.9",
+                "Accept": "application/json, text/plain, */*",
+                "Accept-Encoding": "gzip, deflate, br",
                 "Referer": "https://www.sofascore.com/",
+                "Origin": "https://www.sofascore.com",
+                "x-requested-with": "XMLHttpRequest",
+                "cache-control": "no-cache",
                 "sec-ch-ua": '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
                 "sec-ch-ua-mobile": "?0",
                 "sec-ch-ua-platform": '"Windows"',
