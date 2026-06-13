@@ -24,6 +24,7 @@ export function useGroupStandings(groupId: string) {
     let active = true;
     async function fetchStandings() {
       logger.info("Fetching group standings", { groupId });
+      setError(null);
       setLoading(true);
       try {
         const res = await fetch(`${API_BASE_URL}/teams/groups?name=${groupId}`);

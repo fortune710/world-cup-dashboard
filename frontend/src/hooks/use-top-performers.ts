@@ -73,6 +73,7 @@ export function useTopPerformers() {
       logger.info("Fetching top performers in parallel");
       setLoading(true);
       try {
+        setError(null);
         const [goalsRes, assistsRes, cleanSheetsRes, ratingRes] = await Promise.all([
           fetch(`${API_BASE_URL}/players/top/goals`),
           fetch(`${API_BASE_URL}/players/top/assists`),

@@ -61,11 +61,17 @@ export function usePlayerDetails(playerId: string | undefined) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!playerId) return;
+    if (!playerId) {
+      setLoading(false);
+      setPlayer(undefined);
+      setError(null);
+      return;
+    }
     let active = true;
 
     async function fetchDetails() {
       logger.info("Fetching player details in parallel", { playerId });
+      setError(null);
       setLoading(true);
       try {
         const [infoRes, statsRes] = await Promise.all([

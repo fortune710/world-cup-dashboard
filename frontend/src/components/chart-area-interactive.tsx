@@ -222,7 +222,7 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
         <CardContent className="flex flex-1 flex-col pt-0">
           {loading ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground min-h-60">
-              Loading standings...
+              {t("groupStandings.loading")}
             </div>
           ) : error ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-destructive min-h-60">

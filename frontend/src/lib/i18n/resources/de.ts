@@ -99,6 +99,8 @@ export const de = {
     title: "Live-Rush",
     description: "Live-Spiele des Tages",
     noMatches: "Keine Spiele in dieser Ansicht.",
+    loadingMatches: "Spiele werden geladen…",
+    loadFailed: "Spiele konnten nicht geladen werden.",
     tabs: {
       all: "Alle",
       finished: "Beendet",
@@ -134,6 +136,8 @@ export const de = {
   topPerformers: {
     title: "Top-Spieler",
     description: "Herausragende Spieler im Turnier bisher",
+    loading: "Spieler werden geladen…",
+    error: "Top-Spieler konnten nicht geladen werden.",
     tabs: { goals: "Tore", assists: "Vorlagen", saves: "Paraden" },
   },
   groupStandings: {
@@ -142,6 +146,7 @@ export const de = {
     groupShort: "Gruppe {{group}}",
     selectPlaceholder: "Gruppe A",
     tableAriaLabel: "Tabelle Gruppe {{group}}",
+    loading: "Tabelle wird geladen…",
   },
   powerRanking: {
     title: "Turnier-Power-Ranking",

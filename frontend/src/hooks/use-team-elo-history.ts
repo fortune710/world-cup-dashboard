@@ -19,11 +19,17 @@ export function useTeamEloHistory(teamCode: string | undefined) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!teamCode) return;
+    if (!teamCode) {
+      setLoading(false);
+      setHistory([]);
+      setError(null);
+      return;
+    }
     let active = true;
 
     async function fetchEloHistory() {
       logger.info("Fetching ELO history", { teamCode });
+      setError(null);
       setLoading(true);
       try {
         const res = await fetch(`${API_BASE_URL}/ratings/elo/${teamCode}/history`);

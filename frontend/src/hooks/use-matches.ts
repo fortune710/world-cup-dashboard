@@ -12,6 +12,7 @@ export function useMatches(status?: string, page: number = 1, pageSize: number =
     let active = true;
     async function fetchMatches() {
       logger.info("Fetching matches from backend", { status, page, pageSize });
+      setError(null);
       setLoading(true);
       try {
         const url = `${API_BASE_URL}/matches?page=${page}&page_size=${pageSize}${status ? `&status=${status}` : ""}`;

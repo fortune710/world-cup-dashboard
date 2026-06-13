@@ -12,6 +12,7 @@ export function usePlayers(limit: number = 100, search?: string, classification?
     let active = true;
     async function fetchPlayers() {
       logger.info("Fetching players", { limit, search, classification });
+      setError(null);
       setLoading(true);
       try {
         const queryParams = new URLSearchParams();

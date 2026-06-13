@@ -22,7 +22,7 @@ export function LivePage() {
         </div>
       ) : error ? (
         <div className="flex items-center justify-center p-6 text-sm text-destructive min-h-[200px]">
-          Error: {error}
+          {t("liveRush.loadFailed", { defaultValue: "Failed to load matches." })}
         </div>
       ) : (
         <LiveRush matches={matches} />

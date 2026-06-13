@@ -72,7 +72,7 @@ export function TeamDetailsPage() {
     [teamId, teams]
   )
 
-  const teamCode = team?.idCountry || ""
+  const teamCode = team?.idCountry ?? undefined
   const { players: squad, loading: squadLoading, error: squadError } = useSquadPlayers(teamCode)
   const { history: eloHistory, loading: eloLoading, error: eloError } = useTeamEloHistory(teamCode)
 

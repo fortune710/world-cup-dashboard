@@ -10,15 +10,22 @@ export interface PlayerInfo {
   avatarUrl?: string;
 }
 
-export function useSquadPlayers(teamId: string) {
+export function useSquadPlayers(teamId: string | undefined) {
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!teamId) {
+      setLoading(false);
+      setPlayers([]);
+      setError(null);
+      return;
+    }
     let active = true;
     async function fetchPlayers() {
       logger.info("Fetching squad players", { teamId });
+      setError(null);
       setLoading(true);
       try {
         const res = await fetch(`${API_BASE_URL}/teams/players/${teamId}`);

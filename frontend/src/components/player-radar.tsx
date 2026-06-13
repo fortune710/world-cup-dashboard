@@ -330,7 +330,7 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
 export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
     const { t } = useTranslation()
     const [selectedDimension, setSelectedDimension] = React.useState<string>("rating")
-    const { players } = usePlayers(100)
+    const { players, loading, error } = usePlayers(100)
 
     const pos = React.useMemo(() => getDetailedPosition(player), [player])
     const metrics = React.useMemo(() => POSITION_METRICS[pos] || POSITION_METRICS.ST, [pos])
@@ -353,8 +353,9 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
     }) satisfies ChartConfig, [player.name])
 
     const positionPlayers = React.useMemo(() => {
+        if (loading || error) return []
         return players.filter((p) => getDetailedPosition(p) === pos)
-    }, [players, pos])
+    }, [players, pos, loading, error])
 
     const chartData = React.useMemo(() => {
         /**
@@ -404,6 +405,24 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
             return Math.round((interpolatedIndex / (n - 1)) * 100)
         }
 
+        if (loading || error) {
+            return metrics.map((metric) => {
+                const playerVal = getPlayerStatValue(player, metric.key)
+                return {
+                    subject: metric.label,
+                    key: metric.key,
+                    playerValue: playerVal,
+                    avgValue: playerVal,
+                    playerNormalized: 50,
+                    avgNormalized: 50,
+                    maxVal: playerVal,
+                    minVal: playerVal,
+                    percentile: 50,
+                    colorClass: metric.colorClass,
+                }
+            })
+        }
+
         return metrics.map((metric) => {
             const playerVal = getPlayerStatValue(player, metric.key)
             const peerVals = positionPlayers.length > 0
@@ -434,7 +453,7 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
                 colorClass: metric.colorClass,
             }
         })
-    }, [player, metrics, positionPlayers])
+    }, [player, metrics, positionPlayers, loading, error])
 
     const activeMetricData = React.useMemo(() => {
         return chartData.find((d) => d.key === selectedDimension) || chartData[0]
@@ -468,166 +487,178 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="pb-0 flex-1 flex flex-col justify-between">
-                <div className="flex-1 flex items-center justify-center">
-                    <ChartContainer
-                        config={chartConfig}
-                        className="mx-auto aspect-square w-full max-w-[315px]"
-                    >
-                        <RadarChart
-                            data={chartData}
-                            className="cursor-pointer"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius="65%"
-                            margin={{ top: 10, right: 35, bottom: 10, left: 35 }}
-                            onClick={(state) => {
-                                if (state && state.activeLabel) {
-                                    const matched = chartData.find((d) => d.subject === state.activeLabel)
-                                    if (matched) {
-                                        setSelectedDimension(matched.key)
-                                    }
-                                }
-                            }}
-                        >
-                            <ChartTooltip
-                                cursor={false}
-                                content={<CustomRadarTooltip />}
-                            />
-                            <PolarGrid gridType="circle" className="stroke-border/40" />
-                            <PolarAngleAxis
-                                dataKey="subject"
-                                tick={{ fill: "var(--color-foreground)", fontSize: 9, fontWeight: 500 }}
-                            />
-                            <Radar
-                                name={player.name}
-                                dataKey="playerNormalized"
-                                stroke="var(--primary)"
-                                fill="var(--primary)"
-                                fillOpacity={0.25}
-                                strokeWidth={2.5}
-                                dot={{
-                                    r: 4,
-                                    fill: "var(--primary)",
-                                    stroke: "var(--background)",
-                                    strokeWidth: 1.5,
-                                    fillOpacity: 1,
-                                }}
-                            />
-                            <Radar
-                                name="Position Average"
-                                dataKey="avgNormalized"
-                                stroke="var(--muted-foreground)"
-                                strokeDasharray="4 4"
-                                fill="none"
-                                strokeWidth={1.5}
-                                dot={{
-                                    r: 3,
-                                    fill: "var(--muted-foreground)",
-                                    stroke: "var(--background)",
-                                    strokeWidth: 1,
-                                    fillOpacity: 0.8,
-                                }}
-                            />
-                        </RadarChart>
-                    </ChartContainer>
-                </div>
-
-                {/* Dimension pills row */}
-                <div className="flex flex-wrap gap-1.5 justify-center py-3 border-t border-border/20">
-                    {chartData.map((d) => {
-                        const dTiers = getPercentileTier(d.percentile)
-                        return (
-                            <button
-                                key={d.key}
-                                onClick={() => setSelectedDimension(d.key)}
-                                className={cn(
-                                    "px-2.5 py-1 text-[10px] font-semibold rounded-full border transition-all cursor-pointer flex items-center gap-1",
-                                    selectedDimension === d.key
-                                        ? cn("text-white shadow-xs", dTiers.barColor, "border-transparent")
-                                        : "bg-muted/40 hover:bg-muted/70 text-muted-foreground border-border/60"
-                                )}
-                            >
-                                {d.key === "rating" && <Star className="size-3" />}
-                                {d.subject}
-                            </button>
-                        )
-                    })}
-                </div>
-
-                {/* Percentile Visualizer Line */}
-                <div className="space-y-3 border-t border-border/20 pt-4 pb-4 px-1">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h4 className="text-xs font-bold tracking-tight text-foreground uppercase flex items-center gap-1.5">
-                                <Info className="size-3.5 text-primary" />
-                                {t("playerDetailsPage.metricRank", {
-                                    subject: activeMetricData.subject,
-                                    defaultValue: "{{subject}} Rank"
-                                })}
-                            </h4>
-                            <p className="text-[10px] text-muted-foreground">
-                                {t("playerDetailsPage.relativeToPeers", {
-                                    count: positionPlayers.length,
-                                    playerName: player.name,
-                                    position: positionNameMap[pos],
-                                    defaultValue: "Relative to {{count}} {{position}} peers"
-                                })}
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <span className={cn(
-                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border",
-                                activeTier.bgClass
-                            )}>
-                                {activeTier.label} ({activeMetricData.percentile}th)
-                            </span>
-                        </div>
+                {loading ? (
+                    <div className="flex-1 flex items-center justify-center p-6 text-sm text-muted-foreground min-h-[300px]">
+                        {t("playerDetailsPage.loading", { defaultValue: "Loading position profile..." })}
                     </div>
-
-                    <div className="relative pt-4 pb-2">
-                        {/* Track */}
-                        <div className="h-2 w-full rounded-full bg-muted/60 dark:bg-muted/30 relative overflow-visible">
-                            {/* Player range fill */}
-                            <div
-                                className={cn("absolute left-0 top-0 h-full rounded-full transition-all duration-300", activeTier.barColor)}
-                                style={{ width: `${activeMetricData.percentile}%` }}
-                            />
-
-                            {/* Midpoint line indicator at 50% */}
-                            <div className="absolute top-1/2 -translate-y-1/2 h-4 w-0.5 bg-foreground/20 dark:bg-foreground/30 z-0" style={{ left: "50%" }} />
-
-                            {/* Average Pin (placed at 50% midpoint) */}
-                            <div
-                                className="absolute top-1/2 -translate-y-1/2 z-10"
-                                style={{ left: "50%" }}
+                ) : error ? (
+                    <div className="flex-1 flex items-center justify-center p-6 text-sm text-destructive min-h-[300px]">
+                        {t("playerDetailsPage.error", { defaultValue: "Failed to load peer data." })}
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex-1 flex items-center justify-center">
+                            <ChartContainer
+                                config={chartConfig}
+                                className="mx-auto aspect-square w-full max-w-[315px]"
                             >
-                                <div className="size-3 -ml-1.5 rounded-full border-2 border-background bg-muted-foreground shadow-xs cursor-help" />
-                            </div>
+                                <RadarChart
+                                    data={chartData}
+                                    className="cursor-pointer"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius="65%"
+                                    margin={{ top: 10, right: 35, bottom: 10, left: 35 }}
+                                    onClick={(state) => {
+                                        if (state && state.activeLabel) {
+                                            const matched = chartData.find((d) => d.subject === state.activeLabel)
+                                            if (matched) {
+                                                setSelectedDimension(matched.key)
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<CustomRadarTooltip />}
+                                    />
+                                    <PolarGrid gridType="circle" className="stroke-border/40" />
+                                    <PolarAngleAxis
+                                        dataKey="subject"
+                                        tick={{ fill: "var(--color-foreground)", fontSize: 9, fontWeight: 500 }}
+                                    />
+                                    <Radar
+                                        name={player.name}
+                                        dataKey="playerNormalized"
+                                        stroke="var(--primary)"
+                                        fill="var(--primary)"
+                                        fillOpacity={0.25}
+                                        strokeWidth={2.5}
+                                        dot={{
+                                            r: 4,
+                                            fill: "var(--primary)",
+                                            stroke: "var(--background)",
+                                            strokeWidth: 1.5,
+                                            fillOpacity: 1,
+                                        }}
+                                    />
+                                    <Radar
+                                        name="Position Average"
+                                        dataKey="avgNormalized"
+                                        stroke="var(--muted-foreground)"
+                                        strokeDasharray="4 4"
+                                        fill="none"
+                                        strokeWidth={1.5}
+                                        dot={{
+                                            r: 3,
+                                            fill: "var(--muted-foreground)",
+                                            stroke: "var(--background)",
+                                            strokeWidth: 1,
+                                            fillOpacity: 0.8,
+                                        }}
+                                    />
+                                </RadarChart>
+                            </ChartContainer>
+                        </div>
 
-                            {/* Player Pin (placed at player's percentile) */}
-                            <div
-                                className="absolute top-1/2 -translate-y-1/2 z-20"
-                                style={{ left: `${activeMetricData.percentile}%` }}
-                            >
-                                <div className={cn(
-                                    "size-5 -ml-2.5 rounded-full border border-background shadow-md flex items-center justify-center text-[9px] font-extrabold text-white cursor-help transition-all duration-300 hover:scale-110",
-                                    activeTier.barColor,
-                                    activeTier.glowClass
-                                )}>
-                                    {activeMetricData.percentile}
+                        {/* Dimension pills row */}
+                        <div className="flex flex-wrap gap-1.5 justify-center py-3 border-t border-border/20">
+                            {chartData.map((d) => {
+                                const dTiers = getPercentileTier(d.percentile)
+                                return (
+                                    <button
+                                        key={d.key}
+                                        onClick={() => setSelectedDimension(d.key)}
+                                        className={cn(
+                                            "px-2.5 py-1 text-[10px] font-semibold rounded-full border transition-all cursor-pointer flex items-center gap-1",
+                                            selectedDimension === d.key
+                                                ? cn("text-white shadow-xs", dTiers.barColor, "border-transparent")
+                                                : "bg-muted/40 hover:bg-muted/70 text-muted-foreground border-border/60"
+                                        )}
+                                    >
+                                        {d.key === "rating" && <Star className="size-3" />}
+                                        {d.subject}
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        {/* Percentile Visualizer Line */}
+                        <div className="space-y-3 border-t border-border/20 pt-4 pb-4 px-1">
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <h4 className="text-xs font-bold tracking-tight text-foreground uppercase flex items-center gap-1.5">
+                                        <Info className="size-3.5 text-primary" />
+                                        {t("playerDetailsPage.metricRank", {
+                                            subject: activeMetricData.subject,
+                                            defaultValue: "{{subject}} Rank"
+                                        })}
+                                    </h4>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        {t("playerDetailsPage.relativeToPeers", {
+                                            count: positionPlayers.length,
+                                            playerName: player.name,
+                                            position: positionNameMap[pos],
+                                            defaultValue: "Relative to {{count}} {{position}} peers"
+                                        })}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <span className={cn(
+                                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border",
+                                        activeTier.bgClass
+                                    )}>
+                                        {activeTier.label} ({activeMetricData.percentile}th)
+                                    </span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="flex justify-between items-center text-[9px] text-muted-foreground font-mono font-medium relative mt-2">
-                        <span>0% (Min: {formatMetricValue(activeMetricData.key, activeMetricData.minVal ?? 0)})</span>
-                        <span className="absolute left-1/2 -translate-x-1/2 text-foreground font-bold">
-                            50% (Avg: {formatMetricValue(activeMetricData.key, activeMetricData.avgValue)})
-                        </span>
-                        <span>100% (Max: {formatMetricValue(activeMetricData.key, activeMetricData.maxVal)})</span>
-                    </div>
-                </div>
+                            <div className="relative pt-4 pb-2">
+                                {/* Track */}
+                                <div className="h-2 w-full rounded-full bg-muted/60 dark:bg-muted/30 relative overflow-visible">
+                                    {/* Player range fill */}
+                                    <div
+                                        className={cn("absolute left-0 top-0 h-full rounded-full transition-all duration-300", activeTier.barColor)}
+                                        style={{ width: `${activeMetricData.percentile}%` }}
+                                    />
+
+                                    {/* Midpoint line indicator at 50% */}
+                                    <div className="absolute top-1/2 -translate-y-1/2 h-4 w-0.5 bg-foreground/20 dark:bg-foreground/30 z-0" style={{ left: "50%" }} />
+
+                                    {/* Average Pin (placed at 50% midpoint) */}
+                                    <div
+                                        className="absolute top-1/2 -translate-y-1/2 z-10"
+                                        style={{ left: "50%" }}
+                                    >
+                                        <div className="size-3 -ml-1.5 rounded-full border-2 border-background bg-muted-foreground shadow-xs cursor-help" />
+                                    </div>
+
+                                    {/* Player Pin (placed at player's percentile) */}
+                                    <div
+                                        className="absolute top-1/2 -translate-y-1/2 z-20"
+                                        style={{ left: `${activeMetricData.percentile}%` }}
+                                    >
+                                        <div className={cn(
+                                            "size-5 -ml-2.5 rounded-full border border-background shadow-md flex items-center justify-center text-[9px] font-extrabold text-white cursor-help transition-all duration-300 hover:scale-110",
+                                            activeTier.barColor,
+                                            activeTier.glowClass
+                                        )}>
+                                            {activeMetricData.percentile}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center text-[9px] text-muted-foreground font-mono font-medium relative mt-2">
+                                <span>0% (Min: {formatMetricValue(activeMetricData.key, activeMetricData.minVal ?? 0)})</span>
+                                <span className="absolute left-1/2 -translate-x-1/2 text-foreground font-bold">
+                                    50% (Avg: {formatMetricValue(activeMetricData.key, activeMetricData.avgValue)})
+                                </span>
+                                <span>100% (Max: {formatMetricValue(activeMetricData.key, activeMetricData.maxVal)})</span>
+                            </div>
+                        </div>
+                    </>
+                )}
             </CardContent>
 
         </Card>

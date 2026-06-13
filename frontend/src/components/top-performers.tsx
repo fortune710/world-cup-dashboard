@@ -113,11 +113,11 @@ function TopPerformers({ className }: TopPerformersProps) {
         <CardContent className="flex flex-1 flex-col pt-0">
           {loading ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground min-h-60">
-              Loading performers...
+              {t("topPerformers.loading", { defaultValue: "Loading performers..." })}
             </div>
           ) : error ? (
             <div className="flex flex-1 items-center justify-center p-6 text-sm text-destructive min-h-60">
-              {error}
+              {t("topPerformers.error", { defaultValue: "Failed to load top performers." })}
             </div>
           ) : data ? (
             <>
