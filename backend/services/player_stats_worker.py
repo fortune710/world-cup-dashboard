@@ -7,6 +7,7 @@ Reads player IDs from the 'player_stats_updates' queue, calls the Sofascore
 API for each, then pushes the result to 'player_stats_db_updates' for the
 DB update worker. Acks only on success.
 """
+import asyncio
 import logging
 import json
 from services.celery_app import celery_app
@@ -54,7 +55,7 @@ def run_fetch_stats_batch() -> dict:
         })
 
         try:
-            raw_stats = source.get_player_stats(player_id)
+            raw_stats = asyncio.run(source.get_player_stats(player_id))
             rating, stats_json = transformer.transform_player_stats(raw_stats)
 
             if rating is not None:
