@@ -38,6 +38,10 @@ class TestStatsTransformation(unittest.TestCase):
         rating, stats = self.transformer.transform_player_stats(self.mock_stats)
         self.assertEqual(rating, 7.5)
         self.assertEqual(stats["assists"], 1)
+        self.assertEqual(stats["total_passes"], 50)
+        self.assertEqual(stats["accurate_passes"], 45)
+        self.assertNotIn("totalPasses", stats)
+        self.assertNotIn("accuratePasses", stats)
 
     def test_transform_invalid_stats(self):
         rating, stats = self.transformer.transform_player_stats({})

@@ -8,19 +8,27 @@ logger = logging.getLogger(__name__)
 
 class PlayersTransformations:
     @staticmethod
-    def _camel_to_kebab(value: str) -> str:
-        """Convert camelCase/PascalCase keys to kebab-case."""
-        return re.sub(r"(?<!^)(?=[A-Z])", "-", value).lower()
+    def _camel_to_snake(value: str) -> str:
+        """Convert camelCase/PascalCase keys to snake_case."""
+        logger.info({
+            "message": "Converting stats key to snake_case",
+            "source_key": value,
+        })
+        return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower()
 
-    def _to_kebab_case_keys(self, payload: Any) -> Any:
-        """Recursively convert dictionary keys to kebab-case."""
+    def _to_snake_case_keys(self, payload: Any) -> Any:
+        """Recursively convert dictionary keys to snake_case."""
+        logger.info({
+            "message": "Normalizing stats payload keys to snake_case",
+            "payload_type": type(payload).__name__,
+        })
         if isinstance(payload, dict):
             return {
-                self._camel_to_kebab(str(key)): self._to_kebab_case_keys(val)
+                self._camel_to_snake(str(key)): self._to_snake_case_keys(val)
                 for key, val in payload.items()
             }
         if isinstance(payload, list):
-            return [self._to_kebab_case_keys(item) for item in payload]
+            return [self._to_snake_case_keys(item) for item in payload]
         return payload
 
     def transform_player_info(self, player_info, image_url=None):
@@ -79,7 +87,7 @@ class PlayersTransformations:
         
         stats = player_stats["statistics"]
         rating = stats.get("rating")
-        transformed_stats = self._to_kebab_case_keys(stats)
+        transformed_stats = self._to_snake_case_keys(stats)
 
         logger.info({
             "message": "Transformed player stats payload",
