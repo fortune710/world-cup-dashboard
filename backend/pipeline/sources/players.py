@@ -165,10 +165,10 @@ class PlayersSource:
         self.player = Player(self.api, player_id) if player_id else None
         self.settings = Settings()
 
-    def get_player_stats(self, player_id: int = None):
+    async def get_player_stats(self, player_id: int = None):
         target_player = Player(self.api, player_id) if not self.player else self.player
-        
-        return target_player.league_stats(
+
+        return await target_player.league_stats(
             season=self.settings.WC_SEASON_ID_2026, # Use current WC season
             league_id=self.settings.WC_LEAGUE_ID
         )
