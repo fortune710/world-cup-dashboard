@@ -24,20 +24,41 @@ INBOUND_QUEUE = Settings.MATCHDAY_STATS_QUEUE
 BATCH_SIZE = 5
 
 
+def _normalize_lineup_payload(lineup_payload: dict) -> dict:
+    logger.info({"message": "Normalizing lineup payload for matchday stats worker"})
+    if not isinstance(lineup_payload, dict):
+        return {"players": []}
+
+    if isinstance(lineup_payload.get("players"), list):
+        return lineup_payload
+
+    players: list[dict] = []
+    starters = lineup_payload.get("starters")
+    substitutes = lineup_payload.get("substitutes")
+    if isinstance(starters, list):
+        players.extend([entry for entry in starters if isinstance(entry, dict)])
+    if isinstance(substitutes, list):
+        players.extend([entry for entry in substitutes if isinstance(entry, dict)])
+
+    normalized_payload = dict(lineup_payload)
+    normalized_payload["players"] = players
+    return normalized_payload
+
+
 async def fetch_match_lineups(sofascore_id: int) -> dict:
     logger.info({
-        "message": "Starting Sofascore match lineup fetch",
+        "message": "Starting Sofascore lineup fetch for matchday stats worker",
         "sofascore_id": sofascore_id,
     })
     from pipeline.sources.stealth_api import StealthSofascoreAPI
-    from sofascore_wrapper.match import Match
 
     api = StealthSofascoreAPI()
     try:
-        match = Match(api, match_id=sofascore_id)
-        home_lineup, away_lineup = await asyncio.gather(match.lineups_home(), match.lineups_away())
+        raw_lineups = await api._get(f"/event/{sofascore_id}/lineups")
+        home_lineup = _normalize_lineup_payload((raw_lineups or {}).get("home") or {})
+        away_lineup = _normalize_lineup_payload((raw_lineups or {}).get("away") or {})
         logger.info({
-            "message": "Successfully fetched Sofascore match lineups",
+            "message": "Successfully fetched Sofascore lineups for matchday stats worker",
             "sofascore_id": sofascore_id,
             "home_players": len((home_lineup or {}).get("players") or []),
             "away_players": len((away_lineup or {}).get("players") or []),
@@ -48,7 +69,7 @@ async def fetch_match_lineups(sofascore_id: int) -> dict:
         }
     except Exception as exc:
         logger.error({
-            "message": "Failed to fetch Sofascore match lineups",
+            "message": "Failed to fetch Sofascore lineups for matchday stats worker",
             "sofascore_id": sofascore_id,
             "error": {"message": str(exc), "type": type(exc).__name__},
         })

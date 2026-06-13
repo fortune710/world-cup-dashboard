@@ -1,4 +1,7 @@
 import os
+import sys
+import types
+import asyncio
 import unittest
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -130,6 +133,77 @@ class TestMatchdayStatsWorker(unittest.TestCase):
         self.assertEqual(result, {"processed": 0})
         fake_queue.ack.assert_not_called()
         fake_queue.nack.assert_called_once_with(202, requeue=True)
+
+    def test_fetch_match_lineups_uses_stealth_sofascore_api_and_normalizes_payload(self):
+        raw_lineups = {
+            "home": {
+                "starters": [
+                    {"player": {"id": 11, "name": "Home Starter"}},
+                ],
+                "substitutes": [
+                    {"player": {"id": 12, "name": "Home Sub"}},
+                ],
+            },
+            "away": {
+                "players": [
+                    {"player": {"id": 21, "name": "Away Starter"}},
+                ]
+            },
+        }
+
+        class FakeStealthSofascoreAPI:
+            def __init__(self):
+                self.closed = False
+
+            async def _get(self, endpoint: str):
+                self.endpoint = endpoint
+                return raw_lineups
+
+            async def close(self):
+                self.closed = True
+
+        class RaisingSofascoreAPI:
+            def __init__(self, *args, **kwargs):
+                raise AssertionError("SofascoreAPI should not be used by matchday stats worker")
+
+        fake_celery_app_module = types.ModuleType("services.celery_app")
+        fake_celery_app_module.celery_app = types.SimpleNamespace(task=lambda *args, **kwargs: (lambda fn: fn))
+        fake_config_db_module = types.ModuleType("config.db")
+        fake_config_db_module.SessionLocal = lambda: None
+        fake_matches_controller_module = types.ModuleType("db.controllers.matches")
+        fake_matches_controller_module.get_match_by_sofascore_id = lambda *args, **kwargs: None
+        fake_matchday_stats_controller_module = types.ModuleType("db.controllers.matchday_stats")
+        fake_matchday_stats_controller_module.replace_matchday_stats_for_match = lambda *args, **kwargs: 0
+        fake_db_models_matches_module = types.ModuleType("db.models.matches")
+        fake_db_models_matches_module.Match = type("Match", (), {})
+        fake_transform_module = types.ModuleType("pipeline.transformations.matchday_stats")
+        fake_transform_module.MatchdayStatsTransformations = type("MatchdayStatsTransformations", (), {})
+        fake_sofascore_api_module = types.ModuleType("sofascore_wrapper.api")
+        fake_sofascore_api_module.SofascoreAPI = RaisingSofascoreAPI
+        fake_stealth_api_module = types.ModuleType("pipeline.sources.stealth_api")
+        fake_stealth_api_module.StealthSofascoreAPI = FakeStealthSofascoreAPI
+
+        with patch.dict(
+            sys.modules,
+            {
+                "services.celery_app": fake_celery_app_module,
+                "config.db": fake_config_db_module,
+                "db.controllers.matches": fake_matches_controller_module,
+                "db.controllers.matchday_stats": fake_matchday_stats_controller_module,
+                "db.models.matches": fake_db_models_matches_module,
+                "pipeline.transformations.matchday_stats": fake_transform_module,
+                "sofascore_wrapper.api": fake_sofascore_api_module,
+                "pipeline.sources.stealth_api": fake_stealth_api_module,
+            },
+            clear=False,
+        ):
+            from services import matchday_stats_worker
+
+            result = asyncio.run(matchday_stats_worker.fetch_match_lineups(15186710))
+
+        self.assertEqual(result["home"]["players"][0]["player"]["id"], 11)
+        self.assertEqual(result["home"]["players"][1]["player"]["name"], "Home Sub")
+        self.assertEqual(result["away"]["players"][0]["player"]["id"], 21)
 
 
 class TestMatchdayStatsWorkerIntegration(unittest.TestCase):
