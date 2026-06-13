@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { PlayerRow } from "@/pages/players-page";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export function usePlayers(limit: number = 100, search?: string, classification?: string) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -29,7 +30,7 @@ export function usePlayers(limit: number = 100, search?: string, classification?
           }
         }
 
-        const res = await fetch(`/api/players?${queryParams.toString()}`);
+        const res = await fetch(`${API_BASE_URL}/players?${queryParams.toString()}`);
         if (!res.ok) throw new Error("Failed to fetch players leaderboard");
         const data = await res.json();
 

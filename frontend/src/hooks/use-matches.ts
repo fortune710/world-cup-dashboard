@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { LiveRushMatch } from "@/datatypes";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export function useMatches(status?: string, page: number = 1, pageSize: number = 20) {
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
@@ -13,8 +14,9 @@ export function useMatches(status?: string, page: number = 1, pageSize: number =
       logger.info("Fetching matches from backend", { status, page, pageSize });
       setLoading(true);
       try {
-        const url = `/api/matches?page=${page}&page_size=${pageSize}${status ? `&status=${status}` : ""}`;
+        const url = `${API_BASE_URL}/matches?page=${page}&page_size=${pageSize}${status ? `&status=${status}` : ""}`;
         const res = await fetch(url);
+
         if (!res.ok) throw new Error("Failed to fetch matches");
         const data = await res.json();
 

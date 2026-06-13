@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { PlayerRow } from "@/pages/players-page";
+import { API_BASE_URL } from "@/lib/api-config";
 
 const countryMetadata: Record<string, { group: string; federation: string }> = {
   MEX: { group: "A", federation: "CONCACAF" },
@@ -68,8 +69,8 @@ export function usePlayerDetails(playerId: string | undefined) {
       setLoading(true);
       try {
         const [infoRes, statsRes] = await Promise.all([
-          fetch(`/api/players/${playerId}/info`),
-          fetch(`/api/players/${playerId}/statistics`),
+          fetch(`${API_BASE_URL}/players/${playerId}/info`),
+          fetch(`${API_BASE_URL}/players/${playerId}/statistics`),
         ]);
 
         if (!infoRes.ok || !statsRes.ok) {

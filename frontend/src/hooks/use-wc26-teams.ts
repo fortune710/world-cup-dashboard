@@ -1,5 +1,6 @@
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { API_BASE_URL } from "@/lib/api-config"
 
 import {
   type Wc26TeamRow,
@@ -37,7 +38,7 @@ export function useWc26Teams(): {
     setIsLoading(true)
     setErrorMessage(null)
 
-    fetch("/api/teams", { signal: controller.signal })
+    fetch(`${API_BASE_URL}/teams`, { signal: controller.signal })
       .then(async (res) => {
         if (!res.ok) {
           throw new Error(`HTTP ${res.status}`)

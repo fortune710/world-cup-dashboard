@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { PerformerRow } from "@/datatypes";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface TopPerformersData {
   goals: PerformerRow[];
@@ -73,10 +74,10 @@ export function useTopPerformers() {
       setLoading(true);
       try {
         const [goalsRes, assistsRes, cleanSheetsRes, ratingRes] = await Promise.all([
-          fetch("/api/players/top/goals"),
-          fetch("/api/players/top/assists"),
-          fetch("/api/players/top/clean-sheets"),
-          fetch("/api/players/top/rating"),
+          fetch(`${API_BASE_URL}/players/top/goals`),
+          fetch(`${API_BASE_URL}/players/top/assists`),
+          fetch(`${API_BASE_URL}/players/top/clean-sheets`),
+          fetch(`${API_BASE_URL}/players/top/rating`),
         ]);
 
         if (!goalsRes.ok || !assistsRes.ok || !cleanSheetsRes.ok || !ratingRes.ok) {

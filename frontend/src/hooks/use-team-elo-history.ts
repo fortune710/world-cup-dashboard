@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface EloHistoryPoint {
   matchId: number;
@@ -25,7 +26,7 @@ export function useTeamEloHistory(teamCode: string | undefined) {
       logger.info("Fetching ELO history", { teamCode });
       setLoading(true);
       try {
-        const res = await fetch(`/api/ratings/elo/${teamCode}/history`);
+        const res = await fetch(`${API_BASE_URL}/ratings/elo/${teamCode}/history`);
         if (!res.ok) throw new Error("Failed to fetch ELO history");
         const data = await res.json();
 

@@ -1,6 +1,7 @@
 // src/hooks/use-group-standings.ts
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface Standing {
   position: number;
@@ -25,7 +26,7 @@ export function useGroupStandings(groupId: string) {
       logger.info("Fetching group standings", { groupId });
       setLoading(true);
       try {
-        const res = await fetch(`/api/teams/groups?name=${groupId}`);
+        const res = await fetch(`${API_BASE_URL}/teams/groups?name=${groupId}`);
         if (!res.ok) throw new Error("Failed to fetch group standings");
         const data = await res.json();
         

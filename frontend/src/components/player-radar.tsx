@@ -1,15 +1,15 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts"
-import { Star, TrendingUp, Info } from "lucide-react"
+import { Star, Info } from "lucide-react"
 
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -19,7 +19,8 @@ import {
     type ChartConfig,
 } from "@/components/ui/chart"
 import { cn } from "@/lib/utils"
-import { type PlayerRow, mockTableData, getPlayerMatchHistory } from "@/pages/players-page"
+import { type PlayerRow, getPlayerMatchHistory } from "@/pages/players-page"
+import { usePlayers } from "@/hooks/use-players"
 
 interface MetricConfig {
     key: string
@@ -329,6 +330,7 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
 export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
     const { t } = useTranslation()
     const [selectedDimension, setSelectedDimension] = React.useState<string>("rating")
+    const { players } = usePlayers(100)
 
     const pos = React.useMemo(() => getDetailedPosition(player), [player])
     const metrics = React.useMemo(() => POSITION_METRICS[pos] || POSITION_METRICS.ST, [pos])
@@ -351,8 +353,8 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
     }) satisfies ChartConfig, [player.name])
 
     const positionPlayers = React.useMemo(() => {
-        return mockTableData.filter((p) => getDetailedPosition(p) === pos)
-    }, [pos])
+        return players.filter((p) => getDetailedPosition(p) === pos)
+    }, [players, pos])
 
     const chartData = React.useMemo(() => {
         /**
@@ -404,7 +406,9 @@ export function ChartRadarGridCircle({ player }: { player: PlayerRow }) {
 
         return metrics.map((metric) => {
             const playerVal = getPlayerStatValue(player, metric.key)
-            const peerVals = positionPlayers.map((p) => getPlayerStatValue(p, metric.key))
+            const peerVals = positionPlayers.length > 0
+                ? positionPlayers.map((p) => getPlayerStatValue(p, metric.key))
+                : [playerVal]
             const maxVal = Math.max(...peerVals)
             const minVal = Math.min(...peerVals)
             const sumVal = peerVals.reduce((a, b) => a + b, 0)

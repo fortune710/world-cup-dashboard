@@ -1,6 +1,7 @@
 // src/hooks/use-best-players.ts
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface PlayerPerformance {
   id: string;
@@ -28,7 +29,7 @@ export function useBestPlayers(teamId: string) {
     async function fetchBest() {
       logger.info("Fetching best players", { teamId });
       try {
-        const res = await fetch(`/api/teams/${teamId}/best-players`);
+        const res = await fetch(`${API_BASE_URL}/teams/${teamId}/best-players`);
         if (!res.ok) throw new Error("Failed to fetch best players");
         const result = await res.json();
         setData(result);

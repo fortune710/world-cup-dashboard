@@ -1,6 +1,7 @@
 // src/hooks/use-squad-players.ts
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface PlayerInfo {
   id: string;
@@ -20,7 +21,7 @@ export function useSquadPlayers(teamId: string) {
       logger.info("Fetching squad players", { teamId });
       setLoading(true);
       try {
-        const res = await fetch(`/api/teams/players/${teamId}`);
+        const res = await fetch(`${API_BASE_URL}/teams/players/${teamId}`);
         if (!res.ok) throw new Error("Failed to fetch squad players");
         const data = await res.json();
         

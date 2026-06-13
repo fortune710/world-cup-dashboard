@@ -1,5 +1,12 @@
 import { writeFileSync } from "node:fs"
 import { resolve } from "node:path"
+import { loadEnvFile } from "node:process"
+
+try {
+  loadEnvFile()
+} catch {
+  // Ignore if .env is missing
+}
 
 const LOCALHOST_ORIGINS = new Set([
   "http://localhost:5173",
