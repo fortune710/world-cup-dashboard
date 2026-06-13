@@ -24,13 +24,8 @@ import {
   ItemTitle,
 } from "@/components/ui/item"
 import type { PerformerListProps, TopPerformersProps } from "@/datatypes"
-import {
-  toAssistPerformerRows,
-  toGoalPerformerRows,
-  toSavePerformerRows,
-  topPerformers,
-} from "@/lib/helpers/top-performers.helpers"
 import { cn } from "@/lib/utils"
+import { useTopPerformers } from "@/hooks/use-top-performers"
 
 const PERFORMER_TAB_VALUES = ["Goals", "Assists", "Saves"] as const
 
@@ -41,10 +36,6 @@ const PERFORMER_TAB_I18N: Record<PerformerTab, string> = {
   Assists: "topPerformers.tabs.assists",
   Saves: "topPerformers.tabs.saves",
 }
-
-const goalPerformerRows = toGoalPerformerRows(topPerformers[0])
-const assistPerformerRows = toAssistPerformerRows(topPerformers[1])
-const savePerformerRows = toSavePerformerRows(topPerformers[2])
 
 const PerformerList = React.memo(function PerformerList({
   performers,
@@ -80,6 +71,7 @@ const PerformerList = React.memo(function PerformerList({
 function TopPerformers({ className }: TopPerformersProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = React.useState<PerformerTab>("Goals")
+  const { data, loading, error } = useTopPerformers()
 
   const performerTabs = React.useMemo(
     () =>
@@ -93,7 +85,6 @@ function TopPerformers({ className }: TopPerformersProps) {
   const handleTabChange = React.useCallback((value: string) => {
     setActiveTab(value as PerformerTab)
   }, [])
-
 
   return (
     <Tabs
@@ -117,22 +108,30 @@ function TopPerformers({ className }: TopPerformersProps) {
                 </TabsTrigger>
               ))}
             </TabsList>
-
           </div>
-
-
-
         </CardHeader>
         <CardContent className="flex flex-1 flex-col pt-0">
-          <TabsContent value="Goals" className="flex-1">
-            <PerformerList performers={goalPerformerRows} />
-          </TabsContent>
-          <TabsContent value="Assists" className="flex-1">
-            <PerformerList performers={assistPerformerRows} />
-          </TabsContent>
-          <TabsContent value="Saves" className="flex-1">
-            <PerformerList performers={savePerformerRows} />
-          </TabsContent>
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground min-h-60">
+              Loading performers...
+            </div>
+          ) : error ? (
+            <div className="flex flex-1 items-center justify-center p-6 text-sm text-destructive min-h-60">
+              {error}
+            </div>
+          ) : data ? (
+            <>
+              <TabsContent value="Goals" className="flex-1">
+                <PerformerList performers={data.goals} />
+              </TabsContent>
+              <TabsContent value="Assists" className="flex-1">
+                <PerformerList performers={data.assists} />
+              </TabsContent>
+              <TabsContent value="Saves" className="flex-1">
+                <PerformerList performers={data.saves} />
+              </TabsContent>
+            </>
+          ) : null}
         </CardContent>
       </Card>
     </Tabs>

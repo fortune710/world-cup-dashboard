@@ -15,22 +15,45 @@ export function useSquadPlayers(teamId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     async function fetchPlayers() {
       logger.info("Fetching squad players", { teamId });
+      setLoading(true);
       try {
-        const res = await fetch(`/api/teams/${teamId}/squad`);
+        const res = await fetch(`/api/teams/players/${teamId}`);
         if (!res.ok) throw new Error("Failed to fetch squad players");
         const data = await res.json();
-        setPlayers(data);
-        logger.info("Squad players fetched", { teamId, count: data.length });
+        
+        if (!active) return;
+
+        const positionDisplayMap: Record<string, string> = {
+          F: "FWD",
+          M: "MID",
+          D: "DEF",
+          G: "GK",
+        };
+
+        const mapped = data.map((p: any) => ({
+          id: String(p.id),
+          name: p.name,
+          position: positionDisplayMap[p.classification] || p.classification,
+          avatarUrl: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
+        }));
+
+        setPlayers(mapped);
+        logger.info("Squad players fetched", { teamId, count: mapped.length });
       } catch (e: any) {
+        if (!active) return;
         setError(e.message);
         logger.error("Error fetching squad players", { teamId, error: e.message });
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     fetchPlayers();
+    return () => {
+      active = false;
+    };
   }, [teamId]);
 
   return { players, loading, error };

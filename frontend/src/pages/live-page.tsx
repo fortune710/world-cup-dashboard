@@ -6,14 +6,27 @@ import { SectionCards } from "@/components/section-cards"
 
 import { LiveRush } from "@/components/live-rush"
 import TopPerformers from "@/components/top-performers"
+import { useMatches } from "@/hooks/use-matches"
+import { Spinner } from "@/components/ui/spinner"
 
 export function LivePage() {
   const { t } = useTranslation()
+  const { matches, loading, error } = useMatches()
 
   return (
     <div className="flex flex-col gap-3 py-4 md:gap-4 md:py-5">
       <h1 className="sr-only">{t("routes.live")}</h1>
-      <LiveRush />
+      {loading ? (
+        <div className="flex items-center justify-center p-6 text-sm text-muted-foreground min-h-[200px]">
+          <Spinner className="mr-2" /> {t("liveRush.loadingMatches", { defaultValue: "Loading matches..." })}
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center p-6 text-sm text-destructive min-h-[200px]">
+          Error: {error}
+        </div>
+      ) : (
+        <LiveRush matches={matches} />
+      )}
       <SectionCards />
       <div className="grid grid-cols-1 items-stretch gap-3 px-4 lg:grid-cols-3 lg:px-6">
         <div className="col-span-1 flex lg:col-span-2">

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router"
@@ -13,6 +14,8 @@ import type { ColumnDef, SortingState, VisibilityState } from "@tanstack/react-t
 
 import { PlayerPerformanceCard, type PlayerPerformance } from "@/components/player-performance-card"
 import { Badge } from "@/components/ui/badge"
+import { usePlayers } from "@/hooks/use-players"
+import { useTopPerformers } from "@/hooks/use-top-performers"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -60,66 +63,6 @@ import {
 } from "lucide-react"
 
 import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
-
-// ─── Top highlights (hero cards) ───────────────────────────────────────────────
-
-const mockPlayerData: PlayerPerformance[] = [
-  {
-    name: "Kylian Mbappé",
-    position: "FWD",
-    country: "FRA",
-    rating: 9.5,
-    goals: 12,
-    assists: 5,
-    category: "Top Goalscorer",
-    federation: "UEFA",
-    group: "A",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Kylian_Mbapp%C3%A9_-_20220917161011.jpg/250px-Kylian_Mbapp%C3%A9_-_20220917161011.jpg",
-  },
-  {
-    name: "Lionel Messi",
-    position: "FWD",
-    country: "ARG",
-    rating: 9.2,
-    goals: 10,
-    assists: 8,
-    category: "Most Assists",
-    federation: "CONMEBOL",
-    group: "B",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel_Messi_in_2023.jpg/250px-Lionel_Messi_in_2023.jpg",
-  },
-  {
-    name: "Cristiano Ronaldo",
-    position: "FWD",
-    country: "POR",
-    rating: 9.0,
-    goals: 8,
-    assists: 4,
-    category: "Top Rated",
-    federation: "UEFA",
-    group: "C",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Cristiano_Ronaldo_-_20220402153727.jpg/250px-Cristiano_Ronaldo_-_20220402153727.jpg",
-  },
-  {
-    name: "Marc-Andre ter Stegen",
-    position: "GK",
-    country: "GER",
-    rating: 9.0,
-    goals: 0,
-    assists: 0,
-    cleanSheets: 5,
-    category: "Most Clean Sheets",
-    federation: "UEFA",
-    group: "C",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Cristiano_Ronaldo_-_20220402153727.jpg/250px-Cristiano_Ronaldo_-_20220402153727.jpg",
-  },
-]
-
-// ─── Full player roster (data table) ───────────────────────────────────────────
 
 export interface MatchPerformance {
   matchName: string
@@ -191,7 +134,7 @@ export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
     const opponent = validOpponents[opponentIndex] || "OPP"
 
     const fluctuation = (random(seed + i * 20) - 0.5) * 2.4
-    let matchRating = Math.max(5.0, Math.min(10.0, player.rating + fluctuation))
+    const matchRating = Math.max(5.0, Math.min(10.0, player.rating + fluctuation))
 
     let matchGoals = 0
     if (goalsLeft > 0) {
@@ -291,300 +234,11 @@ export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
   return matches
 }
 
-export const mockTableData: PlayerRow[] = [
-  {
-    id: 1,
-    name: "Kylian Mbappé",
-    position: "FWD",
-    country: "FRA",
-    federation: "UEFA",
-    group: "A",
-    gamesPlayed: 7,
-    minutesPlayed: 612,
-    goals: 12,
-    assists: 5,
-    xg: 10.34,
-    xa: 4.21,
-    yellowCards: 1,
-    redCards: 0,
-    rating: 9.47,
-    injuryStatus: "Fit",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Kylian_Mbapp%C3%A9_-_20220917161011.jpg/250px-Kylian_Mbapp%C3%A9_-_20220917161011.jpg",
-  },
-  {
-    id: 2,
-    name: "Lionel Messi",
-    position: "FWD",
-    country: "ARG",
-    federation: "CONMEBOL",
-    group: "B",
-    gamesPlayed: 7,
-    minutesPlayed: 598,
-    goals: 10,
-    assists: 8,
-    xg: 8.12,
-    xa: 7.44,
-    yellowCards: 2,
-    redCards: 0,
-    rating: 9.23,
-    injuryStatus: "Fit",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel_Messi_in_2023.jpg/250px-Lionel_Messi_in_2023.jpg",
-  },
-  {
-    id: 3,
-    name: "Cristiano Ronaldo",
-    position: "FWD",
-    country: "POR",
-    federation: "UEFA",
-    group: "C",
-    gamesPlayed: 6,
-    minutesPlayed: 521,
-    goals: 8,
-    assists: 4,
-    xg: 7.88,
-    xa: 3.05,
-    yellowCards: 1,
-    redCards: 0,
-    rating: 9.01,
-    injuryStatus: "questionable",
-    avatar:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Cristiano_Ronaldo_-_20220402153727.jpg/250px-Cristiano_Ronaldo_-_20220402153727.jpg",
-  },
-  {
-    id: 4,
-    name: "Marc-Andre ter Stegen",
-    position: "GK",
-    country: "GER",
-    federation: "UEFA",
-    group: "C",
-    gamesPlayed: 6,
-    minutesPlayed: 540,
-    goals: 0,
-    assists: 0,
-    xg: 0.0,
-    xa: 0.0,
-    yellowCards: 0,
-    redCards: 0,
-    cleanSheets: 5,
-    rating: 8.99,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 5,
-    name: "Erling Haaland",
-    position: "FWD",
-    country: "NOR",
-    federation: "UEFA",
-    group: "D",
-    gamesPlayed: 5,
-    minutesPlayed: 436,
-    goals: 7,
-    assists: 2,
-    xg: 6.91,
-    xa: 1.72,
-    yellowCards: 0,
-    redCards: 0,
-    rating: 8.82,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 6,
-    name: "Vinicius Junior",
-    position: "FWD",
-    country: "BRA",
-    federation: "CONMEBOL",
-    group: "E",
-    gamesPlayed: 7,
-    minutesPlayed: 607,
-    goals: 6,
-    assists: 6,
-    xg: 5.44,
-    xa: 5.19,
-    yellowCards: 3,
-    redCards: 0,
-    rating: 8.91,
-    injuryStatus: "injured",
-  },
-  {
-    id: 7,
-    name: "Virgil van Dijk",
-    position: "DEF",
-    country: "NED",
-    federation: "UEFA",
-    group: "F",
-    gamesPlayed: 7,
-    minutesPlayed: 630,
-    goals: 2,
-    assists: 1,
-    xg: 1.65,
-    xa: 0.88,
-    yellowCards: 1,
-    redCards: 0,
-    cleanSheets: 4,
-    rating: 8.71,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 8,
-    name: "Kevin De Bruyne",
-    position: "MID",
-    country: "BEL",
-    federation: "UEFA",
-    group: "G",
-    gamesPlayed: 6,
-    minutesPlayed: 512,
-    goals: 3,
-    assists: 9,
-    xg: 2.81,
-    xa: 8.34,
-    yellowCards: 1,
-    redCards: 0,
-    rating: 9.11,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 9,
-    name: "Pedri",
-    position: "MID",
-    country: "ESP",
-    federation: "UEFA",
-    group: "A",
-    gamesPlayed: 6,
-    minutesPlayed: 503,
-    goals: 2,
-    assists: 7,
-    xg: 1.78,
-    xa: 6.22,
-    yellowCards: 2,
-    redCards: 0,
-    rating: 8.64,
-    injuryStatus: "questionable",
-  },
-  {
-    id: 10,
-    name: "Rúben Dias",
-    position: "DEF",
-    country: "POR",
-    federation: "UEFA",
-    group: "C",
-    gamesPlayed: 6,
-    minutesPlayed: 540,
-    goals: 1,
-    assists: 0,
-    xg: 0.94,
-    xa: 0.11,
-    yellowCards: 2,
-    redCards: 1,
-    cleanSheets: 4,
-    rating: 8.53,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 11,
-    name: "Alisson Becker",
-    position: "GK",
-    country: "BRA",
-    federation: "CONMEBOL",
-    group: "E",
-    gamesPlayed: 7,
-    minutesPlayed: 630,
-    goals: 0,
-    assists: 0,
-    xg: 0.0,
-    xa: 0.0,
-    yellowCards: 0,
-    redCards: 0,
-    cleanSheets: 4,
-    rating: 8.78,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 12,
-    name: "Jude Bellingham",
-    position: "MID",
-    country: "ENG",
-    federation: "UEFA",
-    group: "B",
-    gamesPlayed: 7,
-    minutesPlayed: 587,
-    goals: 5,
-    assists: 4,
-    xg: 4.52,
-    xa: 3.67,
-    yellowCards: 1,
-    redCards: 0,
-    rating: 9.03,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 13,
-    name: "Lautaro Martínez",
-    position: "FWD",
-    country: "ARG",
-    federation: "CONMEBOL",
-    group: "B",
-    gamesPlayed: 7,
-    minutesPlayed: 571,
-    goals: 5,
-    assists: 3,
-    xg: 4.88,
-    xa: 2.41,
-    yellowCards: 2,
-    redCards: 0,
-    rating: 8.72,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 14,
-    name: "Trent Alexander-Arnold",
-    position: "DEF",
-    country: "ENG",
-    federation: "UEFA",
-    group: "B",
-    gamesPlayed: 7,
-    minutesPlayed: 621,
-    goals: 1,
-    assists: 5,
-    xg: 0.78,
-    xa: 4.63,
-    yellowCards: 1,
-    redCards: 0,
-    cleanSheets: 3,
-    rating: 8.61,
-    injuryStatus: "Fit",
-  },
-  {
-    id: 15,
-    name: "Manuel Neuer",
-    position: "GK",
-    country: "GER",
-    federation: "UEFA",
-    group: "C",
-    gamesPlayed: 6,
-    minutesPlayed: 540,
-    goals: 0,
-    assists: 0,
-    xg: 0.0,
-    xa: 0.0,
-    yellowCards: 1,
-    redCards: 0,
-    cleanSheets: 3,
-    rating: 8.41,
-    injuryStatus: "Fit",
-  },
-]
-
-export function getPlayerHref(id: number): string {
+function getPlayerHref(id: number): string {
   return `/players/${id}`
 }
 
-export function findPlayerById(id: number): PlayerRow | undefined {
-  return mockTableData.find((player) => player.id === id)
-}
-
-function createPlayerColumns(t: any): ColumnDef<PlayerRow>[] {
+function createPlayerColumns(): ColumnDef<PlayerRow>[] {
   return [
     {
       accessorKey: "name",
@@ -945,13 +599,75 @@ export function PlayersPage() {
     pageSize: 10,
   })
 
-  const columns = React.useMemo(() => createPlayerColumns(t), [t])
+  const columns = React.useMemo(() => createPlayerColumns(), [])
 
-  // Filter mock data by active position tab
-  const filteredByPosition = React.useMemo(() => {
-    if (positionTab === "all") return mockTableData
-    return mockTableData.filter((player) => player.position === positionTab)
-  }, [positionTab])
+  const { players, loading: playersLoading, error: playersError } = usePlayers(100, globalFilter, positionTab)
+  const { data: topPerformers, loading: topLoading, error: topError } = useTopPerformers()
+
+  const highlights = React.useMemo(() => {
+    if (!topPerformers) return []
+    const list: PlayerPerformance[] = []
+    
+    // 1. Top Goalscorer
+    if (topPerformers.goals?.[0]) {
+      const g = topPerformers.goals[0]
+      list.push({
+        name: g.name,
+        position: g.position || "FWD",
+        country: g.nationality,
+        goals: g.value,
+        category: "Top Goalscorer",
+        avatar: g.avatar,
+        federation: g.federation || "UEFA",
+        group: g.group || "A",
+      })
+    }
+    // 2. Most Assists
+    if (topPerformers.assists?.[0]) {
+      const a = topPerformers.assists[0]
+      list.push({
+        name: a.name,
+        position: a.position || "FWD",
+        country: a.nationality,
+        assists: a.value,
+        category: "Most Assists",
+        avatar: a.avatar,
+        federation: a.federation || "UEFA",
+        group: a.group || "A",
+      })
+    }
+    // 3. Top Rated
+    if (topPerformers.rating?.[0]) {
+      const r = topPerformers.rating[0]
+      list.push({
+        name: r.name,
+        position: r.position || "FWD",
+        country: r.nationality,
+        rating: r.value,
+        category: "Top Rated",
+        avatar: r.avatar,
+        federation: r.federation || "UEFA",
+        group: r.group || "A",
+      })
+    }
+    // 4. Most Clean Sheets
+    if (topPerformers.saves?.[0]) {
+      const s = topPerformers.saves[0]
+      list.push({
+        name: s.name,
+        position: s.position || "GK",
+        country: s.nationality,
+        cleanSheets: s.value,
+        category: "Most Clean Sheets",
+        avatar: s.avatar,
+        federation: s.federation || "UEFA",
+        group: s.group || "A",
+      })
+    }
+    return list
+  }, [topPerformers])
+
+  const filteredByPosition = players;
 
   const table = useReactTable({
     data: filteredByPosition,
@@ -993,7 +709,21 @@ export function PlayersPage() {
       </div>
 
       {/* Highlight cards */}
-      <PlayerPerformanceCard playerPerformance={mockPlayerData} />
+      {topLoading ? (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="h-32 flex items-center justify-center text-sm text-muted-foreground animate-pulse border border-border/50 bg-card/30">
+              Loading highlight...
+            </Card>
+          ))}
+        </div>
+      ) : topError ? (
+        <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-sm text-destructive">
+          Error loading highlights: {topError}
+        </div>
+      ) : (
+        <PlayerPerformanceCard playerPerformance={highlights} />
+      )}
 
       {/* Full player table */}
       <Card>
@@ -1094,7 +824,25 @@ export function PlayersPage() {
                 ))}
               </TableHeader>
               <TableBody>
-                {table.getRowModel().rows.length ? (
+                {playersError ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-destructive font-medium"
+                    >
+                      Error loading players: {playersError}
+                    </TableCell>
+                  </TableRow>
+                ) : playersLoading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center text-muted-foreground animate-pulse font-medium"
+                    >
+                      Loading player statistics...
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows.length ? (
                   table.getRowModel().rows.map((row) => {
                     const playerHref = getPlayerHref(row.original.id)
 

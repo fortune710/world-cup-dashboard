@@ -30,13 +30,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GROUPS, type GroupKey, type GroupStageStandingsProps, type StandingsTableProps } from "@/datatypes"
 import {
   formatGoalDifference,
-  groupStandings,
   isQualificationZone,
 } from "@/lib/helpers/standings.helpers"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 import { Badge } from "./ui/badge"
+import { useGroupStandings } from "@/hooks/use-group-standings"
 const STANDINGS_TEAM_CODES: Record<string, string> = {
   "Argentina": "ARG",
   "Poland": "POL",
@@ -170,6 +170,7 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
 }: GroupStageStandingsProps) {
   const { t } = useTranslation()
   const [activeGroup, setActiveGroup] = React.useState<GroupKey>("A")
+  const { standings, loading, error } = useGroupStandings(activeGroup)
 
   const handleGroupChange = React.useCallback((value: string) => {
     setActiveGroup(value as GroupKey)
@@ -219,11 +220,19 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
           </CardAction>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col pt-0">
-          {GROUPS.map((group) => (
-            <TabsContent key={group} value={group} className="flex-1 outline-none">
-              <StandingsTable group={group} rows={groupStandings[group]} />
+          {loading ? (
+            <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground min-h-60">
+              Loading standings...
+            </div>
+          ) : error ? (
+            <div className="flex flex-1 items-center justify-center p-6 text-sm text-destructive min-h-60">
+              {error}
+            </div>
+          ) : (
+            <TabsContent value={activeGroup} className="flex-1 outline-none">
+              <StandingsTable group={activeGroup} rows={standings} />
             </TabsContent>
-          ))}
+          )}
         </CardContent>
       </Card>
     </Tabs>
