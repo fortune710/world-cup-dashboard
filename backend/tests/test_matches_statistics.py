@@ -39,6 +39,29 @@ class FakeQuery:
         return self.row
 
 
+class FakeDateQuery:
+    def __init__(self, rows):
+        self.rows = rows
+        self.filter_args = []
+        self.order_by_args = None
+        self.options_args = None
+
+    def options(self, *args):
+        self.options_args = args
+        return self
+
+    def filter(self, *args):
+        self.filter_args.extend(args)
+        return self
+
+    def order_by(self, *args):
+        self.order_by_args = args
+        return self
+
+    def all(self):
+        return self.rows
+
+
 class TestMatchesStatisticsRoute(unittest.TestCase):
     def setUp(self):
         app.dependency_overrides[get_db] = lambda: object()
@@ -120,6 +143,35 @@ class TestMatchesStatisticsRoute(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()[0]["stadium"], None)
 
+    def test_matches_by_date_route_forwards_status_filter(self):
+        rows = [
+            SimpleNamespace(
+                id=7,
+                round="Group",
+                group="B",
+                home_team_code="AAA",
+                away_team_code="BBB",
+                stadium="National Stadium",
+                kickoff_utc="2026-06-11T18:00:00",
+                status="live",
+                phase=None,
+                home_score=1,
+                away_score=0,
+                home_pen=None,
+                away_pen=None,
+                home_team=None,
+                away_team=None,
+            )
+        ]
+
+        with patch.object(matches_route, "get_matches_by_date", return_value=rows) as mock_get_matches:
+            response = self.client.get("/matches/2026-06-11?status=live")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["id"], 7)
+        mock_get_matches.assert_called_once()
+        self.assertEqual(mock_get_matches.call_args.kwargs["status"], "live")
+
 
 class TestMatchesStatisticsController(unittest.TestCase):
     def test_get_matchday_statistics_by_date_returns_top_one_per_metric(self):
@@ -149,6 +201,26 @@ class TestMatchesStatisticsController(unittest.TestCase):
             self.assertIsNotNone(fake_query.order_by_args)
             self.assertTrue(any("match_date" in str(arg) for arg in fake_query.filter_args))
             self.assertTrue(any("player_id" in str(arg) for arg in fake_query.join_args))
+
+    def test_get_matches_by_date_filters_date_and_status(self):
+        rows = [
+            SimpleNamespace(
+                id=1,
+                status="live",
+                kickoff_utc=date(2026, 6, 11),
+            )
+        ]
+        fake_query = FakeDateQuery(rows)
+        fake_db = Mock()
+        fake_db.query.return_value = fake_query
+
+        result = matches_controller.get_matches_by_date(fake_db, date(2026, 6, 11), status="live")
+
+        self.assertEqual(result, rows)
+        self.assertIsNotNone(fake_query.options_args)
+        self.assertIsNotNone(fake_query.order_by_args)
+        self.assertTrue(any("kickoff_utc" in str(arg) for arg in fake_query.filter_args))
+        self.assertTrue(any("status" in str(arg) for arg in fake_query.filter_args))
 
 
 if __name__ == "__main__":
