@@ -11,7 +11,12 @@ from pipeline.load.elo import EloLoader
 from config.db import SessionLocal
 from db.controllers.matches import get_matches_for_matchday_stats_queue
 from db.controllers.elo import get_elo_inputs
-from db.controllers.players import get_players_by_team
+from db.controllers.players import (
+    claim_player_stats_queue_pending,
+    clear_player_stats_queue_pending,
+    get_players_by_team,
+    release_player_stats_queue_pending,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -221,9 +226,11 @@ def enqueue_player_stats(**context):
         return
 
     # Identify teams in completed matches
+    completed_matches = []
     teams_to_update = set()
     for match in transformed_matches:
         if match.get('status') == 'completed':
+            completed_matches.append(match)
             teams_to_update.add(match.get('home_team_code'))
             teams_to_update.add(match.get('away_team_code'))
 
@@ -231,9 +238,23 @@ def enqueue_player_stats(**context):
         logger.info({"message": "No completed matches found in this run"})
         return
 
+    completed_match_ids = sorted(
+        str(match.get("id"))
+        for match in completed_matches
+        if match.get("id") is not None
+    )
+    if not completed_match_ids:
+        logger.warning({
+            "message": "No valid completed match ids found for player stats enqueue",
+            "completed_match_count": len(completed_matches),
+        })
+        return
+    batch_key = ",".join(completed_match_ids)
+
     logger.info({
         "message": "Found teams from completed matches",
         "count": len(teams_to_update),
+        "batch_key": batch_key,
     })
 
     db = SessionLocal()
@@ -243,16 +264,53 @@ def enqueue_player_stats(**context):
     queue = QueueService()
     settings = Settings()
     try:
+        queued_count = 0
+        skipped_pending_count = 0
         for team_code in teams_to_update:
             players = get_players_by_team(db, team_code)
             for player in players:
-                queue.publish(
-                    queue_name=settings.PLAYER_STATS_UPDATES_QUEUE,
-                    message={'player_id': player.id, 'name': player.name}
-                )
+                claimed = claim_player_stats_queue_pending(db, player.id, batch_key)
+                if not claimed:
+                    skipped_pending_count += 1
+                    logger.info({
+                        "message": "Skipping player already pending or already queued for batch",
+                        "player_id": player.id,
+                        "player_name": player.name,
+                        "team_code": team_code,
+                        "batch_key": batch_key,
+                    })
+                    continue
+
+                logger.info({
+                    "message": "Enqueueing player for stats update",
+                    "player_id": player.id,
+                    "player_name": player.name,
+                    "team_code": team_code,
+                    "batch_key": batch_key,
+                })
+                try:
+                    queue.publish(
+                        queue_name=settings.PLAYER_STATS_UPDATES_QUEUE,
+                        message={'player_id': player.id, 'name': player.name}
+                    )
+                    queued_count += 1
+                except Exception:
+                    release_player_stats_queue_pending(db, player.id, reset_batch_key=True)
+                    logger.error({
+                        "message": "Failed to publish player stats message; cleared pending flag",
+                        "player_id": player.id,
+                        "player_name": player.name,
+                        "team_code": team_code,
+                        "batch_key": batch_key,
+                    }, exc_info=True)
+                    raise
+
         logger.info({
             "message": "Completed player stats enqueue",
             "teams": len(teams_to_update),
+            "batch_key": batch_key,
+            "queued_count": queued_count,
+            "skipped_pending_count": skipped_pending_count,
         })
     except Exception as exc:
         logger.error({
@@ -260,6 +318,7 @@ def enqueue_player_stats(**context):
             "error": {"message": str(exc), "type": type(exc).__name__},
         })
         raise
+    
     finally:
         db.close()
         queue.close()

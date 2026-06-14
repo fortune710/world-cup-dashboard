@@ -32,14 +32,144 @@ def update_player_stats(db: Session, player_id: int, rating: float, stats_json: 
     """
     Updates only the statistics of a player.
     """
-    logger.info("Updating player stats for id: %d", player_id)
+    logger.info({
+        "message": "Updating player stats for id",
+        "player_id": player_id,
+    })
     db_player = db.query(Player).filter(Player.id == player_id).first()
-    if db_player:
-        db_player.rating = rating
-        db_player.stats_json = stats_json
-        db.commit()
-        db.refresh(db_player)
+    if not db_player:
+        logger.warning({
+            "message": "Player not found while updating stats",
+            "player_id": player_id,
+        })
+        return None
+
+    db_player.rating = rating
+    db_player.stats_json = stats_json
+    db_player.stats_queue_pending = False
+    db.commit()
+    db.refresh(db_player)
+    logger.info({
+        "message": "Updated player stats and cleared queue pending flag",
+        "player_id": player_id,
+    })
     return db_player
+
+
+def claim_player_stats_queue_pending(db: Session, player_id: int, batch_key: str) -> bool:
+    logger.info({
+        "message": "Attempting to claim player for stats queue",
+        "player_id": player_id,
+        "batch_key": batch_key,
+    })
+    try:
+        updated_rows = (
+            db.query(Player)
+            .filter(
+                Player.id == player_id,
+                Player.stats_queue_pending.is_(False),
+                sa.func.coalesce(Player.stats_last_enqueued_batch_key, "") != batch_key,
+            )
+            .update(
+            {
+                    Player.stats_queue_pending: True,
+                    Player.stats_last_enqueued_batch_key: batch_key,
+                },
+                synchronize_session=False,
+            )
+        )
+        db.commit()
+        claimed = updated_rows > 0
+        logger.info({
+            "message": "Claimed player for stats queue" if claimed else "Player already pending or already queued for batch",
+            "player_id": player_id,
+            "batch_key": batch_key,
+            "claimed": claimed,
+        })
+        return claimed
+    except Exception as exc:
+        db.rollback()
+        logger.error({
+            "message": "Failed to claim player for stats queue",
+            "player_id": player_id,
+            "batch_key": batch_key,
+            "error": {
+                "message": str(exc),
+                "type": type(exc).__name__,
+            },
+        }, exc_info=True)
+        raise
+
+
+def clear_player_stats_queue_pending(db: Session, player_id: int) -> bool:
+    logger.info({
+        "message": "Clearing player stats queue pending flag",
+        "player_id": player_id,
+    })
+    try:
+        updated_rows = (
+            db.query(Player)
+            .filter(Player.id == player_id)
+            .update({Player.stats_queue_pending: False}, synchronize_session=False)
+        )
+        db.commit()
+        cleared = updated_rows > 0
+        logger.info({
+            "message": "Cleared player stats queue pending flag" if cleared else "Player not found while clearing stats queue pending flag",
+            "player_id": player_id,
+            "cleared": cleared,
+        })
+        return cleared
+    except Exception as exc:
+        db.rollback()
+        logger.error({
+            "message": "Failed to clear player stats queue pending flag",
+            "player_id": player_id,
+            "error": {
+                "message": str(exc),
+                "type": type(exc).__name__,
+            },
+        }, exc_info=True)
+        raise
+
+
+def release_player_stats_queue_pending(db: Session, player_id: int, reset_batch_key: bool = False) -> bool:
+    logger.info({
+        "message": "Releasing player stats queue claim",
+        "player_id": player_id,
+        "reset_batch_key": reset_batch_key,
+    })
+    try:
+        update_values = {Player.stats_queue_pending: False}
+        if reset_batch_key:
+            update_values[Player.stats_last_enqueued_batch_key] = None
+
+        updated_rows = (
+            db.query(Player)
+            .filter(Player.id == player_id)
+            .update(update_values, synchronize_session=False)
+        )
+        db.commit()
+        released = updated_rows > 0
+        logger.info({
+            "message": "Released player stats queue claim" if released else "Player not found while releasing stats queue claim",
+            "player_id": player_id,
+            "reset_batch_key": reset_batch_key,
+            "released": released,
+        })
+        return released
+    except Exception as exc:
+        db.rollback()
+        logger.error({
+            "message": "Failed to release player stats queue claim",
+            "player_id": player_id,
+            "reset_batch_key": reset_batch_key,
+            "error": {
+                "message": str(exc),
+                "type": type(exc).__name__,
+            },
+        }, exc_info=True)
+        raise
 
 def get_players_by_team(db: Session, team_code: str):
     """
