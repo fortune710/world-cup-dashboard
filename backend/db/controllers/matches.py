@@ -369,3 +369,74 @@ def get_matchday_statistics_by_date(db: Session, match_date: date):
             }
         )
         raise
+
+
+def get_bracket_matches(db: Session):
+    """
+    Retrieve all knockout stage matches and group them by round.
+    Knockout rounds include: R32, R16, QF, SF, 3rd place, and Final.
+    """
+    logger.info({"message": "Fetching all knockout stage matches for bracket"})
+
+    knockout_rounds = [
+        "Round of 32", "R32",
+        "Round of 16", "R16",
+        "Quarter-final", "QF",
+        "Semi-final", "SF",
+        "3rd place", "3rd",
+        "Final", "final"
+    ]
+
+    try:
+        matches = (
+            db.query(Match)
+            .options(joinedload(Match.home_team), joinedload(Match.away_team))
+            .filter(Match.round.in_(knockout_rounds))
+            .order_by(Match.kickoff_utc.asc())
+            .all()
+        )
+
+        # Map to normalize round names for consistency
+        round_name_map = {
+            "Round of 32": "R32",
+            "R32": "R32",
+            "Round of 16": "R16",
+            "R16": "R16",
+            "Quarter-final": "QF",
+            "QF": "QF",
+            "Semi-final": "SF",
+            "SF": "SF",
+            "3rd place": "3rd",
+            "3rd": "3rd",
+            "Final": "final",
+            "final": "final"
+        }
+
+        # Define display order for frontend
+        display_order = ["R32", "R16", "QF", "SF", "3rd", "final"]
+        
+        bracket = {round_key: [] for round_key in display_order}
+
+        for match in matches:
+            normalized_round = round_name_map.get(match.round)
+            if normalized_round:
+                bracket[normalized_round].append(match)
+
+        logger.info(
+            {
+                "message": "Resolved bracket matches",
+                "round_counts": {r: len(m) for r, m in bracket.items()},
+            }
+        )
+        
+        # Return as a list of rounds for easier iteration in frontend
+        return [{"round": r, "matches": bracket[r]} for r in display_order if bracket[r]]
+
+    except Exception as exc:
+        logger.error(
+            {
+                "message": "Failed to fetch bracket matches",
+                "error": {"message": str(exc), "type": type(exc).__name__},
+            }
+        )
+        raise
