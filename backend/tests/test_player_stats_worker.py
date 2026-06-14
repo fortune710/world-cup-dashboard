@@ -18,6 +18,10 @@ def load_player_stats_worker_module():
             "PLAYER_STATS_DB_UPDATES_QUEUE": "player_stats_db_updates",
         },
     )
+    fake_config_db_module = types.ModuleType("config.db")
+    fake_config_db_module.SessionLocal = lambda: None
+    fake_players_controller_module = types.ModuleType("db.controllers.players")
+    fake_players_controller_module.clear_player_stats_queue_pending = lambda *args, **kwargs: None
     fake_players_source_module = types.ModuleType("pipeline.sources.players")
     fake_players_source_module.PlayersSource = type("PlayersSource", (), {})
     fake_players_transform_module = types.ModuleType("pipeline.transformations.players")
@@ -34,6 +38,8 @@ def load_player_stats_worker_module():
                 "services.celery_app": fake_celery_app_module,
                 "services.queue_service": fake_queue_service_module,
                 "config.settings": fake_settings_module,
+                "config.db": fake_config_db_module,
+                "db.controllers.players": fake_players_controller_module,
                 "pipeline.sources.players": fake_players_source_module,
                 "pipeline.transformations.players": fake_players_transform_module,
             },
@@ -53,8 +59,9 @@ def load_player_stats_worker_module():
 class TestPlayerStatsWorker(unittest.TestCase):
     def test_run_fetch_stats_batch_awaits_async_player_stats_and_publishes_result(self):
         worker = load_player_stats_worker_module()
-        fake_queue = Mock()
-        fake_queue.consume.return_value = [
+        inbound_queue = Mock()
+        outbound_queue = Mock()
+        inbound_queue.consume.return_value = [
             {"body": {"player_id": 539792, "name": "Ronwen Williams"}, "delivery_tag": 1}
         ]
         fake_source = Mock()
@@ -62,7 +69,7 @@ class TestPlayerStatsWorker(unittest.TestCase):
         fake_transformer = Mock()
         fake_transformer.transform_player_stats.return_value = (7.2, {"rating": 7.2})
 
-        with patch.object(worker, "QueueService", return_value=fake_queue), patch.object(
+        with patch.object(worker, "QueueService", side_effect=[inbound_queue, outbound_queue]), patch.object(
             worker,
             "PlayersSource",
             return_value=fake_source,
@@ -72,8 +79,10 @@ class TestPlayerStatsWorker(unittest.TestCase):
         self.assertEqual(result, {"processed": 1})
         fake_source.get_player_stats.assert_awaited_once_with(539792)
         fake_transformer.transform_player_stats.assert_called_once_with({"statistics": {"rating": 7.2}})
-        fake_queue.publish.assert_called_once()
-        fake_queue.ack.assert_called_once_with(1)
+        inbound_queue.consume.assert_called_once_with("player_stats_updates", count=10)
+        outbound_queue.publish.assert_called_once()
+        inbound_queue.ack.assert_called_once_with(1)
+        outbound_queue.ack.assert_not_called()
 
 
 if __name__ == "__main__":

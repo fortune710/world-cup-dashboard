@@ -1,5 +1,5 @@
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey, Index, func
+from sqlalchemy import Column, String, Float, BigInteger, Date, Enum, SmallInteger, ForeignKey, Index, func, Boolean, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session
@@ -40,6 +40,8 @@ class Player(Base):
 
     ## Statistics
     rating = Column(Float, index=True)
+    stats_queue_pending = Column(Boolean, default=False, server_default=text("false"), nullable=False, index=True)
+    stats_last_enqueued_batch_key = Column(String, nullable=True)
     stats_json = Column(JSONB, default=lambda: {
         "rating": 0,
         "total_rating": 0,
