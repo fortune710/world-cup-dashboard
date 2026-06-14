@@ -1,6 +1,9 @@
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from db.models.teams import Team
+
+logger = logging.getLogger(__name__)
 
 def upsert_team(db: Session, team_data: dict):
     payload = {k: v for k, v in team_data.items() if k != "id"}
@@ -59,7 +62,12 @@ def upsert_team(db: Session, team_data: dict):
     return db_team
 
 def get_all_teams(db: Session, group: str = None):
+    logger.info({
+        "message": "Entering get_all_teams",
+        "group": group
+    })
     query = db.query(Team)
+    ordering = "none"
     if group:
         query = query.filter(Team.group == group).order_by(
             Team.points.desc(),
@@ -67,7 +75,14 @@ def get_all_teams(db: Session, group: str = None):
             Team.goals_for.desc(),
             Team.name.asc()
         )
-    return query.all()
+        ordering = "points desc, goal_difference desc, goals_for desc, name asc"
+    teams = query.all()
+    logger.info({
+        "message": "Exiting get_all_teams",
+        "teams_count": len(teams),
+        "ordering": ordering
+    })
+    return teams
 
 def upsert_teams_batch(db: Session, teams_data: list[dict]):
     """

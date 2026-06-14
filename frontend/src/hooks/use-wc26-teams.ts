@@ -4,7 +4,9 @@ import { API_BASE_URL } from "@/lib/api-config"
 
 import {
   type Wc26TeamRow,
+  normalizeTeamKey,
 } from "@/lib/teams/wc26-teams"
+import { powerRankingRows } from "@/lib/helpers/power-ranking.helpers"
 
 function getConfederationByCode(code: string): string {
   const codeUpper = code.toUpperCase();
@@ -46,15 +48,20 @@ export function useWc26Teams(): {
         return (await res.json())
       })
       .then((data) => {
+        const powerTeamMap = new Map<string, typeof powerRankingRows[number]>()
+        for (const row of powerRankingRows) {
+          powerTeamMap.set(normalizeTeamKey(row.team), row)
+          if (row.code) {
+            powerTeamMap.set(row.code.toUpperCase(), row)
+          }
+        }
+
         const mapped: Wc26TeamRow[] = data.map((item: any) => {
-          const won = item.matches_won || 0
-          const drawn = item.matches_drawn || 0
-          const lost = item.matches_lost || 0
-          
-          const form: ("W" | "D" | "L")[] = []
-          for (let i = 0; i < won; i++) form.push("W")
-          for (let i = 0; i < drawn; i++) form.push("D")
-          for (let i = 0; i < lost; i++) form.push("L")
+          const powerRow =
+            powerTeamMap.get(item.code.toUpperCase()) ??
+            powerTeamMap.get(normalizeTeamKey(item.name)) ??
+            null
+          const form = powerRow?.form ?? null
 
           return {
             idCountry: item.code,
@@ -63,15 +70,15 @@ export function useWc26Teams(): {
             fifaPoints: item.points,
             confederation: getConfederationByCode(item.code),
             rankChange: 0,
-            groupStageElo: item.elo_rating || 1500,
-            form: form.length > 0 ? form : null,
+            groupStageElo: item.elo_rating ?? 1500,
+            form: form,
             group: item.group || "A",
           }
         })
 
         const sorted = mapped.toSorted((a, b) => {
-          const eloA = a.groupStageElo ?? 0
-          const eloB = b.groupStageElo ?? 0
+          const eloA = a.groupStageElo!
+          const eloB = b.groupStageElo!
           return eloB - eloA
         })
 

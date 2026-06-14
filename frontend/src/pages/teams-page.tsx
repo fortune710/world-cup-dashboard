@@ -165,7 +165,7 @@ function createTeamsColumns(t: TFunction): ColumnDef<Wc26TeamRow>[] {
       ),
     },
     {
-      accessorKey: "fifaRanks",
+      accessorKey: "fifaRank",
       header: () => <div className="text-end">{t("teamsPage.fifaRank")}</div>,
       cell: ({ row }) => (
         <div className="text-end font-medium tabular-nums">
@@ -449,8 +449,8 @@ export function TeamsPage() {
                     <Card
                       className={cn(
                         "transition-colors group-hover:bg-primary/10",
-                        team.fifaRank != null &&
-                        team.fifaRank <= 10 &&
+                        team.eloRank != null &&
+                        team.eloRank <= 10 &&
                         "border-primary/30 group-hover:border-primary/50"
                       )}
                     >
