@@ -60,7 +60,6 @@ ${COMPOSE_CMD} -f compose.prod.yaml up -d --build --remove-orphans \
   airflow-init \
   celery-beat \
   celery-worker-fetch \
-  celery-worker-db \
   celery-worker-matchday-stats \
   rabbitmq \
   prometheus \
