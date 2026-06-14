@@ -129,6 +129,8 @@ export const en = {
     title: "Live Rush",
     description: "Live matches for the day",
     noMatches: "No matches in this view.",
+    loadingMatches: "Loading matches...",
+    loadFailed: "Failed to load matches.",
     tabs: {
       all: "All",
       finished: "Finished",
@@ -164,6 +166,8 @@ export const en = {
   topPerformers: {
     title: "Top Performers",
     description: "Standouts so far in the tournament",
+    loading: "Loading performers...",
+    error: "Failed to load top performers.",
     tabs: {
       goals: "Goals",
       assists: "Assists",
@@ -176,6 +180,7 @@ export const en = {
     groupShort: "Group {{group}}",
     selectPlaceholder: "Group A",
     tableAriaLabel: "Group {{group}} standings",
+    loading: "Loading standings...",
   },
   powerRanking: {
     title: "Tournament Power Rankings",
@@ -220,6 +225,8 @@ export const en = {
   playerDetailsPage: {
     backToPlayers: "Back to players",
     notFound: "Player not found",
+    loading: "Loading position profile...",
+    error: "Failed to load peer data.",
     goals: "Goals",
     assists: "Assists",
     apps: "Apps",

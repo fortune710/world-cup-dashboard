@@ -1,4 +1,3 @@
-import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useParams } from "react-router"
 import {
@@ -9,7 +8,6 @@ import {
   ClockIcon,
   ActivityIcon,
   TrendingUpIcon,
-  ExternalLinkIcon,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -24,22 +22,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { findPlayerById } from "@/pages/players-page"
+import { usePlayerDetails } from "@/hooks/use-player-details"
 import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
 
 import { ChartRadarGridCircle } from "@/components/player-radar"
 import { ChartAreaInteractive } from "@/components/bar-graph"
-import { ChartBarMixed } from "@/components/player-bars"
 
 export function PlayerDetailsPage() {
   const { t } = useTranslation()
   const { playerId } = useParams<{ playerId: string }>()
 
-  const player = React.useMemo(() => {
-    const id = Number(playerId)
-    if (!Number.isFinite(id)) return undefined
-    return findPlayerById(id)
-  }, [playerId])
+  const { player, loading, error } = usePlayerDetails(playerId)
 
   const initials = player
     ? player.name
@@ -52,7 +45,15 @@ export function PlayerDetailsPage() {
     ? getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
     : ""
 
-  if (!player) {
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground min-h-[400px]">
+        Loading player details...
+      </div>
+    )
+  }
+
+  if (error || !player) {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">
         <Button variant="ghost" size="sm" className="w-fit" asChild>
@@ -62,7 +63,7 @@ export function PlayerDetailsPage() {
           </Link>
         </Button>
         <h1 className="text-2xl font-semibold tracking-tight">
-          {t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
+          {error ? `Error: ${error}` : t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
         </h1>
       </div>
     )

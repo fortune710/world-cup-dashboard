@@ -1,6 +1,7 @@
 // src/hooks/use-last-five-fixtures.ts
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface Fixture {
   id: string;
@@ -18,7 +19,8 @@ export function useLastFiveFixtures(teamId: string) {
     async function fetchFixtures() {
       logger.info("Fetching last five fixtures", { teamId });
       try {
-        const res = await fetch(`/api/teams/${teamId}/last-five`);
+        const res = await fetch(`${API_BASE_URL}/teams/${teamId}/last-five`);
+
         if (!res.ok) throw new Error("Failed to fetch last five fixtures");
         const data = await res.json();
         setFixtures(data);

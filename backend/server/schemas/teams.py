@@ -12,5 +12,8 @@ class TeamStandingResponse(BaseModel):
     goals_against: int
     goal_difference: int
     points: int
+    group: Optional[str] = None
+    fifa_ranking: Optional[int] = None
+    elo_rating: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)

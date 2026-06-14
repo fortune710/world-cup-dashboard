@@ -180,6 +180,10 @@ export interface PerformerRow {
   nationality: string
   value: number
   avatar?: string
+  position?: string
+  group?: string
+  federation?: string
+  rating?: number
 }
 
 export interface PerformerListProps {

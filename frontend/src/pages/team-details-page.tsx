@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -22,7 +21,9 @@ import { useWc26Teams } from "@/hooks/use-wc26-teams"
 import { findTeamByRouteId, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChartRadarDots } from "@/components/radar-chart"
+import { useSquadPlayers } from "@/hooks/use-squad-players"
+import { useTeamEloHistory } from "@/hooks/use-team-elo-history"
+import { TeamEloHistoryChart } from "@/components/team-elo-history-chart"
 
 const RankChangeBadge = React.memo(function RankChangeBadge({
   change,
@@ -70,6 +71,10 @@ export function TeamDetailsPage() {
     () => findTeamByRouteId(teams, teamId),
     [teamId, teams]
   )
+
+  const teamCode = team?.idCountry ?? undefined
+  const { players: squad, loading: squadLoading, error: squadError } = useSquadPlayers(teamCode)
+  const { history: eloHistory, loading: eloLoading, error: eloError } = useTeamEloHistory(teamCode)
 
   if (isLoading) {
     return (
@@ -139,33 +144,53 @@ export function TeamDetailsPage() {
           {team.idCountry ?? "—"} · {confed} · {t("teamsPage.group")} {team.group}
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[140px] mt-2">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Upcoming Feature</CardTitle>
-
-          </CardHeader>
-          <CardContent>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Form </CardTitle>
-
-          </CardHeader>
-          <CardFooter>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quod.
-          </CardFooter>
-
-        </Card>
-
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows mt-2">
-        <ChartRadarDots />
-        <div className="col-span-1  ">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mt-4">
+        <div className="col-span-1 md:col-span-2 flex flex-col">
+          <TeamEloHistoryChart history={eloHistory} loading={eloLoading} error={eloError} />
         </div>
-
+        <div className="col-span-1 flex flex-col">
+          <Card className="flex flex-col h-full">
+            <CardHeader className="pb-2">
+              <CardTitle>{t("teamDetailsPage.squadTitle", { defaultValue: "Team Squad" })}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-y-auto max-h-[260px] pr-2">
+              {squadLoading ? (
+                <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+                  Loading squad...
+                </div>
+              ) : squadError ? (
+                <div className="text-destructive text-sm py-4">
+                  Error loading squad: {squadError}
+                </div>
+              ) : squad.length === 0 ? (
+                <div className="text-muted-foreground text-sm py-4">
+                  No squad players found.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {squad.map((player) => (
+                    <Link
+                      key={player.id}
+                      to={`/players/${player.id}`}
+                      className="flex items-center justify-between p-1.5 rounded-lg hover:bg-primary/10 transition-colors border border-transparent hover:border-border/50 group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="size-7 rounded-full border border-border/50 overflow-hidden shrink-0">
+                          <AvatarImage src={player.avatarUrl} alt={player.name} className="object-cover" />
+                          <AvatarFallback>{player.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">{player.name}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-bold px-1.5 py-0.5 leading-none border-primary/40 bg-primary/5 text-primary">
+                        {player.position}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
 

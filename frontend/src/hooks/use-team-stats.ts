@@ -1,6 +1,7 @@
 // src/hooks/use-team-stats.ts
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface TeamStats {
   bestAttribute: string;
@@ -19,7 +20,7 @@ export function useTeamStats(teamId: string) {
       logger.info("Fetching team stats", { teamId });
       try {
         // Placeholder fetch - replace with real API
-        const response = await fetch(`/api/teams/${teamId}/stats`);
+        const response = await fetch(`${API_BASE_URL}/teams/${teamId}/stats`);
         if (!response.ok) throw new Error("Failed to fetch team stats");
         const result = await response.json();
         setData(result);

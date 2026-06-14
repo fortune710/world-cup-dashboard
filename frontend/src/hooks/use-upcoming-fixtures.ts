@@ -1,6 +1,7 @@
 // src/hooks/use-upcoming-fixtures.ts
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export interface Fixture {
   id: string;
@@ -18,7 +19,7 @@ export function useUpcomingFixtures(teamId: string) {
     async function fetchUpcoming() {
       logger.info("Fetching upcoming fixtures", { teamId });
       try {
-        const res = await fetch(`/api/teams/${teamId}/upcoming`);
+        const res = await fetch(`${API_BASE_URL}/teams/${teamId}/upcoming`);
         if (!res.ok) throw new Error("Failed to fetch upcoming fixtures");
         const data = await res.json();
         setFixtures(data);
