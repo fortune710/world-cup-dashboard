@@ -6,7 +6,7 @@ export type MatchdayStatisticName =
   | "pass_accuracy"
 
 export interface MatchdayStatisticApiRow {
-  stat_name: MatchdayStatisticName
+  stat_name: string
   value: number
   player_name: string
 }
@@ -74,8 +74,22 @@ export function buildMatchdayStatisticsCards(
     goalContributions: { ...DEFAULT_CARD, statName: "goal_contributions" },
     passAccuracy: { ...DEFAULT_CARD, statName: "pass_accuracy" },
   }
+  const validStatNames = new Set<MatchdayStatisticName>([
+    "rating",
+    "goal_contributions",
+    "pass_accuracy",
+  ])
 
   for (const row of rows) {
+    if (!validStatNames.has(row.stat_name as MatchdayStatisticName)) {
+      logger.warn({
+        message: "Skipping unexpected matchday statistic row",
+        stat_name: row.stat_name,
+        player_name: row.player_name,
+      })
+      continue
+    }
+
     const cardKey =
       row.stat_name === "rating"
         ? "rating"
