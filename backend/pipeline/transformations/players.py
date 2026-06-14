@@ -10,18 +10,10 @@ class PlayersTransformations:
     @staticmethod
     def _camel_to_snake(value: str) -> str:
         """Convert camelCase/PascalCase keys to snake_case."""
-        logger.info({
-            "message": "Converting stats key to snake_case",
-            "source_key": value,
-        })
         return re.sub(r"(?<!^)(?=[A-Z])", "_", value).lower()
 
     def _to_snake_case_keys(self, payload: Any) -> Any:
         """Recursively convert dictionary keys to snake_case."""
-        logger.info({
-            "message": "Normalizing stats payload keys to snake_case",
-            "payload_type": type(payload).__name__,
-        })
         if isinstance(payload, dict):
             return {
                 self._camel_to_snake(str(key)): self._to_snake_case_keys(val)
@@ -82,6 +74,8 @@ class PlayersTransformations:
         if not player_stats or "statistics" not in player_stats:
             logger.warning({
                 "message": "Player stats payload missing statistics block",
+                "has_stats": bool(player_stats),
+                "statistics_present": isinstance(player_stats, dict) and "statistics" in player_stats,
             })
             return None, None
         

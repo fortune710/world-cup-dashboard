@@ -56,6 +56,7 @@ def _player_info_payload(player):
             "player_id": getattr(player, "id", None),
         }
     )
+    country_code = getattr(player, "country_code", None) or ""
     payload = {
         "id": player.id,
         "name": player.name,
@@ -66,7 +67,7 @@ def _player_info_payload(player):
         "weight_kg": player.weight_kg,
         "height_cm": player.height_cm,
         "foot": player.foot,
-        "country_code": player.country_code,
+        "country_code": country_code,
         "market_value": player.market_value,
         "image_url": player.image_url or f"https://img.sofascore.com/api/v1/player/{player.id}/image",
         "rating": player.rating,

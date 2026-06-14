@@ -1,18 +1,28 @@
 import logging
 
 from fastapi import FastAPI
-from server.routes import predictions, teams, matches, ratings, players
+from fastapi.middleware.cors import CORSMiddleware
+from server.routes import predictions, teams, matches, ratings, players, bracket
 
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="World Cup Dashboard API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
+
 app.include_router(predictions.router)
 app.include_router(teams.router)
 app.include_router(matches.router)
 app.include_router(ratings.router)
 app.include_router(players.router)
+app.include_router(bracket.router)
 
 @app.get("/")
 def read_root():

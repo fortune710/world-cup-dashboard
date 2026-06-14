@@ -135,10 +135,41 @@ class StealthSofascoreAPI:
             raise
 
     async def close(self):
+        logger.info({
+            "message": "Closing stealthy browser session",
+            "has_context": self.context is not None,
+            "has_browser": self.browser is not None,
+            "has_playwright": self.playwright is not None,
+        })
+        close_errors = []
+
         if self.context:
-            await self.context.close()
+            try:
+                await asyncio.wait_for(self.context.close(), timeout=2)
+            except Exception as exc:
+                close_errors.append({"resource": "context", "message": str(exc), "type": type(exc).__name__})
+
         if self.browser:
-            await self.browser.close()
+            try:
+                await asyncio.wait_for(self.browser.close(), timeout=2)
+            except Exception as exc:
+                close_errors.append({"resource": "browser", "message": str(exc), "type": type(exc).__name__})
+
         if self.playwright:
-            await self.playwright.stop()
-        logger.info("Stealthy browser session closed")
+            try:
+                await asyncio.wait_for(self.playwright.stop(), timeout=2)
+            except Exception as exc:
+                close_errors.append({"resource": "playwright", "message": str(exc), "type": type(exc).__name__})
+
+        self.page = None
+        self.context = None
+        self.browser = None
+        self.playwright = None
+
+        if close_errors:
+            logger.warning({
+                "message": "Closed stealthy browser session with cleanup errors",
+                "errors": close_errors,
+            })
+        else:
+            logger.info({"message": "Stealthy browser session closed"})
