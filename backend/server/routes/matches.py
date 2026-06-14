@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/matches", tags=["matches"])
 
-@router.get("/", response_model=List[MatchResponse])
+@router.get("", response_model=List[MatchResponse])
 def get_matches(
     status: Optional[str] = Query(None, description="Filter matches by status"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -22,7 +22,25 @@ def get_matches(
     """
     Get list of matches (paginated and sorted by kickoff time), optionally filtered by status.
     """
-    return get_all_matches(db, status=status, page=page, page_size=page_size)
+    logger.info(
+        {
+            "message": "Fetching matches",
+            "status": status,
+            "page": page,
+            "page_size": page_size,
+        }
+    )
+    matches = get_all_matches(db, status=status, page=page, page_size=page_size)
+    logger.info(
+        {
+            "message": "Returning matches",
+            "status": status,
+            "page": page,
+            "page_size": page_size,
+            "count": len(matches),
+        }
+    )
+    return matches
 
 
 @router.get("/{date}/statistics", response_model=List[MatchdayStatisticResponse])

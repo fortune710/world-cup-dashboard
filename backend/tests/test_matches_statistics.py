@@ -65,6 +65,61 @@ class TestMatchesStatisticsRoute(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422)
 
+    def test_matches_route_responds_without_redirect(self):
+        rows = [
+            SimpleNamespace(
+                id=1,
+                round="Group",
+                group="A",
+                home_team_code="AAA",
+                away_team_code="BBB",
+                stadium="National Stadium",
+                kickoff_utc="2026-06-11T00:00:00",
+                status="scheduled",
+                phase=None,
+                home_score=0,
+                away_score=0,
+                home_pen=None,
+                away_pen=None,
+                home_team=None,
+                away_team=None,
+            )
+        ]
+
+        with patch.object(matches_route, "get_all_matches", return_value=rows):
+            response = self.client.get("/matches?page=1&page_size=5", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.history, [])
+        self.assertEqual(response.json()[0]["id"], 1)
+
+    def test_matches_route_defaults_missing_stadium(self):
+        rows = [
+            SimpleNamespace(
+                id=1,
+                round="Group",
+                group="A",
+                home_team_code="AAA",
+                away_team_code="BBB",
+                stadium=None,
+                kickoff_utc="2026-06-11T00:00:00",
+                status="scheduled",
+                phase=None,
+                home_score=0,
+                away_score=0,
+                home_pen=None,
+                away_pen=None,
+                home_team=None,
+                away_team=None,
+            )
+        ]
+
+        with patch.object(matches_route, "get_all_matches", return_value=rows):
+            response = self.client.get("/matches?page=1&page_size=5", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["stadium"], None)
+
 
 class TestMatchesStatisticsController(unittest.TestCase):
     def test_get_matchday_statistics_by_date_returns_top_one_per_metric(self):
