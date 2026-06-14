@@ -7,6 +7,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_ELO_RATING = 1500.0
 BASE_K_FACTOR = 30.0
+HOME_ADVANTAGE = 100.0
+DRAW_BONUS = 5.0
 STAGE_WEIGHTS = {
     "group": 1.0,
     "group stage": 1.0,
@@ -110,7 +112,7 @@ class EloTransformations:
 
             home_rating_before = ratings[home_team_code]
             away_rating_before = ratings[away_team_code]
-            home_expected = 1 / (1 + 10 ** ((away_rating_before - home_rating_before) / 400))
+            home_expected = 1 / (1 + 10 ** ((away_rating_before - (home_rating_before + HOME_ADVANTAGE)) / 400))
             away_expected = 1 - home_expected
 
             penalty_shootout = (
@@ -156,6 +158,22 @@ class EloTransformations:
                 stage_weight = 1.0
             home_delta = BASE_K_FACTOR * stage_weight * margin_multiplier * (home_actual - home_expected)
             away_delta = BASE_K_FACTOR * stage_weight * margin_multiplier * (away_actual - away_expected)
+
+            # Apply a flat draw bonus if the match ended in a draw (and not resolved by penalty shootout)
+            is_draw = home_score == away_score and not penalty_shootout
+            if is_draw:
+                home_delta += DRAW_BONUS
+                away_delta += DRAW_BONUS
+                logger.info({
+                    "message": "Applied draw bonus to match Elo deltas",
+                    "match_id": match_id,
+                    "draw_bonus": DRAW_BONUS,
+                    "home_delta_before": home_delta - DRAW_BONUS,
+                    "home_delta_after": home_delta,
+                    "away_delta_before": away_delta - DRAW_BONUS,
+                    "away_delta_after": away_delta,
+                })
+
             home_rating_after = home_rating_before + home_delta
             away_rating_after = away_rating_before + away_delta
 

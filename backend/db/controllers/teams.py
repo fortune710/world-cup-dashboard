@@ -61,7 +61,12 @@ def upsert_team(db: Session, team_data: dict):
 def get_all_teams(db: Session, group: str = None):
     query = db.query(Team)
     if group:
-        query = query.filter(Team.group == group).order_by(Team.points.desc())
+        query = query.filter(Team.group == group).order_by(
+            Team.points.desc(),
+            (Team.goals_for - Team.goals_against).desc(),
+            Team.goals_for.desc(),
+            Team.name.asc()
+        )
     return query.all()
 
 def upsert_teams_batch(db: Session, teams_data: list[dict]):
@@ -130,3 +135,87 @@ def mark_team_as_indexed(db: Session, team_code: str):
         db_team.players_indexed = True
         db.commit()
     return db_team
+
+def recalculate_team_standings(db: Session):
+    logger.info({"message": "Starting recalculation of team standings from completed matches"})
+    from db.models.matches import Match
+    try:
+        # Reset standings metrics for all teams
+        db.query(Team).update({
+            Team.matches_played: 0,
+            Team.matches_won: 0,
+            Team.matches_drawn: 0,
+            Team.matches_lost: 0,
+            Team.goals_for: 0,
+            Team.goals_against: 0,
+            Team.points: 0,
+        }, synchronize_session=False)
+
+        # Get all completed matches
+        completed_matches = db.query(Match).filter(Match.status == "completed").all()
+        logger.info({
+            "message": "Fetched completed matches for standings recalculation",
+            "count": len(completed_matches)
+        })
+
+        team_stats = {}
+        for match in completed_matches:
+            h_code = match.home_team_code
+            a_code = match.away_team_code
+            h_score = match.home_score if match.home_score is not None else 0
+            a_score = match.away_score if match.away_score is not None else 0
+
+            if not h_code or not a_code:
+                continue
+
+            for code in (h_code, a_code):
+                if code not in team_stats:
+                    team_stats[code] = {
+                        "played": 0, "won": 0, "drawn": 0, "lost": 0,
+                        "goals_for": 0, "goals_against": 0, "points": 0
+                    }
+
+            # Update played & goals
+            team_stats[h_code]["played"] += 1
+            team_stats[h_code]["goals_for"] += h_score
+            team_stats[h_code]["goals_against"] += a_score
+
+            team_stats[a_code]["played"] += 1
+            team_stats[a_code]["goals_for"] += a_score
+            team_stats[a_code]["goals_against"] += h_score
+
+            # Match outcome
+            if h_score > a_score:
+                team_stats[h_code]["won"] += 1
+                team_stats[h_code]["points"] += 3
+                team_stats[a_code]["lost"] += 1
+            elif a_score > h_score:
+                team_stats[a_code]["won"] += 1
+                team_stats[a_code]["points"] += 3
+                team_stats[h_code]["lost"] += 1
+            else:
+                team_stats[h_code]["drawn"] += 1
+                team_stats[h_code]["points"] += 1
+                team_stats[a_code]["drawn"] += 1
+                team_stats[a_code]["points"] += 1
+
+        # Bulk update teams
+        for code, stats in team_stats.items():
+            db.query(Team).filter(Team.code == code).update({
+                Team.matches_played: stats["played"],
+                Team.matches_won: stats["won"],
+                Team.matches_drawn: stats["drawn"],
+                Team.matches_lost: stats["lost"],
+                Team.goals_for: stats["goals_for"],
+                Team.goals_against: stats["goals_against"],
+                Team.points: stats["points"],
+            }, synchronize_session=False)
+
+        db.flush()
+        logger.info({"message": "Successfully completed recalculating team standings"})
+    except Exception as e:
+        logger.error({
+            "message": "Failed to recalculate team standings",
+            "error": {"message": str(e), "type": type(e).__name__}
+        })
+        raise

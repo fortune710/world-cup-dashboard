@@ -11,7 +11,7 @@ function getConfederationByCode(code: string): string {
   const uefa = ["FRA", "ENG", "ESP", "POR", "GER", "NED", "BEL", "CRO", "SWE", "NOR", "AUT", "SCO", "CZE", "POL", "DEN", "ITA", "WAL"];
   const conmebol = ["ARG", "BRA", "URU", "COL", "PAR", "CHI", "PER"];
   const concacaf = ["USA", "MEX", "CAN", "PAN", "HON", "JAM", "CRC", "HAI", "CUW"];
-  const afc = ["KOR", "JPN", "IRN", "KSA", "IRQ", "JOR", "UZB", "QAT"];
+  const afc = ["KOR", "JPN", "IRN", "KSA", "IRQ", "JOR", "UZB", "QAT", "AUS"];
   const caf = ["SEN", "MAR", "EGY", "NGA", "CMR", "RSA", "TUN", "ALG", "GHA", "COD", "CPV"];
   
   if (uefa.includes(codeUpper)) return "UEFA";
@@ -46,23 +46,41 @@ export function useWc26Teams(): {
         return (await res.json())
       })
       .then((data) => {
-        const mapped: Wc26TeamRow[] = data.map((item: any) => ({
-          idCountry: item.code,
-          teamName: item.name,
-          fifaRank: item.fifa_ranking,
-          fifaPoints: item.points,
-          confederation: getConfederationByCode(item.code),
-          rankChange: 0,
-          groupStageElo: item.elo_rating || 1500,
-          form: ["W", "D", "L"],
-          group: item.group || "A",
-        }));
-        setTeams(mapped.toSorted((a, b) => {
-          if (a.fifaRank == null && b.fifaRank == null) return 0
-          if (a.fifaRank == null) return 1
-          if (b.fifaRank == null) return -1
-          return a.fifaRank - b.fifaRank
-        }));
+        const mapped: Wc26TeamRow[] = data.map((item: any) => {
+          const won = item.matches_won || 0
+          const drawn = item.matches_drawn || 0
+          const lost = item.matches_lost || 0
+          
+          const form: ("W" | "D" | "L")[] = []
+          for (let i = 0; i < won; i++) form.push("W")
+          for (let i = 0; i < drawn; i++) form.push("D")
+          for (let i = 0; i < lost; i++) form.push("L")
+
+          return {
+            idCountry: item.code,
+            teamName: item.name,
+            fifaRank: item.fifa_ranking,
+            fifaPoints: item.points,
+            confederation: getConfederationByCode(item.code),
+            rankChange: 0,
+            groupStageElo: item.elo_rating || 1500,
+            form: form.length > 0 ? form : null,
+            group: item.group || "A",
+          }
+        })
+
+        const sorted = mapped.toSorted((a, b) => {
+          const eloA = a.groupStageElo ?? 0
+          const eloB = b.groupStageElo ?? 0
+          return eloB - eloA
+        })
+
+        const withRanks = sorted.map((team, index) => ({
+          ...team,
+          eloRank: index + 1,
+        }))
+
+        setTeams(withRanks)
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return

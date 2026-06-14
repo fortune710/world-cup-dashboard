@@ -135,13 +135,13 @@ export function TeamDetailsPage() {
             <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
           </Avatar>
           <Badge variant="default" className="tabular-nums">
-            {team.fifaRank != null ? `#${team.fifaRank}` : "—"}
+            {team.eloRank != null ? `#${team.eloRank}` : "—"}
           </Badge>
           <h1 className="text-2xl font-semibold tracking-tight">{team.teamName}</h1>
           <RankChangeBadge change={team.rankChange} />
         </div>
         <p className="text-sm text-muted-foreground">
-          {team.idCountry ?? "—"} · {confed} · {t("teamsPage.group")} {team.group}
+          {team.idCountry ?? "—"} · {confed} · {t("teamsPage.group")} {team.group} · FIFA #{team.fifaRank != null ? team.fifaRank : "—"}
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mt-4">

@@ -34,8 +34,41 @@ class TestEloTransformations(unittest.TestCase):
         self.assertGreater(result["team_ratings"]["ARG"], 1500.0)
         self.assertLess(result["team_ratings"]["BRA"], 1500.0)
         self.assertEqual(len(result["history"]), 2)
-        self.assertAlmostEqual(result["history"][0]["rating_delta"], 15.0)
-        self.assertAlmostEqual(result["history"][1]["rating_delta"], -15.0)
+        self.assertAlmostEqual(result["history"][0]["rating_delta"], 10.7981, places=3)
+        self.assertAlmostEqual(result["history"][1]["rating_delta"], -10.7981, places=3)
+
+    def test_draw_exchanges_points_from_home_to_away_when_equal_rated(self):
+        matches = [
+            {
+                "id": 10,
+                "round": "group",
+                "home_team_code": "ARG",
+                "away_team_code": "BRA",
+                "kickoff_utc": datetime(2026, 6, 11, 20, 0),
+                "status": "completed",
+                "home_score": 1,
+                "away_score": 1,
+                "home_pen": None,
+                "away_pen": None,
+            }
+        ]
+
+        result = self.transformer.calculate_ratings(self.teams, matches)
+
+        # Home team (ARG) expected ~0.640, actual 0.5. Base delta is -4.202.
+        # With +5.0 draw bonus, ARG gains +0.798 (ends up with 1500.798)
+        self.assertAlmostEqual(result["team_ratings"]["ARG"], 1500.7981, places=3)
+        
+        # Away team (BRA) expected ~0.360, actual 0.5. Base delta is +4.202.
+        # With +5.0 draw bonus, BRA gains +9.202 (ends up with 1509.202)
+        self.assertAlmostEqual(result["team_ratings"]["BRA"], 1509.2019, places=3)
+        
+        # Check that the sum of ratings increases by 2 * 5.0 = 10.0 (3010.0)
+        self.assertAlmostEqual(
+            result["team_ratings"]["ARG"] + result["team_ratings"]["BRA"],
+            3010.0,
+            places=3
+        )
 
     def test_underdog_win_moves_more_than_favorite_win(self):
         teams = [
