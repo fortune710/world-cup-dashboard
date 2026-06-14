@@ -190,6 +190,7 @@ class TestPlayersRoutes(unittest.TestCase):
                     id=1,
                     player_name="Player One",
                     country_code="AAA",
+                    classification="F",
                     team_image="https://img.example.com/team-a.png",
                     group="A",
                     statistics={
@@ -217,6 +218,7 @@ class TestPlayersRoutes(unittest.TestCase):
         self.assertEqual(payload[0]["id"], 1)
         self.assertEqual(payload[0]["player_name"], "Player One")
         self.assertEqual(payload[0]["country_code"], "AAA")
+        self.assertEqual(payload[0]["classification"], "F")
         self.assertEqual(payload[0]["team_image"], "https://img.example.com/team-a.png")
         self.assertEqual(payload[0]["group"], "A")
         self.assertEqual(payload[0]["statistics"]["rating"], 8.1)

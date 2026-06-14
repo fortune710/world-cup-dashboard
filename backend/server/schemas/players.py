@@ -67,6 +67,7 @@ class PlayerLeaderboardResponse(BaseModel):
     id: int
     player_name: str
     country_code: str
+    classification: Optional[PlayerClassification] = None
     team_image: Optional[str] = None
     group: Optional[str] = None
     statistics: PlayerLeaderboardStatisticsResponse
