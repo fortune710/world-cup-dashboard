@@ -190,6 +190,13 @@ export interface PerformerListProps {
   performers: PerformerRow[]
 }
 
+export interface TopPerformersData {
+  goals: PerformerRow[]
+  assists: PerformerRow[]
+  saves: PerformerRow[]
+  rating: PerformerRow[]
+}
+
 export interface TopPerformersProps {
   className?: string
 }

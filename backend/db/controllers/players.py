@@ -374,6 +374,7 @@ def get_players_leaderboard(
                 "id": player.id,
                 "player_name": player.name,
                 "country_code": player.country_code,
+                "classification": player.classification,
                 "team_image": team_image,
                 "group": group,
                 "statistics": {
