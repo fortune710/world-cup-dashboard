@@ -236,11 +236,11 @@ export const pt = {
 
   sectionCards: {
 
-    goalsToday: "Gols hoje",
+    goalsToday: "Melhor avaliação hoje",
 
-    goalsTodayTrend: "Acima da rodada de ontem",
+    goalsTodayTrend: "Maior nota da partida",
 
-    goalsTodayFootnote: "Em todos os jogos concluídos hoje",
+    goalsTodayFootnote: "Liderado por {{playerName}}",
 
     matchesPlayed: "Partidas disputadas",
 
@@ -250,17 +250,17 @@ export const pt = {
 
     matchesPlayedFootnote: "Rodada do torneio de hoje",
 
-    topXgToday: "Melhor xG hoje",
+    topXgToday: "Contribuições de gol hoje",
 
-    topXgTrend: "Maior ameaça esperada",
+    topXgTrend: "Maior participação direta em gols",
 
-    topXgFootnote: "Liderado por Mbappé vs México",
+    topXgFootnote: "Liderado por {{playerName}}",
 
-    cardsToday: "Cartões hoje",
+    cardsToday: "Precisão de passe hoje",
 
-    cardsTrend: "Panorama disciplinar",
+    cardsTrend: "Melhor precisão de passe",
 
-    cardsFootnote: "Cartões amarelos e vermelhos de hoje",
+    cardsFootnote: "Liderado por {{playerName}}",
 
   },
 

@@ -1,190 +1,190 @@
-export const ko = {
+﻿export const ko = {
 
   app: {
 
-    title: "BF WC26 대시보드",
+    title: "BF WC26 ëŒ€ì‹œë³´ë“œ",
 
-    skipToContent: "본문으로 건너뛰기",
+    skipToContent: "ë³¸ë¬¸ìœ¼ë¡œ ê±´ë„ˆë›°ê¸°",
 
   },
 
   nav: {
 
-    live: "라이브",
+    live: "ë¼ì´ë¸Œ",
 
-    teams: "팀",
+    teams: "íŒ€",
 
-    players: "선수",
+    players: "ì„ ìˆ˜",
 
-    matches: "경기",
+    matches: "ê²½ê¸°",
 
-    bracket: "토너먼트",
+    bracket: "í† ë„ˆë¨¼íŠ¸",
 
-    settings: "설정",
+    settings: "ì„¤ì •",
 
-    getHelp: "도움말",
+    getHelp: "ë„ì›€ë§",
 
-    search: "검색",
+    search: "ê²€ìƒ‰",
 
   },
 
   routes: {
 
-    live: "라이브",
+    live: "ë¼ì´ë¸Œ",
 
-    teams: "팀",
+    teams: "íŒ€",
 
-    players: "선수",
+    players: "ì„ ìˆ˜",
 
-    matches: "경기",
+    matches: "ê²½ê¸°",
 
-    bracket: "토너먼트",
+    bracket: "í† ë„ˆë¨¼íŠ¸",
 
-    settings: "설정",
+    settings: "ì„¤ì •",
 
-    help: "도움말",
+    help: "ë„ì›€ë§",
 
-    notFound: "페이지를 찾을 수 없음",
+    notFound: "íŽ˜ì´ì§€ë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŒ",
 
     descriptions: {
 
-      live: "2026 월드컵 라이브 러시, 조별 순위, Elo 파워 랭킹, xG, 대회 내내 업데이트되는 톱 퍼포머.",
+      live: "2026 ì›”ë“œì»µ ë¼ì´ë¸Œ ëŸ¬ì‹œ, ì¡°ë³„ ìˆœìœ„, Elo íŒŒì›Œ ëž­í‚¹, xG, ëŒ€íšŒ ë‚´ë‚´ ì—…ë°ì´íŠ¸ë˜ëŠ” í†± í¼í¬ë¨¸.",
 
-      teams: "2026 월드컵 모든 팀의 스쿼드, 폼, 대회 성적 지표를 둘러보세요.",
+      teams: "2026 ì›”ë“œì»µ ëª¨ë“  íŒ€ì˜ ìŠ¤ì¿¼ë“œ, í¼, ëŒ€íšŒ ì„±ì  ì§€í‘œë¥¼ ë‘˜ëŸ¬ë³´ì„¸ìš”.",
 
-      players: "2026 월드컵 선수 통계 — 골, 어시스트, 선방, 주목 선수.",
+      players: "2026 ì›”ë“œì»µ ì„ ìˆ˜ í†µê³„ â€” ê³¨, ì–´ì‹œìŠ¤íŠ¸, ì„ ë°©, ì£¼ëª© ì„ ìˆ˜.",
 
-      matches: "2026 월드컵 전체 일정과 결과, 킥오프, 조, 최종 스코어.",
+      matches: "2026 ì›”ë“œì»µ ì „ì²´ ì¼ì •ê³¼ ê²°ê³¼, í‚¥ì˜¤í”„, ì¡°, ìµœì¢… ìŠ¤ì½”ì–´.",
 
-      bracket: "2026 월드컵 토너먼트 — 32강부터 결승까지.",
+      bracket: "2026 ì›”ë“œì»µ í† ë„ˆë¨¼íŠ¸ â€” 32ê°•ë¶€í„° ê²°ìŠ¹ê¹Œì§€.",
 
-      settings: "대시보드 환경설정 및 표시 옵션.",
+      settings: "ëŒ€ì‹œë³´ë“œ í™˜ê²½ì„¤ì • ë° í‘œì‹œ ì˜µì…˜.",
 
-      help: "2026 월드컵 대시보드 사용법 — 라이브 데이터, 순위, 랭킹, 탐색.",
+      help: "2026 ì›”ë“œì»µ ëŒ€ì‹œë³´ë“œ ì‚¬ìš©ë²• â€” ë¼ì´ë¸Œ ë°ì´í„°, ìˆœìœ„, ëž­í‚¹, íƒìƒ‰.",
 
-      notFound: "요청한 페이지는 이 대시보드에서 사용할 수 없습니다.",
+      notFound: "ìš”ì²­í•œ íŽ˜ì´ì§€ëŠ” ì´ ëŒ€ì‹œë³´ë“œì—ì„œ ì‚¬ìš©í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.",
 
     },
 
   },
 
-  language: { label: "언어" },
+  language: { label: "ì–¸ì–´" },
 
   theme: {
 
-    label: "테마",
+    label: "í…Œë§ˆ",
 
-    light: "라이트",
+    light: "ë¼ì´íŠ¸",
 
-    dark: "다크",
+    dark: "ë‹¤í¬",
 
-    system: "시스템",
+    system: "ì‹œìŠ¤í…œ",
 
   },
 
   common: {
 
-    all: "전체",
+    all: "ì „ì²´",
 
-    allConfederations: "모든 연맹",
+    allConfederations: "ëª¨ë“  ì—°ë§¹",
 
-    allMatches: "모든 경기",
+    allMatches: "ëª¨ë“  ê²½ê¸°",
 
-    team: "팀",
+    team: "íŒ€",
 
     vs: "vs",
 
-    group: "조 {{group}}",
+    group: "ì¡° {{group}}",
 
-    knockout: "토너먼트",
+    knockout: "í† ë„ˆë¨¼íŠ¸",
 
-    columns: "열",
+    columns: "ì—´",
 
-    rows: "행",
+    rows: "í–‰",
 
-    more: "더보기",
+    more: "ë”ë³´ê¸°",
 
-    open: "열기",
+    open: "ì—´ê¸°",
 
-    share: "공유",
+    share: "ê³µìœ ",
 
-    delete: "삭제",
+    delete: "ì‚­ì œ",
 
-    filterByConfederation: "연맹별 필터",
+    filterByConfederation: "ì—°ë§¹ë³„ í•„í„°",
 
-    pos: "순위",
+    pos: "ìˆœìœ„",
 
-    form: "폼",
+    form: "í¼",
 
-    formLast5SrOnly: " — 최근 5",
+    formLast5SrOnly: " â€” ìµœê·¼ 5",
 
-    rankChange: "순위 변동",
+    rankChange: "ìˆœìœ„ ë³€ë™",
 
-    confederation: "연맹",
+    confederation: "ì—°ë§¹",
 
-    pageOf: "{{current}} / {{total}} 페이지",
+    pageOf: "{{current}} / {{total}} íŽ˜ì´ì§€",
 
-    teamsRankedSorted: "{{count}}팀 순위 · {{sort}} 정렬",
+    teamsRankedSorted: "{{count}}íŒ€ ìˆœìœ„ Â· {{sort}} ì •ë ¬",
 
-    goToFirstPage: "첫 페이지로",
+    goToFirstPage: "ì²« íŽ˜ì´ì§€ë¡œ",
 
-    goToPreviousPage: "이전 페이지",
+    goToPreviousPage: "ì´ì „ íŽ˜ì´ì§€",
 
-    goToNextPage: "다음 페이지",
+    goToNextPage: "ë‹¤ìŒ íŽ˜ì´ì§€",
 
-    goToLastPage: "마지막 페이지",
+    goToLastPage: "ë§ˆì§€ë§‰ íŽ˜ì´ì§€",
 
-    last5Results: "최근 5경기: {{results}}",
+    last5Results: "ìµœê·¼ 5ê²½ê¸°: {{results}}",
 
-    yellowCardsCount: "옐로카드 {{count}}장",
+    yellowCardsCount: "ì˜ë¡œì¹´ë“œ {{count}}ìž¥",
 
-    redCardsCount: "레드카드 {{count}}장",
+    redCardsCount: "ë ˆë“œì¹´ë“œ {{count}}ìž¥",
 
-    win: "승",
+    win: "ìŠ¹",
 
-    draw: "무",
+    draw: "ë¬´",
 
-    loss: "패",
+    loss: "íŒ¨",
 
-    selectGroup: "조 선택",
+    selectGroup: "ì¡° ì„ íƒ",
 
-    selectMatchFilter: "경기 필터 선택",
+    selectMatchFilter: "ê²½ê¸° í•„í„° ì„ íƒ",
 
-    selectPerformerCategory: "선수 카테고리 선택",
+    selectPerformerCategory: "ì„ ìˆ˜ ì¹´í…Œê³ ë¦¬ ì„ íƒ",
 
-    toggleSidebar: "사이드바 토글",
+    toggleSidebar: "ì‚¬ì´ë“œë°” í† ê¸€",
 
-    documents: "문서",
+    documents: "ë¬¸ì„œ",
 
-    account: "계정",
+    account: "ê³„ì •",
 
-    billing: "결제",
+    billing: "ê²°ì œ",
 
-    notifications: "알림",
+    notifications: "ì•Œë¦¼",
 
-    logOut: "로그아웃",
+    logOut: "ë¡œê·¸ì•„ì›ƒ",
 
   },
 
   pages: {
 
-    teams: { description: "팀 카드, 필터, 프로필." },
+    teams: { description: "íŒ€ ì¹´ë“œ, í•„í„°, í”„ë¡œí•„." },
 
-    players: { description: "랭킹, 통계 모드, 선수 프로필." },
+    players: { description: "ëž­í‚¹, í†µê³„ ëª¨ë“œ, ì„ ìˆ˜ í”„ë¡œí•„." },
 
-    matches: { description: "경기 상세, 피치 레이어, 이벤트 타임라인." },
+    matches: { description: "ê²½ê¸° ìƒì„¸, í”¼ì¹˜ ë ˆì´ì–´, ì´ë²¤íŠ¸ íƒ€ìž„ë¼ì¸." },
 
-    bracket: { description: "32강부터 결승까지 토너먼트." },
+    bracket: { description: "32ê°•ë¶€í„° ê²°ìŠ¹ê¹Œì§€ í† ë„ˆë¨¼íŠ¸." },
 
-    settings: { description: "환경설정, 필터, 표시 옵션." },
+    settings: { description: "í™˜ê²½ì„¤ì •, í•„í„°, í‘œì‹œ ì˜µì…˜." },
 
-    help: { description: "가이드, 단축키, 지원 링크." },
+    help: { description: "ê°€ì´ë“œ, ë‹¨ì¶•í‚¤, ì§€ì› ë§í¬." },
 
     notFound: {
 
-      message: "이 경로는 아직 없습니다.",
+      message: "ì´ ê²½ë¡œëŠ” ì•„ì§ ì—†ìŠµë‹ˆë‹¤.",
 
-      backToLive: "라이브로 돌아가기",
+      backToLive: "ë¼ì´ë¸Œë¡œ ëŒì•„ê°€ê¸°",
 
     },
 
@@ -192,33 +192,33 @@ export const ko = {
 
   liveRush: {
 
-    demoDate: "2026년 6월 13일 토요일",
+    demoDate: "2026ë…„ 6ì›” 13ì¼ í† ìš”ì¼",
 
-    title: "라이브 러시",
+    title: "ë¼ì´ë¸Œ ëŸ¬ì‹œ",
 
-    description: "오늘의 라이브 경기",
+    description: "ì˜¤ëŠ˜ì˜ ë¼ì´ë¸Œ ê²½ê¸°",
 
-    noMatches: "이 보기에 경기가 없습니다.",
+    noMatches: "ì´ ë³´ê¸°ì— ê²½ê¸°ê°€ ì—†ìŠµë‹ˆë‹¤.",
 
     tabs: {
 
-      all: "전체",
+      all: "ì „ì²´",
 
-      finished: "종료",
+      finished: "ì¢…ë£Œ",
 
-      live: "라이브",
+      live: "ë¼ì´ë¸Œ",
 
-      upcoming: "예정",
+      upcoming: "ì˜ˆì •",
 
     },
 
     footer: {
 
-      finished: "경기 종료 — 러시 확정",
+      finished: "ê²½ê¸° ì¢…ë£Œ â€” ëŸ¬ì‹œ í™•ì •",
 
-      live: "진행 중 — 골이 지금 반영됩니다",
+      live: "ì§„í–‰ ì¤‘ â€” ê³¨ì´ ì§€ê¸ˆ ë°˜ì˜ë©ë‹ˆë‹¤",
 
-      upcoming: "킥오프 대기 — 픽 오픈",
+      upcoming: "í‚¥ì˜¤í”„ ëŒ€ê¸° â€” í”½ ì˜¤í”ˆ",
 
     },
 
@@ -226,21 +226,21 @@ export const ko = {
 
   matchCard: {
 
-    live: "라이브",
+    live: "ë¼ì´ë¸Œ",
 
-    fullTime: "종료",
+    fullTime: "ì¢…ë£Œ",
 
-    liveKickoff: "{{label}} 라이브",
+    liveKickoff: "{{label}} ë¼ì´ë¸Œ",
 
   },
 
   sectionCards: {
 
-    goalsToday: "오늘 골",
+    goalsToday: "오늘 최고 평점",
 
-    goalsTodayTrend: "어제보다 증가",
+    goalsTodayTrend: "경기 평점 최고",
 
-    goalsTodayFootnote: "오늘 종료된 모든 경기",
+    goalsTodayFootnote: "{{playerName}}가 이끎",
 
     matchesPlayed: "진행 경기",
 
@@ -250,73 +250,74 @@ export const ko = {
 
     matchesPlayedFootnote: "오늘의 대회 일정",
 
-    topXgToday: "오늘 최고 xG",
+    topXgToday: "오늘 골 관여",
 
-    topXgTrend: "최고 기대 위협",
+    topXgTrend: "직접 골 관여 최다",
 
-    topXgFootnote: "음바페 vs 멕시코 주도",
+    topXgFootnote: "{{playerName}}가 이끎",
 
-    cardsToday: "오늘 카드",
+    cardsToday: "오늘 패스 성공률",
 
-    cardsTrend: "징계 스냅샷",
+    cardsTrend: "패스 성공률 최고",
 
-    cardsFootnote: "오늘 부여된 옐로·레드카드",
+    cardsFootnote: "{{playerName}}가 이끎",
 
   },
 
   topPerformers: {
 
-    title: "톱 퍼포머",
+    title: "í†± í¼í¬ë¨¸",
 
-    description: "대회 초반 두각을 나타낸 선수",
+    description: "ëŒ€íšŒ ì´ˆë°˜ ë‘ê°ì„ ë‚˜íƒ€ë‚¸ ì„ ìˆ˜",
 
-    tabs: { goals: "골", assists: "어시스트", saves: "선방" },
+    tabs: { goals: "ê³¨", assists: "ì–´ì‹œìŠ¤íŠ¸", saves: "ì„ ë°©" },
 
   },
 
   groupStandings: {
 
-    title: "조별리그 순위",
+    title: "ì¡°ë³„ë¦¬ê·¸ ìˆœìœ„",
 
-    description: "각 조 1·2위가 32강 진출",
+    description: "ê° ì¡° 1Â·2ìœ„ê°€ 32ê°• ì§„ì¶œ",
 
-    groupShort: "조 {{group}}",
+    groupShort: "ì¡° {{group}}",
 
-    selectPlaceholder: "조 A",
+    selectPlaceholder: "ì¡° A",
 
-    tableAriaLabel: "조 {{group}} 순위",
-    loading: "순위표를 불러오는 중…",
+    tableAriaLabel: "ì¡° {{group}} ìˆœìœ„",
+    loading: "ìˆœìœ„í‘œë¥¼ ë¶ˆëŸ¬ì˜¤ëŠ” ì¤‘â€¦",
 
   },
 
   powerRanking: {
 
-    title: "대회 파워 랭킹",
+    title: "ëŒ€íšŒ íŒŒì›Œ ëž­í‚¹",
 
     description:
 
-      "조별리그 전적, 골, xG, 징계. Elo는 옐로(−{{yellowPenalty}})와 레드(−{{redPenalty}})에 소폭 감점 — 등급에 마우스를 올려 상세 확인.",
+      "ì¡°ë³„ë¦¬ê·¸ ì „ì , ê³¨, xG, ì§•ê³„. EloëŠ” ì˜ë¡œ(âˆ’{{yellowPenalty}})ì™€ ë ˆë“œ(âˆ’{{redPenalty}})ì— ì†Œí­ ê°ì  â€” ë“±ê¸‰ì— ë§ˆìš°ìŠ¤ë¥¼ ì˜¬ë ¤ ìƒì„¸ í™•ì¸.",
 
-    tableAriaLabel: "대회 파워 랭킹",
+    tableAriaLabel: "ëŒ€íšŒ íŒŒì›Œ ëž­í‚¹",
 
-    noTeams: "이 필터에 맞는 팀이 없습니다.",
+    noTeams: "ì´ í•„í„°ì— ë§žëŠ” íŒ€ì´ ì—†ìŠµë‹ˆë‹¤.",
 
-    topRankAria: "{{team}}, 파워 랭킹 상위 {{threshold}}",
+    topRankAria: "{{team}}, íŒŒì›Œ ëž­í‚¹ ìƒìœ„ {{threshold}}",
 
     eloTooltip: {
 
-      base: "기본 Elo {{elo}}",
+      base: "ê¸°ë³¸ Elo {{elo}}",
 
       discipline:
 
-        " · −{{penalty}} 징계 (옐로 {{yellow}} × {{yellowPenalty}}, 레드 {{red}} × {{redPenalty}})",
+        " Â· âˆ’{{penalty}} ì§•ê³„ (ì˜ë¡œ {{yellow}} Ã— {{yellowPenalty}}, ë ˆë“œ {{red}} Ã— {{redPenalty}})",
 
-      none: " · 징계 감점 없음",
+      none: " Â· ì§•ê³„ ê°ì  ì—†ìŒ",
 
     },
 
   },
 
 } as const
+
 
 

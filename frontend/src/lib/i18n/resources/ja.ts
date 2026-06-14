@@ -1,190 +1,190 @@
-export const ja = {
+﻿export const ja = {
 
   app: {
 
-    title: "BF WC26 ダッシュボード",
+    title: "BF WC26 ãƒ€ãƒƒã‚·ãƒ¥ãƒœãƒ¼ãƒ‰",
 
-    skipToContent: "メインコンテンツへスキップ",
+    skipToContent: "ãƒ¡ã‚¤ãƒ³ã‚³ãƒ³ãƒ†ãƒ³ãƒ„ã¸ã‚¹ã‚­ãƒƒãƒ—",
 
   },
 
   nav: {
 
-    live: "ライブ",
+    live: "ãƒ©ã‚¤ãƒ–",
 
-    teams: "チーム",
+    teams: "ãƒãƒ¼ãƒ ",
 
-    players: "選手",
+    players: "é¸æ‰‹",
 
-    matches: "試合",
+    matches: "è©¦åˆ",
 
-    bracket: "トーナメント表",
+    bracket: "ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆè¡¨",
 
-    settings: "設定",
+    settings: "è¨­å®š",
 
-    getHelp: "ヘルプ",
+    getHelp: "ãƒ˜ãƒ«ãƒ—",
 
-    search: "検索",
+    search: "æ¤œç´¢",
 
   },
 
   routes: {
 
-    live: "ライブ",
+    live: "ãƒ©ã‚¤ãƒ–",
 
-    teams: "チーム",
+    teams: "ãƒãƒ¼ãƒ ",
 
-    players: "選手",
+    players: "é¸æ‰‹",
 
-    matches: "試合",
+    matches: "è©¦åˆ",
 
-    bracket: "トーナメント表",
+    bracket: "ãƒˆãƒ¼ãƒŠãƒ¡ãƒ³ãƒˆè¡¨",
 
-    settings: "設定",
+    settings: "è¨­å®š",
 
-    help: "ヘルプ",
+    help: "ãƒ˜ãƒ«ãƒ—",
 
-    notFound: "ページが見つかりません",
+    notFound: "ãƒšãƒ¼ã‚¸ãŒè¦‹ã¤ã‹ã‚Šã¾ã›ã‚“",
 
     descriptions: {
 
-      live: "W杯2026ライブラッシュ、グループ順位、Eloパワーランキング、xG、大会を通じたトップパフォーマー。",
+      live: "Wæ¯2026ãƒ©ã‚¤ãƒ–ãƒ©ãƒƒã‚·ãƒ¥ã€ã‚°ãƒ«ãƒ¼ãƒ—é †ä½ã€Eloãƒ‘ãƒ¯ãƒ¼ãƒ©ãƒ³ã‚­ãƒ³ã‚°ã€xGã€å¤§ä¼šã‚’é€šã˜ãŸãƒˆãƒƒãƒ—ãƒ‘ãƒ•ã‚©ãƒ¼ãƒžãƒ¼ã€‚",
 
-      teams: "W杯2026全チームのメンバー、調子、大会成績を閲覧。",
+      teams: "Wæ¯2026å…¨ãƒãƒ¼ãƒ ã®ãƒ¡ãƒ³ãƒãƒ¼ã€èª¿å­ã€å¤§ä¼šæˆç¸¾ã‚’é–²è¦§ã€‚",
 
-      players: "W杯2026選手統計 — ゴール、アシスト、セーブ、注目選手。",
+      players: "Wæ¯2026é¸æ‰‹çµ±è¨ˆ â€” ã‚´ãƒ¼ãƒ«ã€ã‚¢ã‚·ã‚¹ãƒˆã€ã‚»ãƒ¼ãƒ–ã€æ³¨ç›®é¸æ‰‹ã€‚",
 
-      matches: "W杯2026の全試合日程と結果、キックオフ、グループ、最終スコア。",
+      matches: "Wæ¯2026ã®å…¨è©¦åˆæ—¥ç¨‹ã¨çµæžœã€ã‚­ãƒƒã‚¯ã‚ªãƒ•ã€ã‚°ãƒ«ãƒ¼ãƒ—ã€æœ€çµ‚ã‚¹ã‚³ã‚¢ã€‚",
 
-      bracket: "W杯2026ノックアウト表 — ラウンド32から決勝まで。",
+      bracket: "Wæ¯2026ãƒŽãƒƒã‚¯ã‚¢ã‚¦ãƒˆè¡¨ â€” ãƒ©ã‚¦ãƒ³ãƒ‰32ã‹ã‚‰æ±ºå‹ã¾ã§ã€‚",
 
-      settings: "ダッシュボードの設定と表示オプション。",
+      settings: "ãƒ€ãƒƒã‚·ãƒ¥ãƒœãƒ¼ãƒ‰ã®è¨­å®šã¨è¡¨ç¤ºã‚ªãƒ—ã‚·ãƒ§ãƒ³ã€‚",
 
-      help: "W杯2026ダッシュボードの使い方 — ライブデータ、順位、ランキング、ナビゲーション。",
+      help: "Wæ¯2026ãƒ€ãƒƒã‚·ãƒ¥ãƒœãƒ¼ãƒ‰ã®ä½¿ã„æ–¹ â€” ãƒ©ã‚¤ãƒ–ãƒ‡ãƒ¼ã‚¿ã€é †ä½ã€ãƒ©ãƒ³ã‚­ãƒ³ã‚°ã€ãƒŠãƒ“ã‚²ãƒ¼ã‚·ãƒ§ãƒ³ã€‚",
 
-      notFound: "リクエストされたページはこのダッシュボードでは利用できません。",
+      notFound: "ãƒªã‚¯ã‚¨ã‚¹ãƒˆã•ã‚ŒãŸãƒšãƒ¼ã‚¸ã¯ã“ã®ãƒ€ãƒƒã‚·ãƒ¥ãƒœãƒ¼ãƒ‰ã§ã¯åˆ©ç”¨ã§ãã¾ã›ã‚“ã€‚",
 
     },
 
   },
 
-  language: { label: "言語" },
+  language: { label: "è¨€èªž" },
 
   theme: {
 
-    label: "テーマ",
+    label: "ãƒ†ãƒ¼ãƒž",
 
-    light: "ライト",
+    light: "ãƒ©ã‚¤ãƒˆ",
 
-    dark: "ダーク",
+    dark: "ãƒ€ãƒ¼ã‚¯",
 
-    system: "システム",
+    system: "ã‚·ã‚¹ãƒ†ãƒ ",
 
   },
 
   common: {
 
-    all: "すべて",
+    all: "ã™ã¹ã¦",
 
-    allConfederations: "すべての連盟",
+    allConfederations: "ã™ã¹ã¦ã®é€£ç›Ÿ",
 
-    allMatches: "すべての試合",
+    allMatches: "ã™ã¹ã¦ã®è©¦åˆ",
 
-    team: "チーム",
+    team: "ãƒãƒ¼ãƒ ",
 
     vs: "vs",
 
-    group: "グループ {{group}}",
+    group: "ã‚°ãƒ«ãƒ¼ãƒ— {{group}}",
 
-    knockout: "ノックアウト",
+    knockout: "ãƒŽãƒƒã‚¯ã‚¢ã‚¦ãƒˆ",
 
-    columns: "列",
+    columns: "åˆ—",
 
-    rows: "行",
+    rows: "è¡Œ",
 
-    more: "その他",
+    more: "ãã®ä»–",
 
-    open: "開く",
+    open: "é–‹ã",
 
-    share: "共有",
+    share: "å…±æœ‰",
 
-    delete: "削除",
+    delete: "å‰Šé™¤",
 
-    filterByConfederation: "連盟で絞り込み",
+    filterByConfederation: "é€£ç›Ÿã§çµžã‚Šè¾¼ã¿",
 
-    pos: "順位",
+    pos: "é †ä½",
 
-    form: "調子",
+    form: "èª¿å­",
 
-    formLast5SrOnly: " — 直近5",
+    formLast5SrOnly: " â€” ç›´è¿‘5",
 
-    rankChange: "順位変動",
+    rankChange: "é †ä½å¤‰å‹•",
 
-    confederation: "連盟",
+    confederation: "é€£ç›Ÿ",
 
-    pageOf: "{{current}} / {{total}} ページ",
+    pageOf: "{{current}} / {{total}} ãƒšãƒ¼ã‚¸",
 
-    teamsRankedSorted: "{{count}} チーム · {{sort}} でソート",
+    teamsRankedSorted: "{{count}} ãƒãƒ¼ãƒ  Â· {{sort}} ã§ã‚½ãƒ¼ãƒˆ",
 
-    goToFirstPage: "最初のページへ",
+    goToFirstPage: "æœ€åˆã®ãƒšãƒ¼ã‚¸ã¸",
 
-    goToPreviousPage: "前のページへ",
+    goToPreviousPage: "å‰ã®ãƒšãƒ¼ã‚¸ã¸",
 
-    goToNextPage: "次のページへ",
+    goToNextPage: "æ¬¡ã®ãƒšãƒ¼ã‚¸ã¸",
 
-    goToLastPage: "最後のページへ",
+    goToLastPage: "æœ€å¾Œã®ãƒšãƒ¼ã‚¸ã¸",
 
-    last5Results: "直近5試合: {{results}}",
+    last5Results: "ç›´è¿‘5è©¦åˆ: {{results}}",
 
-    yellowCardsCount: "イエローカード {{count}} 枚",
+    yellowCardsCount: "ã‚¤ã‚¨ãƒ­ãƒ¼ã‚«ãƒ¼ãƒ‰ {{count}} æžš",
 
-    redCardsCount: "レッドカード {{count}} 枚",
+    redCardsCount: "ãƒ¬ãƒƒãƒ‰ã‚«ãƒ¼ãƒ‰ {{count}} æžš",
 
-    win: "勝ち",
+    win: "å‹ã¡",
 
-    draw: "引き分け",
+    draw: "å¼•ãåˆ†ã‘",
 
-    loss: "負け",
+    loss: "è² ã‘",
 
-    selectGroup: "グループを選択",
+    selectGroup: "ã‚°ãƒ«ãƒ¼ãƒ—ã‚’é¸æŠž",
 
-    selectMatchFilter: "試合フィルターを選択",
+    selectMatchFilter: "è©¦åˆãƒ•ã‚£ãƒ«ã‚¿ãƒ¼ã‚’é¸æŠž",
 
-    selectPerformerCategory: "カテゴリを選択",
+    selectPerformerCategory: "ã‚«ãƒ†ã‚´ãƒªã‚’é¸æŠž",
 
-    toggleSidebar: "サイドバーの表示切替",
+    toggleSidebar: "ã‚µã‚¤ãƒ‰ãƒãƒ¼ã®è¡¨ç¤ºåˆ‡æ›¿",
 
-    documents: "ドキュメント",
+    documents: "ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆ",
 
-    account: "アカウント",
+    account: "ã‚¢ã‚«ã‚¦ãƒ³ãƒˆ",
 
-    billing: "請求",
+    billing: "è«‹æ±‚",
 
-    notifications: "通知",
+    notifications: "é€šçŸ¥",
 
-    logOut: "ログアウト",
+    logOut: "ãƒ­ã‚°ã‚¢ã‚¦ãƒˆ",
 
   },
 
   pages: {
 
-    teams: { description: "チームカード、フィルター、プロフィール。" },
+    teams: { description: "ãƒãƒ¼ãƒ ã‚«ãƒ¼ãƒ‰ã€ãƒ•ã‚£ãƒ«ã‚¿ãƒ¼ã€ãƒ—ãƒ­ãƒ•ã‚£ãƒ¼ãƒ«ã€‚" },
 
-    players: { description: "ランキング、統計モード、選手プロフィール。" },
+    players: { description: "ãƒ©ãƒ³ã‚­ãƒ³ã‚°ã€çµ±è¨ˆãƒ¢ãƒ¼ãƒ‰ã€é¸æ‰‹ãƒ—ãƒ­ãƒ•ã‚£ãƒ¼ãƒ«ã€‚" },
 
-    matches: { description: "試合詳細、ピッチレイヤー、イベントタイムライン。" },
+    matches: { description: "è©¦åˆè©³ç´°ã€ãƒ”ãƒƒãƒãƒ¬ã‚¤ãƒ¤ãƒ¼ã€ã‚¤ãƒ™ãƒ³ãƒˆã‚¿ã‚¤ãƒ ãƒ©ã‚¤ãƒ³ã€‚" },
 
-    bracket: { description: "ラウンド32から決勝までのノックアウト。" },
+    bracket: { description: "ãƒ©ã‚¦ãƒ³ãƒ‰32ã‹ã‚‰æ±ºå‹ã¾ã§ã®ãƒŽãƒƒã‚¯ã‚¢ã‚¦ãƒˆã€‚" },
 
-    settings: { description: "設定、フィルター、表示オプション。" },
+    settings: { description: "è¨­å®šã€ãƒ•ã‚£ãƒ«ã‚¿ãƒ¼ã€è¡¨ç¤ºã‚ªãƒ—ã‚·ãƒ§ãƒ³ã€‚" },
 
-    help: { description: "ガイド、ショートカット、サポートリンク。" },
+    help: { description: "ã‚¬ã‚¤ãƒ‰ã€ã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã€ã‚µãƒãƒ¼ãƒˆãƒªãƒ³ã‚¯ã€‚" },
 
     notFound: {
 
-      message: "このルートはまだ存在しません。",
+      message: "ã“ã®ãƒ«ãƒ¼ãƒˆã¯ã¾ã å­˜åœ¨ã—ã¾ã›ã‚“ã€‚",
 
-      backToLive: "ライブに戻る",
+      backToLive: "ãƒ©ã‚¤ãƒ–ã«æˆ»ã‚‹",
 
     },
 
@@ -192,33 +192,33 @@ export const ja = {
 
   liveRush: {
 
-    demoDate: "2026年6月13日（土）",
+    demoDate: "2026å¹´6æœˆ13æ—¥ï¼ˆåœŸï¼‰",
 
-    title: "ライブラッシュ",
+    title: "ãƒ©ã‚¤ãƒ–ãƒ©ãƒƒã‚·ãƒ¥",
 
-    description: "本日のライブ試合",
+    description: "æœ¬æ—¥ã®ãƒ©ã‚¤ãƒ–è©¦åˆ",
 
-    noMatches: "この表示に試合はありません。",
+    noMatches: "ã“ã®è¡¨ç¤ºã«è©¦åˆã¯ã‚ã‚Šã¾ã›ã‚“ã€‚",
 
     tabs: {
 
-      all: "すべて",
+      all: "ã™ã¹ã¦",
 
-      finished: "終了",
+      finished: "çµ‚äº†",
 
-      live: "ライブ",
+      live: "ãƒ©ã‚¤ãƒ–",
 
-      upcoming: "予定",
+      upcoming: "äºˆå®š",
 
     },
 
     footer: {
 
-      finished: "試合終了 — ラッシュ確定",
+      finished: "è©¦åˆçµ‚äº† â€” ãƒ©ãƒƒã‚·ãƒ¥ç¢ºå®š",
 
-      live: "進行中 — ゴールは現在カウント",
+      live: "é€²è¡Œä¸­ â€” ã‚´ãƒ¼ãƒ«ã¯ç¾åœ¨ã‚«ã‚¦ãƒ³ãƒˆ",
 
-      upcoming: "キックオフ待ち — ピック受付中",
+      upcoming: "ã‚­ãƒƒã‚¯ã‚ªãƒ•å¾…ã¡ â€” ãƒ”ãƒƒã‚¯å—ä»˜ä¸­",
 
     },
 
@@ -226,21 +226,21 @@ export const ja = {
 
   matchCard: {
 
-    live: "ライブ",
+    live: "ãƒ©ã‚¤ãƒ–",
 
-    fullTime: "終了",
+    fullTime: "çµ‚äº†",
 
-    liveKickoff: "{{label}} ライブ",
+    liveKickoff: "{{label}} ãƒ©ã‚¤ãƒ–",
 
   },
 
   sectionCards: {
 
-    goalsToday: "本日のゴール",
+    goalsToday: "本日の最高評価",
 
-    goalsTodayTrend: "昨日より増加",
+    goalsTodayTrend: "試合評価が最高",
 
-    goalsTodayFootnote: "本日終了した全試合",
+    goalsTodayFootnote: "{{playerName}}が牽引",
 
     matchesPlayed: "消化試合",
 
@@ -250,73 +250,74 @@ export const ja = {
 
     matchesPlayedFootnote: "本日の大会スケジュール",
 
-    topXgToday: "本日トップxG",
+    topXgToday: "本日のゴール関与数",
 
-    topXgTrend: "最高の期待脅威",
+    topXgTrend: "直接ゴール関与が最多",
 
-    topXgFootnote: "ムバッペ vs メキシコが牽引",
+    topXgFootnote: "{{playerName}}が牽引",
 
-    cardsToday: "本日のカード",
+    cardsToday: "本日のパス成功率",
 
-    cardsTrend: "規律スナップショット",
+    cardsTrend: "パス成功率が最高",
 
-    cardsFootnote: "本日のイエロー・レッドカード",
+    cardsFootnote: "{{playerName}}が牽引",
 
   },
 
   topPerformers: {
 
-    title: "トップパフォーマー",
+    title: "ãƒˆãƒƒãƒ—ãƒ‘ãƒ•ã‚©ãƒ¼ãƒžãƒ¼",
 
-    description: "大会序盤の注目選手",
+    description: "å¤§ä¼šåºç›¤ã®æ³¨ç›®é¸æ‰‹",
 
-    tabs: { goals: "ゴール", assists: "アシスト", saves: "セーブ" },
+    tabs: { goals: "ã‚´ãƒ¼ãƒ«", assists: "ã‚¢ã‚·ã‚¹ãƒˆ", saves: "ã‚»ãƒ¼ãƒ–" },
 
   },
 
   groupStandings: {
 
-    title: "グループステージ順位",
+    title: "ã‚°ãƒ«ãƒ¼ãƒ—ã‚¹ãƒ†ãƒ¼ã‚¸é †ä½",
 
-    description: "各組1・2位がラウンド32へ",
+    description: "å„çµ„1ãƒ»2ä½ãŒãƒ©ã‚¦ãƒ³ãƒ‰32ã¸",
 
-    groupShort: "グループ {{group}}",
+    groupShort: "ã‚°ãƒ«ãƒ¼ãƒ— {{group}}",
 
-    selectPlaceholder: "グループ A",
+    selectPlaceholder: "ã‚°ãƒ«ãƒ¼ãƒ— A",
 
-    tableAriaLabel: "グループ {{group}} 順位",
-    loading: "順位表を読み込み中…",
+    tableAriaLabel: "ã‚°ãƒ«ãƒ¼ãƒ— {{group}} é †ä½",
+    loading: "é †ä½è¡¨ã‚’èª­ã¿è¾¼ã¿ä¸­â€¦",
 
   },
 
   powerRanking: {
 
-    title: "大会パワーランキング",
+    title: "å¤§ä¼šãƒ‘ãƒ¯ãƒ¼ãƒ©ãƒ³ã‚­ãƒ³ã‚°",
 
     description:
 
-      "グループステージの成績、ゴール、xG、規律。Eloはイエロー（−{{yellowPenalty}}）とレッド（−{{redPenalty}}）に小さな減点 — 評価にホバーで内訳。",
+      "ã‚°ãƒ«ãƒ¼ãƒ—ã‚¹ãƒ†ãƒ¼ã‚¸ã®æˆç¸¾ã€ã‚´ãƒ¼ãƒ«ã€xGã€è¦å¾‹ã€‚Eloã¯ã‚¤ã‚¨ãƒ­ãƒ¼ï¼ˆâˆ’{{yellowPenalty}}ï¼‰ã¨ãƒ¬ãƒƒãƒ‰ï¼ˆâˆ’{{redPenalty}}ï¼‰ã«å°ã•ãªæ¸›ç‚¹ â€” è©•ä¾¡ã«ãƒ›ãƒãƒ¼ã§å†…è¨³ã€‚",
 
-    tableAriaLabel: "大会パワーランキング",
+    tableAriaLabel: "å¤§ä¼šãƒ‘ãƒ¯ãƒ¼ãƒ©ãƒ³ã‚­ãƒ³ã‚°",
 
-    noTeams: "このフィルターに一致するチームはありません。",
+    noTeams: "ã“ã®ãƒ•ã‚£ãƒ«ã‚¿ãƒ¼ã«ä¸€è‡´ã™ã‚‹ãƒãƒ¼ãƒ ã¯ã‚ã‚Šã¾ã›ã‚“ã€‚",
 
-    topRankAria: "{{team}}、パワーランキング上位{{threshold}}",
+    topRankAria: "{{team}}ã€ãƒ‘ãƒ¯ãƒ¼ãƒ©ãƒ³ã‚­ãƒ³ã‚°ä¸Šä½{{threshold}}",
 
     eloTooltip: {
 
-      base: "ベースElo {{elo}}",
+      base: "ãƒ™ãƒ¼ã‚¹Elo {{elo}}",
 
       discipline:
 
-        " · −{{penalty}} 規律（イエロー {{yellow}} × {{yellowPenalty}}、レッド {{red}} × {{redPenalty}}）",
+        " Â· âˆ’{{penalty}} è¦å¾‹ï¼ˆã‚¤ã‚¨ãƒ­ãƒ¼ {{yellow}} Ã— {{yellowPenalty}}ã€ãƒ¬ãƒƒãƒ‰ {{red}} Ã— {{redPenalty}}ï¼‰",
 
-      none: " · 規律減点なし",
+      none: " Â· è¦å¾‹æ¸›ç‚¹ãªã—",
 
     },
 
   },
 
 } as const
+
 
 

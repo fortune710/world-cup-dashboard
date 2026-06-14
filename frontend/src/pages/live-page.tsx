@@ -11,7 +11,7 @@ import { Spinner } from "@/components/ui/spinner"
 
 export function LivePage() {
   const { t } = useTranslation()
-  const { matches, loading, error } = useMatches()
+  const { matches, loading, error, dateLabel } = useMatches()
 
   return (
     <div className="flex flex-col gap-3 py-4 md:gap-4 md:py-5">
@@ -25,7 +25,7 @@ export function LivePage() {
           {t("liveRush.loadFailed", { defaultValue: "Failed to load matches." })}
         </div>
       ) : (
-        <LiveRush matches={matches} />
+        <LiveRush matches={matches} dateLabel={dateLabel} />
       )}
       <SectionCards />
       <div className="grid grid-cols-1 items-stretch gap-3 px-4 lg:grid-cols-3 lg:px-6">

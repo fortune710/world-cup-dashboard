@@ -236,11 +236,11 @@ export const nl = {
 
   sectionCards: {
 
-    goalsToday: "Goals vandaag",
+    goalsToday: "Beste beoordeling vandaag",
 
-    goalsTodayTrend: "Hoger dan gisteren",
+    goalsTodayTrend: "Hoogste wedstrijdbeoordeling",
 
-    goalsTodayFootnote: "In alle vandaag afgeronde wedstrijden",
+    goalsTodayFootnote: "Aangevoerd door {{playerName}}",
 
     matchesPlayed: "Gespeelde wedstrijden",
 
@@ -250,17 +250,17 @@ export const nl = {
 
     matchesPlayedFootnote: "Speelronde van vandaag",
 
-    topXgToday: "Top xG vandaag",
+    topXgToday: "Doelbijdragen vandaag",
 
-    topXgTrend: "Hoogste verwachte dreiging",
+    topXgTrend: "Meeste directe doelbijdragen",
 
-    topXgFootnote: "Aangevoerd door Mbappé vs Mexico",
+    topXgFootnote: "Aangevoerd door {{playerName}}",
 
-    cardsToday: "Kaarten vandaag",
+    cardsToday: "Passnauwkeurigheid vandaag",
 
-    cardsTrend: "Discipline-overzicht",
+    cardsTrend: "Beste passnauwkeurigheid",
 
-    cardsFootnote: "Gele en rode kaarten vandaag",
+    cardsFootnote: "Aangevoerd door {{playerName}}",
 
   },
 
