@@ -1,9 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { LiveRushMatch } from "@/datatypes";
 import { API_BASE_URL } from "@/lib/api-config";
+import {
+  buildMatchesApiPath,
+  mapMatchApiRowsToLiveRushMatches,
+} from "@/lib/helpers/match.helpers";
 
-export function useMatches(status?: string, page: number = 1, pageSize: number = 20) {
+function getCurrentUtcDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatMatchDateLabel(matchDate: string): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${matchDate}T00:00:00Z`));
+}
+
+export function useMatches(matchDate: string = getCurrentUtcDate(), status?: string) {
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -11,11 +28,11 @@ export function useMatches(status?: string, page: number = 1, pageSize: number =
   useEffect(() => {
     let active = true;
     async function fetchMatches() {
-      logger.info("Fetching matches from backend", { status, page, pageSize });
+      logger.info("Fetching matches from backend", { matchDate, status });
       setError(null);
       setLoading(true);
       try {
-        const url = `${API_BASE_URL}/matches?page=${page}&page_size=${pageSize}${status ? `&status=${status}` : ""}`;
+        const url = `${API_BASE_URL}${buildMatchesApiPath(matchDate, status)}`;
         const res = await fetch(url);
 
         if (!res.ok) throw new Error("Failed to fetch matches");
@@ -23,43 +40,14 @@ export function useMatches(status?: string, page: number = 1, pageSize: number =
 
         if (!active) return;
 
-        const mapped: LiveRushMatch[] = data.map((m: any) => {
-          let mappedStatus: "finished" | "live" | "upcoming" = "upcoming";
-          const statusLower = String(m.status).toLowerCase();
-          if (statusLower === "ft" || statusLower === "finished" || statusLower === "ended") {
-            mappedStatus = "finished";
-          } else if (statusLower === "live" || statusLower === "ht" || statusLower === "active" || statusLower.includes("min")) {
-            mappedStatus = "live";
-          }
-
-          let kickoffLabel = "";
-          if (mappedStatus === "finished") {
-            kickoffLabel = "FT";
-          } else if (mappedStatus === "live") {
-            kickoffLabel = m.status === "HT" ? "HT" : "Live";
-          } else {
-            const date = new Date(m.kickoff_utc);
-            kickoffLabel = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          }
-
-          return {
-            id: String(m.id),
-            homeTeam: m.home_team?.name || m.home_team_code,
-            awayTeam: m.away_team?.name || m.away_team_code,
-            homeScore: m.home_score,
-            awayScore: m.away_score,
-            kickoffLabel,
-            status: mappedStatus,
-            group: m.group,
-          };
-        });
+        const mapped: LiveRushMatch[] = mapMatchApiRowsToLiveRushMatches(data);
 
         setMatches(mapped);
-        logger.info("Matches fetched successfully", { count: mapped.length });
+        logger.info("Matches fetched successfully", { matchDate, count: mapped.length });
       } catch (e: any) {
         if (!active) return;
         setError(e.message);
-        logger.error("Error fetching matches", { error: e.message });
+        logger.error("Error fetching matches", { matchDate, error: e.message });
       } finally {
         if (active) setLoading(false);
       }
@@ -69,7 +57,9 @@ export function useMatches(status?: string, page: number = 1, pageSize: number =
     return () => {
       active = false;
     };
-  }, [status, page, pageSize]);
+  }, [matchDate, status]);
 
-  return { matches, loading, error };
+  const dateLabel = useMemo(() => formatMatchDateLabel(matchDate), [matchDate]);
+
+  return { matches, loading, error, dateLabel };
 }
