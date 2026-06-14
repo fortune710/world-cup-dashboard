@@ -5,7 +5,11 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 from config.db import get_db
-from db.controllers.matches import get_all_matches, get_matchday_statistics_by_date
+from db.controllers.matches import (
+    get_all_matches,
+    get_matches_by_date,
+    get_matchday_statistics_by_date,
+)
 from server.schemas.matches import MatchResponse, MatchdayStatisticResponse
 
 logger = logging.getLogger(__name__)
@@ -66,3 +70,31 @@ def get_matchday_statistics(
         }
     )
     return result
+
+
+@router.get("/{match_date}", response_model=List[MatchResponse])
+def get_matches_for_date(
+    match_date: Date = Path(..., description="Match date in YYYY-MM-DD format"),
+    status: Optional[str] = Query(None, description="Filter matches by status"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all matches for a specific date, optionally filtered by status.
+    """
+    logger.info(
+        {
+            "message": "Fetching matches for date",
+            "match_date": match_date.isoformat(),
+            "status": status,
+        }
+    )
+    matches = get_matches_by_date(db, match_date, status=status)
+    logger.info(
+        {
+            "message": "Returning matches for date",
+            "match_date": match_date.isoformat(),
+            "status": status,
+            "count": len(matches),
+        }
+    )
+    return matches

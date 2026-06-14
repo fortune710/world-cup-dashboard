@@ -95,6 +95,47 @@ def get_all_matches(db: Session, status: str = None, page: int = 1, page_size: i
     return query.offset(skip).limit(page_size).all()
 
 
+def get_matches_by_date(db: Session, match_date: date, status: str | None = None):
+    logger.info(
+        {
+            "message": "Fetching matches by date",
+            "match_date": match_date.isoformat(),
+            "status": status,
+        }
+    )
+    try:
+        query = (
+            db.query(Match)
+            .options(joinedload(Match.home_team), joinedload(Match.away_team))
+            .filter(func.date(Match.kickoff_utc) == match_date)
+            .order_by(Match.kickoff_utc.asc(), Match.id.asc())
+        )
+
+        if status:
+            query = query.filter(Match.status == status)
+
+        matches = query.all()
+        logger.info(
+            {
+                "message": "Resolved matches by date",
+                "match_date": match_date.isoformat(),
+                "status": status,
+                "count": len(matches),
+            }
+        )
+        return matches
+    except Exception as exc:
+        logger.error(
+            {
+                "message": "Failed to fetch matches by date",
+                "match_date": match_date.isoformat(),
+                "status": status,
+                "error": {"message": str(exc), "type": type(exc).__name__},
+            }
+        )
+        raise
+
+
 def get_match_by_fixture_identity(db: Session, match_identity: dict):
     logger.info({
         "message": "Looking up match by fixture identity",
