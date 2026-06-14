@@ -125,6 +125,9 @@ services:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - WC2026_API_KEY=${WC2026_API_KEY}
       - PYTHONPATH=/app/backend
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -140,21 +143,9 @@ services:
       - RABBITMQ_URL=${RABBITMQ_URL}
       - WC2026_API_KEY=${WC2026_API_KEY}
       - PYTHONPATH=/app/backend
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  celery-worker-db:
-    build: .
-    image: world_cup_backend:prod
-    container_name: world_cup_celery_worker_db
-    command: celery -A services.celery_app worker --loglevel=info -Q worker_db --concurrency=4
-    restart: always
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - RABBITMQ_URL=${RABBITMQ_URL}
-      - WC2026_API_KEY=${WC2026_API_KEY}
-      - PYTHONPATH=/app/backend
+      - PROXY_SERVER=${PROXY_SERVER}
+      - PROXY_USER=${PROXY_USER}
+      - PROXY_PASSWORD=${PROXY_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_healthy

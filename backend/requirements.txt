@@ -22,6 +22,7 @@ watchfiles==1.2.0
 websockets==16.0
 apache-airflow
 requests==2.34.2
+setuptools==80.9.0
 alembic==1.15.1
 sofascore-wrapper
 celery==5.4.0
