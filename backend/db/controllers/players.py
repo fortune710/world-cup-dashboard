@@ -56,6 +56,77 @@ def update_player_stats(db: Session, player_id: int, rating: float, stats_json: 
     return db_player
 
 
+def update_player_stats_batch(
+    db: Session,
+    player_stats_updates: list[dict],
+    release_player_ids: list[int] | None = None,
+) -> dict:
+    logger.info({
+        "message": "Starting batch player stats update",
+        "update_count": len(player_stats_updates),
+        "release_count": len(release_player_ids or []),
+    })
+    updated_count = 0
+    released_count = 0
+
+    try:
+        for update in player_stats_updates:
+            player_id = update.get("player_id")
+            logger.info({
+                "message": "Applying player stats update from batch",
+                "player_id": player_id,
+            })
+            db_player = db.query(Player).filter(Player.id == player_id).first()
+            if not db_player:
+                logger.warning({
+                    "message": "Player not found during batch player stats update",
+                    "player_id": player_id,
+                })
+                continue
+
+            db_player.rating = update.get("rating")
+            db_player.stats_json = update.get("stats_json")
+            db_player.stats_queue_pending = False
+            updated_count += 1
+
+        for player_id in release_player_ids or []:
+            logger.info({
+                "message": "Releasing pending player without stats",
+                "player_id": player_id,
+            })
+            db_player = db.query(Player).filter(Player.id == player_id).first()
+            if not db_player:
+                logger.warning({
+                    "message": "Player not found while releasing pending flag in batch",
+                    "player_id": player_id,
+                })
+                continue
+
+            db_player.stats_queue_pending = False
+            released_count += 1
+
+        db.commit()
+        logger.info({
+            "message": "Completed batch player stats update",
+            "updated_count": updated_count,
+            "released_count": released_count,
+        })
+        return {
+            "updated_count": updated_count,
+            "released_count": released_count,
+        }
+    except Exception as exc:
+        db.rollback()
+        logger.error({
+            "message": "Failed batch player stats update",
+            "error": {
+                "message": str(exc),
+                "type": type(exc).__name__,
+            },
+        }, exc_info=True)
+        raise
+
+
 def claim_player_stats_queue_pending(db: Session, player_id: int, batch_key: str) -> bool:
     logger.info({
         "message": "Attempting to claim player for stats queue",
