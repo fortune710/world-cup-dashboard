@@ -56,6 +56,7 @@ export function useMatchdayStatistics(matchDate?: string): {
   cards: MatchdayStatisticsCards
   loading: boolean
   error: string | null
+  hasData: boolean
 } {
   const resolvedMatchDate = useMemo(
     () => matchDate ?? getCurrentUtcDate(),
@@ -97,5 +98,6 @@ export function useMatchdayStatistics(matchDate?: string): {
     cards,
     loading: isLoading,
     error: error ? error.message : null,
+    hasData: data !== undefined,
   }
 }

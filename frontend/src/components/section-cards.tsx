@@ -45,6 +45,26 @@ const SECTION_CARD_CONFIGS: SectionCardConfig[] = [
   },
 ]
 
+export type SectionCardsRenderMode = "loading" | "error" | "content"
+
+export function getSectionCardsRenderMode(
+  loading: boolean,
+  error: string | null,
+  hasData: boolean
+): SectionCardsRenderMode {
+  const mode = loading ? "loading" : error && !hasData ? "error" : "content"
+
+  logger.info({
+    message: "Resolved section cards render mode",
+    loading,
+    has_error: Boolean(error),
+    has_data: hasData,
+    mode,
+  })
+
+  return mode
+}
+
 function SectionCardSkeleton() {
   logger.info({
     message: "Rendering section card skeleton",
@@ -77,7 +97,8 @@ function SectionCardSkeleton() {
 
 export function SectionCards() {
   const { t } = useTranslation()
-  const { cards, loading, error } = useMatchdayStatistics()
+  const { cards, loading, error, hasData } = useMatchdayStatistics()
+  const renderMode = getSectionCardsRenderMode(loading, error, hasData)
 
   useEffect(() => {
     logger.info({
@@ -90,11 +111,13 @@ export function SectionCards() {
 
   return (
     <div className="grid grid-cols-1 gap-3 px-4 @xl/main:grid-cols-3 @xl/main:gap-3 lg:px-6">
-      {loading
+      {renderMode === "loading"
         ? SECTION_CARD_CONFIGS.map(({ statKey }) => (
             <SectionCardSkeleton key={statKey} />
           ))
-        : SECTION_CARD_CONFIGS.map(
+        : renderMode === "error"
+          ? <div className="col-span-full rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
+          : SECTION_CARD_CONFIGS.map(
             ({ statKey, titleKey, trendKey, footnoteKey, Icon }) => {
               const stat = cards[statKey]
 
