@@ -118,7 +118,7 @@ function createTeamsColumns(t: TFunction): ColumnDef<Wc26TeamRow>[] {
       header: () => <div className="w-10">#</div>,
       cell: ({ row }) => (
         <span className="font-medium tabular-nums">
-          {row.index + 1}
+          {row.original.eloRank != null ? row.original.eloRank : row.index + 1}
         </span>
       ),
       enableSorting: false,
@@ -239,7 +239,7 @@ export function TeamsPage() {
   const columns = React.useMemo(() => createTeamsColumns(t), [t])
 
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: "fifaRank", desc: false },
+    { id: "groupStageElo", desc: true },
   ])
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
@@ -374,9 +374,9 @@ export function TeamsPage() {
                           {header.isPlaceholder
                             ? null
                             : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                         </TableHead>
                       ))}
                     </TableRow>
@@ -449,9 +449,9 @@ export function TeamsPage() {
                     <Card
                       className={cn(
                         "transition-colors group-hover:bg-primary/10",
-                        team.fifaRank != null &&
-                          team.fifaRank <= 10 &&
-                          "border-primary/30 group-hover:border-primary/50"
+                        team.eloRank != null &&
+                        team.eloRank <= 10 &&
+                        "border-primary/30 group-hover:border-primary/50"
                       )}
                     >
                       <CardHeader className="space-y-0">
@@ -463,7 +463,7 @@ export function TeamsPage() {
                                 <AvatarFallback>{team.idCountry ?? "—"}</AvatarFallback>
                               </Avatar>
                               <Badge variant="secondary" className="tabular-nums shrink-0">
-                                {team.fifaRank != null ? `#${team.fifaRank}` : "—"}
+                                {team.eloRank != null ? `#${team.eloRank}` : "—"}
                               </Badge>
                               <span className="truncate font-semibold">
                                 {team.teamName}
@@ -495,6 +495,14 @@ export function TeamsPage() {
                                 ? team.fifaPoints.toFixed(2)
                                 : "—"}
                             </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 text-sm">
+                            <span className="text-muted-foreground">
+                              {t("teamsPage.fifaRank")}
+                            </span>
+                            <span className="font-medium tabular-nums">
+                              {team.fifaRank != null ? `#${team.fifaRank}` : "—"}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-muted-foreground">

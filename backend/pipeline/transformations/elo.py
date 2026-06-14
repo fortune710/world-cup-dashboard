@@ -7,6 +7,18 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_ELO_RATING = 1500.0
 BASE_K_FACTOR = 30.0
+HOME_ADVANTAGE = 100.0
+"""
+HOME_ADVANTAGE boosts the home team's rating by 100 points for the probability calculation.
+This 100-point boost results in approximately 64% win expectancy versus 36% for equal-rated teams.
+"""
+
+DRAW_BONUS = 5.0
+"""
+DRAW_BONUS adds a flat 5-point bonus to both teams' Elo changes when a match ends in a draw
+(excluding penalty shootouts). This breaks the zero-sum property of standard Elo, causing
+total ratings to inflate by 10.0 points per draw (5.0 for each team).
+"""
 STAGE_WEIGHTS = {
     "group": 1.0,
     "group stage": 1.0,
@@ -110,7 +122,7 @@ class EloTransformations:
 
             home_rating_before = ratings[home_team_code]
             away_rating_before = ratings[away_team_code]
-            home_expected = 1 / (1 + 10 ** ((away_rating_before - home_rating_before) / 400))
+            home_expected = 1 / (1 + 10 ** ((away_rating_before - (home_rating_before + HOME_ADVANTAGE)) / 400))
             away_expected = 1 - home_expected
 
             penalty_shootout = (
@@ -156,6 +168,25 @@ class EloTransformations:
                 stage_weight = 1.0
             home_delta = BASE_K_FACTOR * stage_weight * margin_multiplier * (home_actual - home_expected)
             away_delta = BASE_K_FACTOR * stage_weight * margin_multiplier * (away_actual - away_expected)
+
+            # Apply a flat draw bonus if the match ended in a draw (and not resolved by penalty shootout).
+            # Note: This is an intentional design choice to reward competitive matches. It breaks the
+            # zero-sum property of traditional Elo, inflating the total rating pool by 10.0 points per draw.
+            # Cumulative growth of the rating pool is monitored via the logged delta contribution below.
+            is_draw = home_score == away_score and not penalty_shootout
+            if is_draw:
+                home_delta += DRAW_BONUS
+                away_delta += DRAW_BONUS
+                logger.info({
+                    "message": "Applied draw bonus to match Elo deltas",
+                    "match_id": match_id,
+                    "draw_bonus": DRAW_BONUS,
+                    "home_delta_before": home_delta - DRAW_BONUS,
+                    "home_delta_after": home_delta,
+                    "away_delta_before": away_delta - DRAW_BONUS,
+                    "away_delta_after": away_delta,
+                })
+
             home_rating_after = home_rating_before + home_delta
             away_rating_after = away_rating_before + away_delta
 

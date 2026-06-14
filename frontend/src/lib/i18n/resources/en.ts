@@ -204,9 +204,9 @@ export const en = {
       "FIFA ranking, group assignment, recent form, and group-stage Elo for this squad.",
   },
   teamsPage: {
-    rankingTitle: "FIFA Men's World Ranking",
+    rankingTitle: "Tournament Elo Rankings",
     rankingDescription:
-      "Live rankings from FIFA’s official feed. Sort is by rank (best → worst).",
+      "Live power rankings based on teams’ Elo ratings in the tournament. Sort is by Elo (highest → lowest).",
     viewMode: "View mode",
     viewList: "View as list",
     viewCards: "View as cards",

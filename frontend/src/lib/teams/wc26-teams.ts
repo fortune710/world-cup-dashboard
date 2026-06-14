@@ -71,6 +71,7 @@ export type Wc26TeamRow = {
   groupStageElo: number | null
   form: FormResult[] | null
   group: string
+  eloRank?: number
 }
 
 function getTeamDisplayName(team: FifaRankingResult): string {

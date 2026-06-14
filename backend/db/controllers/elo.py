@@ -51,6 +51,9 @@ def replace_elo_ratings(db: Session, team_ratings: dict[str, float], history: li
         if history:
             db.bulk_insert_mappings(TeamEloHistory, history)
 
+        from db.controllers.teams import recalculate_team_standings
+        recalculate_team_standings(db)
+
         db.commit()
         logger.info({
             "message": "Replaced Elo ratings and history",
