@@ -5,6 +5,7 @@ class EloRankingResponse(BaseModel):
     rank: int
     team_code: str
     team_name: str | None
+    team_image_url: str | None
     elo_rating: float
 
     model_config = ConfigDict(from_attributes=True)

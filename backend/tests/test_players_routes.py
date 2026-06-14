@@ -65,6 +65,32 @@ class TestPlayersRoutes(unittest.TestCase):
         self.assertEqual(payload[-1]["goals"], 5)
         self.assertNotIn("stats_json", payload[0])
 
+    def test_top_goals_defaults_missing_country_code(self):
+        player = SimpleNamespace(
+            id=1,
+            name="Player 1",
+            date_of_birth=None,
+            classification=None,
+            club_name="Club",
+            positions="ST",
+            weight_kg=None,
+            height_cm=None,
+            foot=None,
+            country_code=None,
+            market_value=None,
+            image_url=None,
+            rating=None,
+            stats_json={"goals": 9},
+        )
+
+        with patch.object(players_route, "get_top_players_by_goals", return_value=[player]):
+            response = self.client.get("/players/top/goals")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload[0]["country_code"], "")
+        self.assertEqual(payload[0]["goals"], 9)
+
     def test_top_assists_returns_top_five_players(self):
         players = [
             SimpleNamespace(

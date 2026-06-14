@@ -43,7 +43,7 @@ def get_teams(db: Session = Depends(get_db)):
 
 @router.get("/groups", response_model=List[TeamStandingResponse])
 def get_team_groups(
-    name: str = Query("A", regex="^[A-L]$"),
+    name: str = Query("A", pattern="^[A-L]$"),
     db: Session = Depends(get_db)
 ):
     """
@@ -56,10 +56,12 @@ def get_team_groups(
     for team in teams:
         # Calculate goal difference
         gd = (team.goals_for or 0) - (team.goals_against or 0)
+        team_name = team.name or ""
+        team_code = team.code or ""
         
         standings.append(TeamStandingResponse(
-            name=team.name,
-            code=team.code,
+            name=team_name,
+            code=team_code,
             matches_played=team.matches_played or 0,
             matches_won=team.matches_won or 0,
             matches_drawn=team.matches_drawn or 0,

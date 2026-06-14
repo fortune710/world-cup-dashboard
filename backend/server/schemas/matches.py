@@ -20,7 +20,7 @@ class MatchBase(BaseModel):
     group: Optional[str] = None
     home_team_code: str
     away_team_code: str
-    stadium: str
+    stadium: Optional[str] = None
     kickoff_utc: datetime
     status: str
     phase: Optional[str] = None
