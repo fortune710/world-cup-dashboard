@@ -3,6 +3,7 @@ import { describe, expect, it } from "bun:test"
 import {
   buildTopPerformersData,
   createTopPerformersSWRConfig,
+  TOP_PERFORMERS_ENDPOINTS,
 } from "./top-performers.helpers"
 
 describe("top performers helpers", () => {
@@ -38,7 +39,7 @@ describe("top performers helpers", () => {
           image_url: "https://example.com/image.png",
           classification: "G",
           rating: 6.9,
-          clean_sheets: 5,
+          saves: 5,
         },
       ],
       [
@@ -83,5 +84,9 @@ describe("top performers helpers", () => {
 
     expect(config.shouldRetryOnError).toBe(true)
     expect(config.errorRetryCount).toBe(3)
+  })
+
+  it("TOP_PERFORMERS_ENDPOINTS uses the saves endpoint", () => {
+    expect(TOP_PERFORMERS_ENDPOINTS.saves).toBe("/players/top/saves")
   })
 })

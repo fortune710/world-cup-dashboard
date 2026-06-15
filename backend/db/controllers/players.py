@@ -271,7 +271,7 @@ def _get_top_players_by_stat(db: Session, stat_key: str, cast_sql: str, stat_lab
             "message": "Fetching top players by stat",
             "stat_key": stat_key,
             "stat_label": stat_label,
-            "limit": 5,
+            "limit": limit,
         }
     )
     stat_expression = sa.literal_column(
@@ -308,6 +308,10 @@ def get_top_players_by_rating(db: Session, limit: int = 5):
 
 def get_top_players_by_clean_sheets(db: Session, limit: int = 5):
     return _get_top_players_by_stat(db, "clean_sheet", "integer", "clean_sheets", limit)
+
+
+def get_top_players_by_saves(db: Session, limit: int = 5):
+    return _get_top_players_by_stat(db, "saves", "integer", "saves", limit)
 
 
 def get_players_leaderboard(

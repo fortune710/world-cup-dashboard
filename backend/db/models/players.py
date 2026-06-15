@@ -161,6 +161,7 @@ class Player(Base):
         Index('ix_players_stats_expected_goals', stats_json['expected_goals'].astext.cast(Float)),
         Index('ix_players_stats_expected_assists', stats_json['expected_assists'].astext.cast(Float)),
         Index('ix_players_stats_clean_sheet', stats_json['clean_sheet'].astext.cast(SmallInteger)),
+        Index('ix_players_stats_saves', stats_json['saves'].astext.cast(SmallInteger)),
         Index('ix_players_stats_big_chances_created', stats_json['big_chances_created'].astext.cast(SmallInteger)),
         Index('ix_players_name_search', func.to_tsvector('english', name), postgresql_using='gin'),
     )

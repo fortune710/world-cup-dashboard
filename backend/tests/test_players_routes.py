@@ -181,6 +181,36 @@ class TestPlayersRoutes(unittest.TestCase):
         self.assertEqual(payload[-1]["clean_sheets"], 2)
         self.assertNotIn("stats_json", payload[0])
 
+    def test_top_saves_returns_top_five_players(self):
+        players = [
+            SimpleNamespace(
+                id=idx,
+                name=f"Player {idx}",
+                date_of_birth=None,
+                classification=None,
+                club_name="Club",
+                positions="GK",
+                weight_kg=None,
+                height_cm=None,
+                foot=None,
+                country_code="AAA",
+                market_value=None,
+                image_url=None,
+                rating=None,
+                stats_json={"saves": saves},
+            )
+            for idx, saves in enumerate([11, 10, 9, 8, 7], start=1)
+        ]
+        with patch.object(players_route, "get_top_players_by_saves", return_value=players):
+            response = self.client.get("/players/top/saves")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload), 5)
+        self.assertEqual(payload[0]["saves"], 11)
+        self.assertEqual(payload[-1]["saves"], 7)
+        self.assertNotIn("stats_json", payload[0])
+
     def test_players_root_returns_leaderboard_payload(self):
         with patch.object(
             players_route,
