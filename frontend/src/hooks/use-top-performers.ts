@@ -21,12 +21,13 @@ type TopPerformerApiPlayer = {
   clean_sheets?: number | null;
 };
 
+const TOP_STATS_LIMIT = 4;
 const swrConfig = createTopPerformersSWRConfig();
 const topPerformersKeys = {
-  goals: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.goals}`,
-  assists: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.assists}`,
-  cleanSheets: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.cleanSheets}`,
-  rating: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.rating}`,
+  goals: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.goals}?limit=${TOP_STATS_LIMIT}`,
+  assists: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.assists}?limit=${TOP_STATS_LIMIT}`,
+  cleanSheets: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.cleanSheets}?limit=${TOP_STATS_LIMIT}`,
+  rating: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.rating}?limit=${TOP_STATS_LIMIT}`,
 } as const;
 
 async function fetchTopPerformersBucket(url: string): Promise<TopPerformerApiPlayer[]> {
