@@ -1,6 +1,6 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from fastapi.testclient import TestClient
 
@@ -261,6 +261,53 @@ class TestPlayersRoutes(unittest.TestCase):
     def test_players_root_rejects_invalid_classification(self):
         response = self.client.get("/players?classification=invalid")
 
+        self.assertEqual(response.status_code, 422)
+
+    def test_get_radar_peers_success(self):
+        mock_db = MagicMock()
+        app.dependency_overrides[get_db] = lambda: mock_db
+
+        mock_players = [
+            SimpleNamespace(
+                id=101,
+                name="Defender Peer",
+                positions="CB",
+                stats_json={
+                    "minutes_played": 450,
+                    "goals": 1,
+                    "assists": 2,
+                    "expected_goals": 0.8,
+                    "expected_assists": 1.2,
+                }
+            )
+        ]
+
+        mock_query = MagicMock()
+        mock_db.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.all.return_value = mock_players
+
+        response = self.client.get("/players/radar-peers?role=CB&min_minutes=300")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertIn("peers", payload)
+        self.assertEqual(payload["total"], 1)
+        peer = payload["peers"][0]
+        self.assertEqual(peer["id"], "101")
+        self.assertEqual(peer["name"], "Defender Peer")
+        self.assertEqual(peer["radarRole"], "CB")
+        self.assertEqual(peer["statistics"]["goals"], 1)
+        self.assertEqual(peer["statistics"]["assists"], 2)
+        self.assertEqual(peer["statistics"]["expected_goals"], 0.8)
+        self.assertEqual(peer["statistics"]["expected_assists"], 1.2)
+
+    def test_get_radar_peers_invalid_role(self):
+        response = self.client.get("/players/radar-peers?role=INVALID")
+        self.assertEqual(response.status_code, 422)
+
+    def test_get_radar_peers_missing_role(self):
+        response = self.client.get("/players/radar-peers")
         self.assertEqual(response.status_code, 422)
 
 

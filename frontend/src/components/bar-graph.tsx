@@ -38,35 +38,35 @@ import { type PlayerRow, getPlayerMatchHistory } from "@/pages/players-page"
 const chartConfig = {
     rating: {
         label: "Match Rating",
-        color: "var(--chart-1)",
+        color: "var(--chart-form-positive)",
     },
     goals: {
         label: "Goals",
-        color: "var(--chart-2)",
+        color: "var(--chart-danger)",
     },
     assists: {
         label: "Assists",
-        color: "var(--chart-3)",
+        color: "var(--chart-possession)",
     },
     ga: {
         label: "G/A",
-        color: "var(--chart-4)",
+        color: "var(--chart-knockout)",
     },
     tackles: {
         label: "Tackles",
-        color: "var(--chart-2)",
+        color: "var(--chart-possession)",
     },
     interceptions: {
         label: "Interceptions",
-        color: "var(--chart-3)",
+        color: "var(--chart-neutral)",
     },
     saves: {
         label: "Saves",
-        color: "var(--chart-2)",
+        color: "var(--chart-form-negative)",
     },
     cleanSheet: {
         label: "Clean Sheet",
-        color: "var(--chart-4)",
+        color: "var(--chart-form-positive)",
     },
 } satisfies ChartConfig
 

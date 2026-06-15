@@ -34,23 +34,23 @@ const chartConfig = {
     },
     chrome: {
         label: "Chrome",
-        color: "var(--chart-1)",
+        color: "var(--chart-possession)",
     },
     safari: {
         label: "Safari",
-        color: "var(--chart-2)",
+        color: "var(--chart-xg)",
     },
     firefox: {
         label: "Firefox",
-        color: "var(--chart-3)",
+        color: "var(--chart-danger)",
     },
     edge: {
         label: "Edge",
-        color: "var(--chart-4)",
+        color: "var(--chart-knockout)",
     },
     other: {
         label: "Other",
-        color: "var(--chart-5)",
+        color: "var(--chart-neutral)",
     },
 } satisfies ChartConfig
 

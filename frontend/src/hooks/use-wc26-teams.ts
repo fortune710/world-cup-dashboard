@@ -28,11 +28,17 @@ export function useWc26Teams(): {
   teams: Wc26TeamRow[]
   errorMessage: string | null
   isLoading: boolean
+  refetch: () => void
 } {
   const { t } = useTranslation()
   const [teams, setTeams] = React.useState<Wc26TeamRow[]>([])
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
+  const [reloadTrigger, setReloadTrigger] = React.useState(0)
+
+  const refetch = React.useCallback(() => {
+    setReloadTrigger((prev) => prev + 1)
+  }, [])
 
   React.useEffect(() => {
     const controller = new AbortController()
@@ -101,7 +107,7 @@ export function useWc26Teams(): {
       })
 
     return () => controller.abort()
-  }, [t])
+  }, [t, reloadTrigger])
 
-  return { teams, errorMessage, isLoading }
+  return { teams, errorMessage, isLoading, refetch }
 }

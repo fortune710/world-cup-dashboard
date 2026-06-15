@@ -86,6 +86,14 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-chart-possession: var(--chart-possession);
+  --color-chart-xg: var(--chart-xg);
+  --color-chart-danger: var(--chart-danger);
+  --color-chart-form-positive: var(--chart-form-positive);
+  --color-chart-form-negative: var(--chart-form-negative);
+  --color-chart-knockout: var(--chart-knockout);
+  --color-chart-live: var(--chart-live);
+  --color-chart-neutral: var(--chart-neutral);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -151,6 +159,14 @@
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
+  --chart-possession: hsl(210 80% 56%);       /* blue — possession/control */
+  --chart-xg: hsl(142 71% 45%);              /* green — expected goals / threat */
+  --chart-danger: hsl(0 84% 60%);            /* red — danger / high press */
+  --chart-form-positive: hsl(152 60% 50%);   /* teal — positive form */
+  --chart-form-negative: hsl(25 95% 53%);    /* orange — negative form / loss */
+  --chart-knockout: hsl(262 80% 62%);        /* purple — knockout stage accent */
+  --chart-live: hsl(4 90% 58%);             /* vivid red — live match only */
+  --chart-neutral: hsl(215 16% 57%);         /* grey — draws / neutral stats */
   --radius: 0.25rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -186,6 +202,14 @@
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
+  --chart-possession: hsl(210 80% 56%);
+  --chart-xg: hsl(142 71% 45%);
+  --chart-danger: hsl(0 84% 60%);
+  --chart-form-positive: hsl(152 60% 50%);
+  --chart-form-negative: hsl(25 95% 53%);
+  --chart-knockout: hsl(262 80% 62%);
+  --chart-live: hsl(4 90% 58%);
+  --chart-neutral: hsl(215 16% 57%);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.623 0.214 259.815);
@@ -209,29 +233,11 @@
     @apply bg-background text-foreground text-body-md;
   }
 
-  h1 {
-    @apply font-heading text-display-xxl;
-  }
-
-  h2 {
-    @apply font-heading text-display-xl;
-  }
-
-  h3 {
-    @apply font-heading text-display-lg;
-  }
-
-  h4 {
-    @apply font-heading text-display-md;
-  }
-
-  h5 {
-    @apply font-heading text-display-sm;
-  }
-
-  h6 {
-    @apply text-body-lg;
-  }
+  /* Operational dashboard typography — not hero scale */
+  h1 { @apply text-2xl font-semibold tracking-tight; }
+  h2 { @apply text-xl font-semibold tracking-tight; }
+  h3 { @apply text-base font-semibold; }
+  h4 { @apply text-sm font-semibold; }
 
   code,
   kbd,

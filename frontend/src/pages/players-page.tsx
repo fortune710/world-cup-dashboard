@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import { useNavigate } from "react-router"
+import { useNavigate, useSearchParams } from "react-router"
 import {
   flexRender,
   getCoreRowModel,
@@ -15,7 +15,11 @@ import type { ColumnDef, SortingState, VisibilityState } from "@tanstack/react-t
 import { PlayerPerformanceCard, type PlayerPerformance } from "@/components/player-performance-card"
 import { Badge } from "@/components/ui/badge"
 import { usePlayers } from "@/hooks/use-players"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useTopPerformers } from "@/hooks/use-top-performers"
+import { PlayerCardSkeleton } from "@/components/skeletons/player-card-skeleton"
+import { PlayerTableSkeleton } from "@/components/skeletons/player-table-skeleton"
+import { ErrorState } from "@/components/error-state"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -63,6 +67,8 @@ import {
 } from "lucide-react"
 
 import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
+import type { Classification, DisplayPosition, RadarRole } from "@/lib/players/player-mapping"
+import type { PlayerStatistics } from "@/types/player-statistics"
 
 export interface MatchPerformance {
   matchName: string
@@ -98,6 +104,11 @@ export interface PlayerRow {
   cleanSheets?: number
   avatar?: string
   matchHistory?: MatchPerformance[]
+  classification?: Classification
+  positions?: string
+  displayPosition?: DisplayPosition
+  radarRole?: RadarRole
+  statistics?: PlayerStatistics
 }
 
 export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
@@ -588,20 +599,61 @@ function createPlayerColumns(): ColumnDef<PlayerRow>[] {
 export function PlayersPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [positionTab, setPositionTab] = React.useState<string>("all")
-  const [globalFilter, setGlobalFilter] = React.useState<string>("")
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const globalFilter = searchParams.get("search") ?? ""
+  const positionTab = searchParams.get("position") ?? "all"
+  const page = Number(searchParams.get("page") ?? "1")
+
+  const setGlobalFilter = React.useCallback((value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (value) {
+        next.set("search", value)
+      } else {
+        next.delete("search")
+      }
+      next.delete("page")
+      return next
+    })
+  }, [setSearchParams])
+
+  const setPositionTab = React.useCallback((value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (value && value !== "all") {
+        next.set("position", value)
+      } else {
+        next.delete("position")
+      }
+      next.delete("page")
+      return next
+    })
+  }, [setSearchParams])
+
+  const setPage = React.useCallback((value: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set("page", String(value))
+      return next
+    })
+  }, [setSearchParams])
+
+  const debouncedFilter = useDebounce(globalFilter, 300)
   const [sorting, setSorting] = React.useState<SortingState>([
     { id: "rating", desc: true },
   ])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+  const [pageSize, setPageSize] = React.useState(10)
 
   const columns = React.useMemo(() => createPlayerColumns(), [])
 
-  const { players, loading: playersLoading, error: playersError } = usePlayers(100, globalFilter, positionTab)
+  const { players, total, isLoading: playersLoading, error: playersError, mutate } = usePlayers({
+    limit: 100,
+    search: debouncedFilter,
+    position: positionTab,
+    page: page,
+  })
   const { data: topPerformers, loading: topLoading, error: topError } = useTopPerformers()
 
   const highlights = React.useMemo(() => {
@@ -676,12 +728,27 @@ export function PlayersPage() {
       sorting,
       columnVisibility,
       globalFilter,
-      pagination,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize,
+      },
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
+    onPaginationChange: (updater) => {
+      if (typeof updater === "function") {
+        const nextState = updater({
+          pageIndex: page - 1,
+          pageSize,
+        })
+        setPage(nextState.pageIndex + 1)
+        setPageSize(nextState.pageSize)
+      } else {
+        setPage(updater.pageIndex + 1)
+        setPageSize(updater.pageSize)
+      }
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -697,8 +764,16 @@ export function PlayersPage() {
 
   const handleTabChange = React.useCallback((value: string) => {
     setPositionTab(value)
-    setPagination((current) => ({ ...current, pageIndex: 0 }))
-  }, [])
+  }, [setPositionTab])
+
+  const team = searchParams.get("team") ?? ""
+  const position = positionTab !== "all" ? positionTab : ""
+  const setPosition = React.useCallback((value: string) => {
+    setPositionTab(value || "all")
+  }, [setPositionTab])
+
+  const hasActiveFilters = !!globalFilter || !!position || !!team
+  const resultLabel = playersLoading ? "Searching…" : `${total} player${total !== 1 ? "s" : ""} found`
 
   return (
     <div className="flex flex-col gap-3 px-4 py-4 md:px-6 md:py-6">
@@ -712,15 +787,13 @@ export function PlayersPage() {
       {topLoading ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="h-32 flex items-center justify-center text-sm text-muted-foreground animate-pulse border border-border/50 bg-card/30">
-              Loading highlight...
-            </Card>
+            <PlayerCardSkeleton key={i} />
           ))}
         </div>
       ) : topError ? (
-        <div className="p-4 rounded-xl border border-destructive/20 bg-destructive/10 text-sm text-destructive">
-          Error loading highlights: {topError}
-        </div>
+        <Card className="p-4">
+          <ErrorState message={`Failed to load highlights: ${topError}`} />
+        </Card>
       ) : (
         <PlayerPerformanceCard playerPerformance={highlights} />
       )}
@@ -744,14 +817,19 @@ export function PlayersPage() {
           <div className="mt-3 flex items-center justify-between">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               {/* Search Bar */}
-              <div className="relative w-full sm:w-64">
-                <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search players..."
-                  value={globalFilter}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex flex-col gap-1 w-full sm:w-64">
+                <div className="relative w-full">
+                  <SearchIcon className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Search players..."
+                    value={globalFilter}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                {hasActiveFilters && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{resultLabel}</p>
+                )}
               </div>
 
               {/* Column selector */}
@@ -802,96 +880,138 @@ export function PlayersPage() {
               </TabsList>
             </Tabs>
           </div>
+
+          {/* Active filter chips & clear all button */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 mt-2 pt-2 border-t border-border/20">
+              {globalFilter && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                  Search: {globalFilter}
+                  <button onClick={() => setGlobalFilter('')} aria-label="Clear search" className="ml-1 hover:text-destructive cursor-pointer">×</button>
+                </span>
+              )}
+              {position && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                  Position: {position}
+                  <button onClick={() => setPosition('')} aria-label="Clear position filter" className="ml-1 hover:text-destructive cursor-pointer">×</button>
+                </span>
+              )}
+              {team && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                  Team: {team}
+                  <button onClick={() => {
+                    setSearchParams(prev => {
+                      const next = new URLSearchParams(prev);
+                      next.delete('team');
+                      next.delete('page');
+                      return next;
+                    });
+                  }} aria-label="Clear team filter" className="ml-1 hover:text-destructive cursor-pointer">×</button>
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setGlobalFilter('');
+                  setPosition('');
+                  setSearchParams(prev => {
+                    const next = new URLSearchParams(prev);
+                    next.delete('team');
+                    next.delete('page');
+                    return next;
+                  });
+                  setPage(1);
+                }}
+                className="text-xs text-muted-foreground underline hover:text-foreground cursor-pointer"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
         </CardHeader>
 
         <CardContent className="flex flex-col gap-4 pt-0">
-          <div className="overflow-x-auto rounded-lg border bg-card/50">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {playersError ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-destructive font-medium"
-                    >
-                      Error loading players: {playersError}
-                    </TableCell>
-                  </TableRow>
-                ) : playersLoading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-muted-foreground animate-pulse font-medium"
-                    >
-                      Loading player statistics...
-                    </TableCell>
-                  </TableRow>
-                ) : table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map((row) => {
-                    const playerHref = getPlayerHref(row.original.id)
-
-                    const handleRowNavigate = () => {
-                      navigate(playerHref)
-                    }
-
-                    return (
-                      <TableRow
-                        key={row.id}
-                        role="link"
-                        tabIndex={0}
-                        className={cn(
-                          "group cursor-pointer transition-colors",
-                          "hover:!bg-primary/10",
-                          "focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                        )}
-                        onClick={handleRowNavigate}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ") {
-                            event.preventDefault()
-                            handleRowNavigate()
-                          }
-                        }}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
+          {playersLoading ? (
+            <PlayerTableSkeleton rows={10} />
+          ) : (
+            <div className="overflow-x-auto rounded-lg border bg-card/50">
+              <Table>
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} colSpan={header.colSpan}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
                             )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    )
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center text-muted-foreground"
-                    >
-                      No players found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {playersError ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-auto"
+                      >
+                        <ErrorState message={`Failed to load players: ${playersError}`} onRetry={() => mutate()} />
+                      </TableCell>
+                    </TableRow>
+                  ) : table.getRowModel().rows.length ? (
+                    table.getRowModel().rows.map((row) => {
+                      const playerHref = getPlayerHref(row.original.id)
+
+                      const handleRowNavigate = () => {
+                        navigate(playerHref)
+                      }
+
+                      return (
+                        <TableRow
+                          key={row.id}
+                          role="link"
+                          tabIndex={0}
+                          className={cn(
+                            "group cursor-pointer transition-colors",
+                            "hover:!bg-primary/10",
+                            "focus-visible:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          )}
+                          onClick={handleRowNavigate}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault()
+                              handleRowNavigate()
+                            }
+                          }}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      )
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center text-muted-foreground"
+                      >
+                        No players found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
           {/* Pagination Footer */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

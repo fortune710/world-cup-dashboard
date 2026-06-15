@@ -24,6 +24,9 @@ export function useMatches(matchDate: string = getCurrentUtcDate(), status?: str
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  const refetch = () => setReloadTrigger((prev) => prev + 1);
 
   useEffect(() => {
     let active = true;
@@ -57,9 +60,9 @@ export function useMatches(matchDate: string = getCurrentUtcDate(), status?: str
     return () => {
       active = false;
     };
-  }, [matchDate, status]);
+  }, [matchDate, status, reloadTrigger]);
 
   const dateLabel = useMemo(() => formatMatchDateLabel(matchDate), [matchDate]);
 
-  return { matches, loading, error, dateLabel };
+  return { matches, loading, error, dateLabel, refetch };
 }

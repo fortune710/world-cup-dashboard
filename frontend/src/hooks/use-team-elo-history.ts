@@ -17,6 +17,9 @@ export function useTeamEloHistory(teamCode: string | undefined) {
   const [history, setHistory] = useState<EloHistoryPoint[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  const refetch = () => setReloadTrigger((prev) => prev + 1);
 
   useEffect(() => {
     if (!teamCode) {
@@ -64,7 +67,7 @@ export function useTeamEloHistory(teamCode: string | undefined) {
     return () => {
       active = false;
     };
-  }, [teamCode]);
+  }, [teamCode, reloadTrigger]);
 
-  return { history, loading, error };
+  return { history, loading, error, refetch };
 }

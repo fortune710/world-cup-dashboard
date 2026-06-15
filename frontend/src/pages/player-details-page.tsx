@@ -23,6 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { usePlayerDetails } from "@/hooks/use-player-details"
+import { useRadarPeers } from "@/hooks/use-radar-peers"
+import { ErrorState } from "@/components/error-state"
 import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
 
 import { ChartRadarGridCircle } from "@/components/player-radar"
@@ -32,7 +34,9 @@ export function PlayerDetailsPage() {
   const { t } = useTranslation()
   const { playerId } = useParams<{ playerId: string }>()
 
-  const { player, loading, error } = usePlayerDetails(playerId)
+  const { player, loading, error, refetch } = usePlayerDetails(playerId)
+  const { peers, isLoading: peersLoading } = useRadarPeers(player?.radarRole)
+
 
   const initials = player
     ? player.name
@@ -62,9 +66,10 @@ export function PlayerDetailsPage() {
             {t("playerDetailsPage.backToPlayers", { defaultValue: "Back to players" })}
           </Link>
         </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {error ? `Error: ${error}` : t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
-        </h1>
+        <ErrorState
+          message={error ? `Failed to load player details: ${error}` : t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
+          onRetry={error ? refetch : undefined}
+        />
       </div>
     )
   }
@@ -236,7 +241,7 @@ export function PlayerDetailsPage() {
 
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        <ChartRadarGridCircle player={player} />
+        <ChartRadarGridCircle player={player} peers={peers} peersLoading={peersLoading} />
         <Card>
           <CardHeader>
             <CardTitle>{t("playerDetailsPage.movementMaps", { defaultValue: "Movement maps" })}</CardTitle>

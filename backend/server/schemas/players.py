@@ -77,3 +77,55 @@ class PlayerLeaderboardResponse(BaseModel):
     statistics: PlayerLeaderboardStatisticsResponse
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RadarPeerStatistics(BaseModel):
+    goals: Optional[float] = None
+    assists: Optional[float] = None
+    expected_goals: Optional[float] = None
+    expected_assists: Optional[float] = None
+    total_shots: Optional[float] = None
+    shots_on_target: Optional[float] = None
+    big_chances_missed: Optional[float] = None
+    successful_dribbles: Optional[float] = None
+    accurate_crosses: Optional[float] = None
+    key_passes: Optional[float] = None
+    accurate_passes: Optional[float] = None
+    total_passes: Optional[float] = None
+    accurate_passes_percentage: Optional[float] = None
+    accurate_long_balls_percentage: Optional[float] = None
+    accurate_final_third_passes: Optional[float] = None
+    tackles: Optional[float] = None
+    tackles_won_percentage: Optional[float] = None
+    interceptions: Optional[float] = None
+    clearances: Optional[float] = None
+    blocked_shots: Optional[float] = None
+    aerial_duels_won: Optional[float] = None
+    aerial_duels_won_percentage: Optional[float] = None
+    saves: Optional[float] = None
+    goals_prevented: Optional[float] = None
+    clean_sheet: Optional[float] = None
+    penalty_save: Optional[float] = None
+    penalty_faced: Optional[float] = None
+    high_claims: Optional[float] = None
+    minutes_played: Optional[float] = None
+    rating: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RadarPeerResponse(BaseModel):
+    id: str
+    name: str
+    radarRole: str
+    statistics: RadarPeerStatistics
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RadarPeersListResponse(BaseModel):
+    peers: list[RadarPeerResponse]
+    total: int
+
+    model_config = ConfigDict(from_attributes=True)
+

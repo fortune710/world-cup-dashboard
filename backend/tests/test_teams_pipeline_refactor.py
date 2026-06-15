@@ -108,3 +108,41 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
         # Assert
         self.assertEqual(len(transformed), 1)
         self.assertEqual(transformed[0]["logo_url"], "https://sofascore.com/team-image.png")
+
+    def test_transform_squad_player(self):
+        # 1. Test positionsDetailed as list
+        player_list = {
+            "id": 999,
+            "name": "Squad Player List",
+            "dateOfBirthTimestamp": 878256000,
+            "position": "F",
+            "positionsDetailed": ["ST", "LW"],
+            "weight": 78,
+            "height": 185,
+            "preferredFoot": "Right",
+            "proposedMarketValue": 45000000,
+            "rating": 7.2,
+            "image_url": "https://example.com/p1.png"
+        }
+        res_list = self.transformations.transform_squad_player(player_list, "ESP")
+        self.assertEqual(res_list["positions"], "ST, LW")
+
+        # 2. Test positionsDetailed as string
+        player_str = {
+            "id": 998,
+            "name": "Squad Player Str",
+            "position": "D",
+            "positionsDetailed": "CB, RB"
+        }
+        res_str = self.transformations.transform_squad_player(player_str, "ESP")
+        self.assertEqual(res_str["positions"], "CB, RB")
+
+        # 3. Test fallback
+        player_fallback = {
+            "id": 997,
+            "name": "Squad Player Fallback",
+            "position": "M"
+        }
+        res_fallback = self.transformations.transform_squad_player(player_fallback, "ESP")
+        self.assertEqual(res_fallback["positions"], "M")
+
