@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/bracket", tags=["bracket"])
 
-@router.get("/", response_model=List[RoundBracketResponse])
+@router.get("", response_model=List[RoundBracketResponse])
 def get_bracket(db: Session = Depends(get_db)):
     """
     Get the tournament bracket structure with all knockout stage matches.
