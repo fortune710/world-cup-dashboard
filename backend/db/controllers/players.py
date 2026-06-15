@@ -265,7 +265,7 @@ def get_team_players(db: Session, team_code: str):
     ).filter(Player.country_code == team_code).all()
 
 
-def _get_top_players_by_stat(db: Session, stat_key: str, cast_sql: str, stat_label: str):
+def _get_top_players_by_stat(db: Session, stat_key: str, cast_sql: str, stat_label: str, limit: int = 5):
     logger.info(
         {
             "message": "Fetching top players by stat",
@@ -280,7 +280,7 @@ def _get_top_players_by_stat(db: Session, stat_key: str, cast_sql: str, stat_lab
     players = (
         db.query(Player)
         .order_by(stat_expression.desc(), Player.id.asc())
-        .limit(5)
+        .limit(limit)
         .all()
     )
     logger.info(
@@ -294,20 +294,20 @@ def _get_top_players_by_stat(db: Session, stat_key: str, cast_sql: str, stat_lab
     return players
 
 
-def get_top_players_by_goals(db: Session):
-    return _get_top_players_by_stat(db, "goals", "integer", "goals")
+def get_top_players_by_goals(db: Session, limit: int = 5):
+    return _get_top_players_by_stat(db, "goals", "integer", "goals", limit)
 
 
-def get_top_players_by_assists(db: Session):
-    return _get_top_players_by_stat(db, "assists", "integer", "assists")
+def get_top_players_by_assists(db: Session, limit: int = 5):
+    return _get_top_players_by_stat(db, "assists", "integer", "assists", limit)
 
 
-def get_top_players_by_rating(db: Session):
-    return _get_top_players_by_stat(db, "rating", "double precision", "rating")
+def get_top_players_by_rating(db: Session, limit: int = 5):
+    return _get_top_players_by_stat(db, "rating", "double precision", "rating", limit)
 
 
-def get_top_players_by_clean_sheets(db: Session):
-    return _get_top_players_by_stat(db, "clean_sheet", "integer", "clean_sheets")
+def get_top_players_by_clean_sheets(db: Session, limit: int = 5):
+    return _get_top_players_by_stat(db, "clean_sheet", "integer", "clean_sheets", limit)
 
 
 def get_players_leaderboard(

@@ -151,10 +151,11 @@ def get_player_statistics(
 
 @router.get("/top/goals", response_model=list[PlayerTopGoalsResponse])
 def get_top_goals(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    limit: int = Query(5, gt=0, description="Positive integer player ID"),
 ):
-    logger.info({"message": "Fetching top players by goals", "limit": 5})
-    players = get_top_players_by_goals(db)
+    logger.info({"message": "Fetching top players by goals", "limit": limit})
+    players = get_top_players_by_goals(db, limit)
     payload = []
     for player in players:
         player_payload = _player_info_payload(player)
@@ -168,10 +169,11 @@ def get_top_goals(
 
 @router.get("/top/assists", response_model=list[PlayerTopAssistsResponse])
 def get_top_assists(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    limit: int = Query(5, gt=0, description="Positive integer player ID"),
 ):
-    logger.info({"message": "Fetching top players by assists", "limit": 5})
-    players = get_top_players_by_assists(db)
+    logger.info({"message": "Fetching top players by assists", "limit": limit})
+    players = get_top_players_by_assists(db, limit)
     payload = []
     for player in players:
         player_payload = _player_info_payload(player)
@@ -185,10 +187,11 @@ def get_top_assists(
 
 @router.get("/top/rating", response_model=list[PlayerInfoResponse])
 def get_top_rating(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    limit: int = Query(5, gt=0, description="Positive integer player ID"),
 ):
-    logger.info({"message": "Fetching top players by rating", "limit": 5})
-    players = get_top_players_by_rating(db)
+    logger.info({"message": "Fetching top players by rating", "limit": limit})
+    players = get_top_players_by_rating(db, limit)
     payload = []
     for player in players:
         player_payload = _player_info_payload(player)
@@ -202,10 +205,11 @@ def get_top_rating(
 
 @router.get("/top/clean-sheets", response_model=list[PlayerTopCleanSheetsResponse])
 def get_top_clean_sheets(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    limit: int = Query(5, gt=0, description="Positive integer player ID"),
 ):
-    logger.info({"message": "Fetching top players by clean sheets", "limit": 5})
-    players = get_top_players_by_clean_sheets(db)
+    logger.info({"message": "Fetching top players by clean sheets", "limit": limit})
+    players = get_top_players_by_clean_sheets(db, limit)
     payload = []
     for player in players:
         player_payload = _player_info_payload(player)
