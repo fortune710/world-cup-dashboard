@@ -1,3 +1,4 @@
+import React, { Suspense } from "react"
 import { useTranslation } from "react-i18next"
 import { Outlet, useNavigation } from "react-router"
 
@@ -33,9 +34,12 @@ export function AppLayout() {
 
       <main id="main-content" className="flex flex-1 flex-col pb-12">
         <div className="@container/main w-full flex flex-1 flex-col gap-4">
-          <Outlet />
+          <Suspense fallback={<div className="flex h-screen items-center justify-center text-sm text-muted-foreground">Loading…</div>}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>
   )
 }
+
