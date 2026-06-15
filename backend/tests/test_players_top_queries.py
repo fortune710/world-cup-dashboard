@@ -64,6 +64,19 @@ class TestPlayersTopQueries(unittest.TestCase):
         self.assertIn("stats_json", str(fake_query.order_by_args[0]))
         self.assertIn("rating", str(fake_query.order_by_args[0]))
 
+    def test_get_top_players_by_saves_orders_by_stats_json_and_limits_to_five(self):
+        fake_query = FakeQuery()
+        db = MagicMock()
+        db.query.return_value = fake_query
+
+        result = players_controller.get_top_players_by_saves(db)
+
+        self.assertEqual(result, ["row-1", "row-2"])
+        self.assertEqual(fake_query.limit_value, 5)
+        self.assertIsNotNone(fake_query.order_by_args)
+        self.assertIn("stats_json", str(fake_query.order_by_args[0]))
+        self.assertIn("saves", str(fake_query.order_by_args[0]))
+
 
 if __name__ == "__main__":
     unittest.main()

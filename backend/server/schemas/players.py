@@ -50,6 +50,10 @@ class PlayerTopCleanSheetsResponse(PlayerInfoResponse):
     clean_sheets: int
 
 
+class PlayerTopSavesResponse(PlayerInfoResponse):
+    saves: int
+
+
 class PlayerLeaderboardStatisticsResponse(BaseModel):
     appearances: int
     minutes_played: int

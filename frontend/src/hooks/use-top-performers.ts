@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from "react";
 import useSWR from "swr";
 import { logger } from "@/lib/logger";
-import type { TopPerformersData } from "@/datatypes";
 import { API_BASE_URL } from "@/lib/api-config";
 import {
   buildTopPerformersData,
@@ -18,15 +17,15 @@ type TopPerformerApiPlayer = {
   rating?: number | null;
   goals?: number | null;
   assists?: number | null;
-  clean_sheets?: number | null;
+  saves?: number | null;
 };
 
-const TOP_STATS_LIMIT = 4;
+const TOP_STATS_LIMIT = 3;
 const swrConfig = createTopPerformersSWRConfig();
 const topPerformersKeys = {
   goals: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.goals}?limit=${TOP_STATS_LIMIT}`,
   assists: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.assists}?limit=${TOP_STATS_LIMIT}`,
-  cleanSheets: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.cleanSheets}?limit=${TOP_STATS_LIMIT}`,
+  saves: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.saves}?limit=${TOP_STATS_LIMIT}`,
   rating: `${API_BASE_URL}${TOP_PERFORMERS_ENDPOINTS.rating}?limit=${TOP_STATS_LIMIT}`,
 } as const;
 
@@ -58,8 +57,8 @@ export function useTopPerformers() {
     fetchTopPerformersBucket,
     swrConfig
   );
-  const cleanSheets = useSWR<TopPerformerApiPlayer[]>(
-    topPerformersKeys.cleanSheets,
+  const saves = useSWR<TopPerformerApiPlayer[]>(
+    topPerformersKeys.saves,
     fetchTopPerformersBucket,
     swrConfig
   );
@@ -73,25 +72,25 @@ export function useTopPerformers() {
     logger.info("Evaluating top performers SWR state", {
       goalsLoading: goals.isLoading,
       assistsLoading: assists.isLoading,
-      cleanSheetsLoading: cleanSheets.isLoading,
+      savesLoading: saves.isLoading,
       ratingLoading: rating.isLoading,
     });
   }, [
     goals.isLoading,
     assists.isLoading,
-    cleanSheets.isLoading,
+    saves.isLoading,
     rating.isLoading,
   ]);
 
   const data = useMemo(() => {
-    if (!goals.data || !assists.data || !cleanSheets.data || !rating.data) {
+    if (!goals.data || !assists.data || !saves.data || !rating.data) {
       return null;
     }
 
     const mapped = buildTopPerformersData(
       goals.data,
       assists.data,
-      cleanSheets.data,
+      saves.data,
       rating.data
     );
     logger.info("Top performers fetched successfully", {
@@ -101,10 +100,10 @@ export function useTopPerformers() {
       rating: mapped.rating.length,
     });
     return mapped;
-  }, [goals.data, assists.data, cleanSheets.data, rating.data]);
+  }, [goals.data, assists.data, saves.data, rating.data]);
 
-  const loading = goals.isLoading || assists.isLoading || cleanSheets.isLoading || rating.isLoading;
-  const error = goals.error || assists.error || cleanSheets.error || rating.error;
+  const loading = goals.isLoading || assists.isLoading || saves.isLoading || rating.isLoading;
+  const error = goals.error || assists.error || saves.error || rating.error;
 
   return {
     data,

@@ -122,6 +122,7 @@ type TopPerformerApiPlayer = {
   image_url?: string | null
   classification?: string | null
   rating?: number | null
+  saves?: number | null
 }
 
 const countryMetadata: Record<string, { group: string; federation: string }> = {
@@ -186,7 +187,7 @@ const positionMap: Record<string, string> = {
 export const TOP_PERFORMERS_ENDPOINTS = {
   goals: "/players/top/goals",
   assists: "/players/top/assists",
-  cleanSheets: "/players/top/clean-sheets",
+  saves: "/players/top/saves",
   rating: "/players/top/rating",
 } as const
 
@@ -200,7 +201,7 @@ export function createTopPerformersSWRConfig() {
 
 function buildPerformerRow(
   player: TopPerformerApiPlayer,
-  valueKey: "goals" | "assists" | "clean_sheets" | "rating"
+  valueKey: "goals" | "assists" | "saves" | "rating"
 ): PerformerRow {
   const name = player.name ?? ""
   const initials = name
@@ -229,13 +230,13 @@ function buildPerformerRow(
 export function buildTopPerformersData(
   goalsData: TopPerformerApiPlayer[],
   assistsData: TopPerformerApiPlayer[],
-  cleanSheetsData: TopPerformerApiPlayer[],
+  savesData: TopPerformerApiPlayer[],
   ratingData: TopPerformerApiPlayer[]
 ): TopPerformersData {
   return {
     goals: goalsData.slice(0, 5).map((player) => buildPerformerRow(player, "goals")),
     assists: assistsData.slice(0, 5).map((player) => buildPerformerRow(player, "assists")),
-    saves: cleanSheetsData.slice(0, 5).map((player) => buildPerformerRow(player, "clean_sheets")),
+    saves: savesData.slice(0, 5).map((player) => buildPerformerRow(player, "saves")),
     rating: ratingData.slice(0, 5).map((player) => buildPerformerRow(player, "rating")),
   }
 }

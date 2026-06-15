@@ -11,6 +11,7 @@ from db.controllers.players import (
     get_top_players_by_assists,
     get_top_players_by_goals,
     get_top_players_by_rating,
+    get_top_players_by_saves,
 )
 from server.schemas.players import (
     PlayerClassification,
@@ -20,6 +21,7 @@ from server.schemas.players import (
     PlayerTopCleanSheetsResponse,
     PlayerTopAssistsResponse,
     PlayerTopGoalsResponse,
+    PlayerTopSavesResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -217,6 +219,23 @@ def get_top_clean_sheets(
         payload.append(player_payload)
 
     logger.info({"message": "Returning top players by clean sheets", "count": len(payload)})
+    return payload
+
+
+@router.get("/top/saves", response_model=list[PlayerTopSavesResponse])
+def get_top_saves(
+    db: Session = Depends(get_db),
+    limit: int = Query(5, gt=0, description="Positive integer player ID"),
+):
+    logger.info({"message": "Fetching top players by saves", "limit": limit})
+    players = get_top_players_by_saves(db, limit)
+    payload = []
+    for player in players:
+        player_payload = _player_info_payload(player)
+        player_payload["saves"] = _player_stat_value(player, "saves", int)
+        payload.append(player_payload)
+
+    logger.info({"message": "Returning top players by saves", "count": len(payload)})
     return payload
 
 
