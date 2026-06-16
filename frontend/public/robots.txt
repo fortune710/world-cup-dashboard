@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /settings
 
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://golazolive.vercel.app/sitemap.xml
