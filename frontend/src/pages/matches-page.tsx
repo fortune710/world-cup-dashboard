@@ -59,7 +59,7 @@ export function MatchesPage() {
             return (
               <section
                 key={group.dateKey}
-                className="rounded-3xl border border-foreground/10 bg-card/70 p-4"
+                className="rounded-3xl py-4"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
