@@ -123,6 +123,8 @@ type TopPerformerApiPlayer = {
   classification?: string | null
   rating?: number | null
   saves?: number | null
+  goals?: number | null
+  assists?: number | null
 }
 
 const countryMetadata: Record<string, { group: string; federation: string }> = {
@@ -218,7 +220,7 @@ function buildPerformerRow(
     name,
     initials,
     nationality: player.country_code || "",
-    value: (player as Record<string, number | null | undefined>)[valueKey] ?? 0,
+    value: (player as any)[valueKey] ?? 0,
     avatar: player.image_url || `https://img.sofascore.com/api/v1/player/${player.id}/image`,
     position: positionMap[player.classification || ""] || player.classification || "FWD",
     group: meta.group,

@@ -4,12 +4,9 @@ import type { LiveRushMatch } from "@/datatypes";
 import { API_BASE_URL } from "@/lib/api-config";
 import {
   buildMatchesApiPath,
+  getCurrentLocalDate,
   mapMatchApiRowsToLiveRushMatches,
 } from "@/lib/helpers/match.helpers";
-
-function getCurrentUtcDate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function formatMatchDateLabel(matchDate: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -20,7 +17,7 @@ function formatMatchDateLabel(matchDate: string): string {
   }).format(new Date(`${matchDate}T00:00:00Z`));
 }
 
-export function useMatches(matchDate: string = getCurrentUtcDate(), status?: string) {
+export function useMatches(matchDate: string = getCurrentLocalDate(), status?: string) {
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

@@ -27,6 +27,7 @@ import {
 } from "@/lib/helpers/live-rush.helpers"
 import { cn } from "@/lib/utils"
 import { CalendarDaysIcon } from "lucide-react"
+import { logger } from "@/lib/logger"
 
 export { liveRushDemoMatches } from "@/lib/helpers/live-rush.helpers"
 
@@ -37,11 +38,19 @@ const LIVE_RUSH_TAB_I18N: Record<LiveRushTab, string> = {
   upcoming: "liveRush.tabs.upcoming",
 }
 
-const LiveRushMatchGrid = React.memo(function LiveRushMatchGrid({
+export const LiveRushMatchGrid = React.memo(function LiveRushMatchGrid({
   matches,
 }: LiveRushMatchGridProps) {
   const { t } = useTranslation()
   const matchCount = Math.min(matches.length, WC26_MAX_MATCHES_PER_DAY)
+
+  React.useEffect(() => {
+    logger.info({
+      message: "Live rush match grid rendered",
+      match_count: matches.length,
+      capped_match_count: matchCount,
+    })
+  }, [matches.length, matchCount])
 
   if (matches.length === 0) {
     return (
@@ -77,6 +86,15 @@ export const LiveRush = React.memo(function LiveRush({
   const resolvedDateLabel = dateLabel ?? t("liveRush.demoDate")
   const [activeTab, setActiveTab] = React.useState<LiveRushTab>("all")
   const counts = React.useMemo(() => countByStatus(matches), [matches])
+
+  React.useEffect(() => {
+    logger.info({
+      message: "Live rush rendered",
+      match_count: matches.length,
+      active_tab: activeTab,
+      date_label: resolvedDateLabel,
+    })
+  }, [matches.length, activeTab, resolvedDateLabel])
 
   const rushTabs = React.useMemo(
     () =>
