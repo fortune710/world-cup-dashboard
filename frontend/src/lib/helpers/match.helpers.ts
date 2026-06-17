@@ -50,8 +50,11 @@ function buildKickoffLabel(status: LiveRushMatch["status"], kickoffUtc: string |
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 }
 
-export function buildMatchesApiPath(matchDate: string, status?: string) {
-  const query = status ? `?status=${encodeURIComponent(status)}` : ""
+export function buildMatchesApiPath(matchDate: string, status?: string, timezone?: string) {
+  const params = new URLSearchParams()
+  if (status) params.set("status", status)
+  if (timezone) params.set("timezone", timezone)
+  const query = params.size > 0 ? `?${params.toString()}` : ""
   return `/matches/${matchDate}${query}`
 }
 

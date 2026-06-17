@@ -10,10 +10,16 @@ import {
 } from "./match.helpers"
 
 describe("match helpers", () => {
-  it("buildMatchesApiPath includes the date segment and optional status", () => {
+  it("buildMatchesApiPath includes the date segment and optional status and timezone", () => {
     expect(buildMatchesApiPath("2026-06-11")).toBe("/matches/2026-06-11")
     expect(buildMatchesApiPath("2026-06-11", "live")).toBe(
       "/matches/2026-06-11?status=live"
+    )
+    expect(buildMatchesApiPath("2026-06-11", undefined, "America/New_York")).toBe(
+      "/matches/2026-06-11?timezone=America%2FNew_York"
+    )
+    expect(buildMatchesApiPath("2026-06-11", "live", "America/New_York")).toBe(
+      "/matches/2026-06-11?status=live&timezone=America%2FNew_York"
     )
   })
 
