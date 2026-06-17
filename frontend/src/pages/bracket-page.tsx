@@ -65,7 +65,7 @@ function BracketMatchCard({ match }: { match: BracketMatchViewModel }) {
         ) : (
           <Avatar className="size-5 shrink-0 rounded-full border border-border/50">
             <AvatarImage
-              src={getTeamFlagUrl({ idCountry: team.code, teamName: team.name }, 24)}
+              src={getTeamFlagUrl({ idCountry: team.code, teamName: team.name }, 20)}
               alt={team.code}
               className="object-cover"
             />
