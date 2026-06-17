@@ -1,17 +1,24 @@
 import json
 import importlib
+import logging
 import os
 import sys
 import types
+import warnings
 from enum import Enum
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import Mock, patch
 
 import pika
+import sqlalchemy as sa
+from sqlalchemy.orm import declarative_base
 
 from config.settings import Settings
 from services.queue_service import QueueService
+
+warnings.filterwarnings("ignore", category=sa.exc.SAWarning, message="The GenericFunction .*")
+logging.disable(logging.CRITICAL)
 
 
 def load_matches_pipeline_module():
@@ -48,6 +55,7 @@ def load_matches_pipeline_module():
         },
     )
     fake_modules["airflow.operators.python"].PythonOperator = type("FakePythonOperator", (FakeChainedObject,), {})
+    fake_modules["config.db"].Base = declarative_base()
     fake_modules["config.db"].SessionLocal = lambda: None
     fake_modules["db.controllers.elo"].get_elo_inputs = lambda *args, **kwargs: ([], [])
     fake_modules["db.controllers.elo"].replace_elo_ratings = lambda *args, **kwargs: 0
@@ -70,7 +78,8 @@ def load_matches_pipeline_module():
     saved_modules[module_name] = sys.modules.pop(module_name, None)
 
     try:
-        with patch.dict(sys.modules, fake_modules, clear=False):
+        with patch.dict(sys.modules, fake_modules, clear=False), warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=sa.exc.SAWarning)
             return importlib.import_module(module_name)
     finally:
         saved = saved_modules[module_name]
@@ -121,10 +130,14 @@ class TestMatchesPipelineQueueUnit(TestCase):
                 "JPN": [SimpleNamespace(id=20, name="Japan One")],
             }.get(team_code, []),
         ), patch.object(
+            fake_db,
+            "get",
+            return_value=SimpleNamespace(id=1, player_stats_indexed=False),
+        ), patch.object(
             matches_pipeline,
             "claim_player_stats_queue_pending",
             return_value=True,
-        ), patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
+        ) as claim_player_stats_queue_pending, patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
             Settings, "PLAYER_STATS_UPDATES_QUEUE", "unit_test_player_stats_updates"
         ):
             matches_pipeline.enqueue_player_stats(ti=self.fake_ti)
@@ -142,9 +155,9 @@ class TestMatchesPipelineQueueUnit(TestCase):
                 ("unit_test_player_stats_updates", 20, "Japan One"),
             },
         )
-        matches_pipeline.claim_player_stats_queue_pending.assert_any_call(fake_db, 10, "1")
-        matches_pipeline.claim_player_stats_queue_pending.assert_any_call(fake_db, 11, "1")
-        matches_pipeline.claim_player_stats_queue_pending.assert_any_call(fake_db, 20, "1")
+        claim_player_stats_queue_pending.assert_any_call(fake_db, 10, "1")
+        claim_player_stats_queue_pending.assert_any_call(fake_db, 11, "1")
+        claim_player_stats_queue_pending.assert_any_call(fake_db, 20, "1")
         fake_db.close.assert_called_once()
         fake_queue.close.assert_called_once()
 
@@ -164,10 +177,14 @@ class TestMatchesPipelineQueueUnit(TestCase):
                 "JPN": [SimpleNamespace(id=20, name="Japan One")],
             }.get(team_code, []),
         ), patch.object(
+            fake_db,
+            "get",
+            return_value=SimpleNamespace(id=1, player_stats_indexed=False),
+        ), patch.object(
             matches_pipeline,
             "claim_player_stats_queue_pending",
             side_effect=claim_side_effect,
-        ), patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
+        ) as claim_player_stats_queue_pending, patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
             Settings, "PLAYER_STATS_UPDATES_QUEUE", "unit_test_player_stats_updates"
         ):
             matches_pipeline.enqueue_player_stats(ti=self.fake_ti)
@@ -184,9 +201,9 @@ class TestMatchesPipelineQueueUnit(TestCase):
                 ("unit_test_player_stats_updates", 20, "Japan One"),
             },
         )
-        matches_pipeline.claim_player_stats_queue_pending.assert_any_call(fake_db, 10, "1")
-        matches_pipeline.claim_player_stats_queue_pending.assert_any_call(fake_db, 11, "1")
-        matches_pipeline.claim_player_stats_queue_pending.assert_any_call(fake_db, 20, "1")
+        claim_player_stats_queue_pending.assert_any_call(fake_db, 10, "1")
+        claim_player_stats_queue_pending.assert_any_call(fake_db, 11, "1")
+        claim_player_stats_queue_pending.assert_any_call(fake_db, 20, "1")
         self.assertEqual(fake_queue.publish.call_count, 2)
 
     def test_enqueue_player_stats_skips_non_completed_matches(self):
@@ -206,7 +223,7 @@ class TestMatchesPipelineQueueUnit(TestCase):
 
         get_players_by_team.assert_not_called()
         fake_queue.publish.assert_not_called()
-        fake_db.close.assert_not_called()
+        fake_db.close.assert_called_once()
         fake_queue.close.assert_not_called()
 
     def test_enqueue_matchday_stats_publishes_live_and_completed_matches(self):
@@ -286,6 +303,55 @@ class TestMatchesPipelineQueueUnit(TestCase):
         fake_db.close.assert_called_once()
         fake_queue.close.assert_called_once()
 
+    def test_enqueue_matchday_stats_skips_scheduled_and_indexed_matches_and_marks_published_matches_indexed(self):
+        matches_pipeline = load_matches_pipeline_module()
+        fake_db = Mock()
+        fake_queue = Mock()
+        fake_matches = [
+            SimpleNamespace(
+                id=21,
+                sofascore_id=121,
+                status="scheduled",
+                home_team_code="KSA",
+                away_team_code="JPN",
+                matchday_stats_indexed=False,
+            ),
+            SimpleNamespace(
+                id=22,
+                sofascore_id=122,
+                status="completed",
+                home_team_code="MEX",
+                away_team_code="RSA",
+                matchday_stats_indexed=True,
+            ),
+            SimpleNamespace(
+                id=23,
+                sofascore_id=123,
+                status="live",
+                home_team_code="BRA",
+                away_team_code="ARG",
+                matchday_stats_indexed=False,
+            ),
+        ]
+
+        with patch.object(matches_pipeline, "SessionLocal", return_value=fake_db), patch.object(
+            matches_pipeline,
+            "get_matches_for_matchday_stats_queue",
+            return_value=fake_matches,
+        ), patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
+            Settings, "MATCHDAY_STATS_QUEUE", "unit_test_matchday_stats"
+        ):
+            matches_pipeline.enqueue_matchday_stats(ti=self.fake_ti)
+
+        published_messages = [
+            (call.kwargs["queue_name"], call.kwargs["message"]["id"])
+            for call in fake_queue.publish.call_args_list
+        ]
+
+        self.assertEqual(published_messages, [("unit_test_matchday_stats", 23)])
+        self.assertEqual(fake_db.query.return_value.filter.return_value.update.call_count, 1)
+        fake_db.commit.assert_called_once()
+
     def test_extract_elo_inputs_serializes_match_status_for_xcom(self):
         matches_pipeline = load_matches_pipeline_module()
         fake_db = Mock()
@@ -318,6 +384,67 @@ class TestMatchesPipelineQueueUnit(TestCase):
         self.assertEqual(result["matches"][0]["status"], "completed")
         json.dumps(result)
         fake_db.close.assert_called_once()
+
+    def test_enqueue_player_stats_skips_indexed_matches_and_marks_selected_matches_indexed(self):
+        matches_pipeline = load_matches_pipeline_module()
+        fake_db = Mock()
+        fake_queue = Mock()
+        fake_completed_match = {
+            "id": 31,
+            "status": "completed",
+            "sofascore_id": 131,
+            "home_team_code": "KSA",
+            "away_team_code": "JPN",
+        }
+        fake_already_indexed_match = {
+            "id": 32,
+            "status": "completed",
+            "sofascore_id": 132,
+            "home_team_code": "MEX",
+            "away_team_code": "RSA",
+        }
+        fake_non_completed_match = {
+            "id": 33,
+            "status": "live",
+            "sofascore_id": 133,
+            "home_team_code": "BRA",
+            "away_team_code": "ARG",
+        }
+        fake_ti = SimpleNamespace(
+            xcom_pull=lambda task_ids: [fake_completed_match, fake_already_indexed_match, fake_non_completed_match]
+            if task_ids == "transform_matches"
+            else None
+        )
+        fake_db.get.side_effect = [
+            SimpleNamespace(id=31, player_stats_indexed=False),
+            SimpleNamespace(id=32, player_stats_indexed=True),
+        ]
+
+        with patch.object(matches_pipeline, "SessionLocal", return_value=fake_db), patch.object(
+            matches_pipeline,
+            "get_players_by_team",
+            side_effect=lambda _db, team_code: {
+                "KSA": [SimpleNamespace(id=10, name="Saudi One")],
+                "JPN": [SimpleNamespace(id=20, name="Japan One")],
+            }.get(team_code, []),
+        ), patch.object(
+            matches_pipeline,
+            "claim_player_stats_queue_pending",
+            return_value=True,
+        ), patch("services.queue_service.QueueService", return_value=fake_queue), patch.object(
+            Settings, "PLAYER_STATS_UPDATES_QUEUE", "unit_test_player_stats_updates"
+        ):
+            matches_pipeline.enqueue_player_stats(ti=fake_ti)
+
+        published_messages = {
+            call.kwargs["message"]["player_id"]
+            for call in fake_queue.publish.call_args_list
+        }
+
+        self.assertEqual(published_messages, {10, 20})
+        self.assertEqual(fake_db.get.call_count, 2)
+        self.assertEqual(fake_db.query.return_value.filter.return_value.update.call_count, 1)
+        fake_db.commit.assert_called_once()
 
 
 class TestMatchesPipelineQueueIntegration(TestCase):

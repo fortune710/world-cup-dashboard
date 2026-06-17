@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import BigInteger, Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import BigInteger, Boolean, Column, Integer, String, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from config.db import Base
 from db.models.teams import Team
@@ -36,6 +36,8 @@ class Match(Base):
     home_pen = Column(Integer, nullable=True)
     away_pen = Column(Integer, nullable=True)
     sofascore_id = Column(BigInteger, nullable=True, unique=True, index=True)
+    matchday_stats_indexed = Column(Boolean, default=False, nullable=False, server_default="false", index=True)
+    player_stats_indexed = Column(Boolean, default=False, nullable=False, server_default="false", index=True)
     
     home_team = relationship("Team", foreign_keys=[home_team_code])
     away_team = relationship("Team", foreign_keys=[away_team_code])
