@@ -6,6 +6,7 @@ from db.controllers.teams import get_all_teams
 from db.controllers.players import get_team_players
 from server.schemas.teams import TeamStandingResponse
 from server.schemas.players import TeamPlayerResponse
+from server.player_image import build_player_image_api_path
 from typing import List
 
 logger = logging.getLogger(__name__)
@@ -90,4 +91,22 @@ def get_team_players_route(
         raise HTTPException(status_code=400, detail="Invalid team code. Must be 3 characters.")
     
     players = get_team_players(db, code)
-    return players
+    payload = [
+        TeamPlayerResponse(
+            id=player.id,
+            name=player.name,
+            club_name=player.club_name,
+            classification=player.classification,
+            image_url=build_player_image_api_path(player.id),
+            positions=player.positions,
+        )
+        for player in players
+    ]
+    logger.info(
+        {
+            "message": "Returning team players with proxied image URLs",
+            "team_code": code,
+            "count": len(payload),
+        }
+    )
+    return payload

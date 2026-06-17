@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { PlayerRow } from "@/pages/players-page";
 import { API_BASE_URL } from "@/lib/api-config";
+import { getPlayerAvatarUrl } from "@/lib/players/player-image";
+import { getFederationByCountryCode } from "@/lib/helpers/federation.helpers";
 
 export function usePlayers(limit: number = 100, search?: string, classification?: string) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
@@ -51,7 +53,7 @@ export function usePlayers(limit: number = 100, search?: string, classification?
             name: p.player_name,
             position: positionMap[p.classification] || p.classification || "FWD",
             country: p.country_code,
-            federation: p.federation || "UEFA",
+            federation: p.federation || getFederationByCountryCode(p.country_code) || "—",
             group: p.group || "A",
             gamesPlayed: stats.appearances ?? 0,
             minutesPlayed: stats.minutes_played ?? 0,
@@ -64,7 +66,7 @@ export function usePlayers(limit: number = 100, search?: string, classification?
             rating: stats.rating ?? 0.0,
             injuryStatus: p.injury_status || "Fit",
             cleanSheets: stats.clean_sheets ?? 0,
-            avatar: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
+            avatar: getPlayerAvatarUrl(p.id),
           };
         });
 

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next"
 
 import { GroupStageStandings } from "@/components/chart-area-interactive"
-import { PowerRankingTable } from "@/components/data-table"
+import { TeamsEloTable } from "@/components/teams-elo-table"
 import { SectionCards } from "@/components/section-cards"
 
 import { LiveRush } from "@/components/live-rush"
@@ -36,7 +36,7 @@ export function LivePage() {
           <TopPerformers className="flex-1" />
         </div>
       </div>
-      <PowerRankingTable />
+      <TeamsEloTable />
     </div>
   )
 }

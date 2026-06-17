@@ -17,19 +17,29 @@ function formatMatchDateLabel(matchDate: string): string {
   }).format(new Date(`${matchDate}T00:00:00Z`));
 }
 
+function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
+
 export function useMatches(matchDate: string = getCurrentLocalDate(), status?: string) {
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const timezone = useMemo(() => getBrowserTimezone(), []);
+
   useEffect(() => {
     let active = true;
     async function fetchMatches() {
-      logger.info("Fetching matches from backend", { matchDate, status });
+      logger.info("Fetching matches from backend", { matchDate, status, timezone });
       setError(null);
       setLoading(true);
       try {
-        const url = `${API_BASE_URL}${buildMatchesApiPath(matchDate, status)}`;
+        const url = `${API_BASE_URL}${buildMatchesApiPath(matchDate, status, timezone)}`;
         const res = await fetch(url);
 
         if (!res.ok) throw new Error("Failed to fetch matches");
@@ -54,7 +64,7 @@ export function useMatches(matchDate: string = getCurrentLocalDate(), status?: s
     return () => {
       active = false;
     };
-  }, [matchDate, status]);
+  }, [matchDate, status, timezone]);
 
   const dateLabel = useMemo(() => formatMatchDateLabel(matchDate), [matchDate]);
 

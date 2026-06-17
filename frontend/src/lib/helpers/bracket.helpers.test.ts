@@ -4,6 +4,7 @@ import {
   buildBracketApiPath,
   buildBracketViewModel,
   getBracketMatchWinnerSide,
+  isBracketMatchCompleted,
 } from "./bracket.helpers"
 
 describe("bracket helpers", () => {
@@ -84,6 +85,13 @@ describe("bracket helpers", () => {
     expect(rounds[0].matches[0].advancementLabel).toBe("R16")
     expect(rounds[1].matches[0].advancementLabel).toBe("QF")
     expect(rounds[2].matches[0].advancementLabel).toBeNull()
+    expect(rounds[0].matches[0].isCompleted).toBe(true)
+  })
+
+  it("isBracketMatchCompleted recognizes finished statuses", () => {
+    expect(isBracketMatchCompleted("completed")).toBe(true)
+    expect(isBracketMatchCompleted("finished")).toBe(true)
+    expect(isBracketMatchCompleted("scheduled")).toBe(false)
   })
 
   it("getBracketMatchWinnerSide uses penalties when scores are level", () => {

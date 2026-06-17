@@ -381,6 +381,7 @@ def get_players_leaderboard(
                 "classification": player.classification,
                 "team_image": team_image,
                 "group": group,
+                "image_url": f"/players/{player.id}/image",
                 "statistics": {
                     "appearances": int(stats_json.get("appearances", 0) or 0),
                     "minutes_played": int(stats_json.get("minutes_played", 0) or 0),
