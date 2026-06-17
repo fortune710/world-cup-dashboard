@@ -1,5 +1,7 @@
 import logging
-from datetime import date, datetime, timezone
+import re
+from datetime import date, datetime, time, timezone, timedelta, tzinfo as datetime_tzinfo
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from sqlalchemy import Float, Integer, func, text
@@ -10,6 +12,58 @@ from db.models.matches import Match, MatchStatus
 from db.models.players import Player
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_timezone(tz_name: str) -> datetime_tzinfo:
+    logger.info(
+        {
+            "message": "Parsing timezone string",
+            "timezone_str": tz_name,
+        }
+    )
+    try:
+        tz = ZoneInfo(tz_name)
+        logger.info(
+            {
+                "message": "Resolved timezone as ZoneInfo",
+                "timezone_str": tz_name,
+                "tz_key": tz.key,
+            }
+        )
+        return tz
+    except Exception as exc:
+        logger.debug(
+            {
+                "message": "ZoneInfo lookup failed, attempting regex offset parsing",
+                "timezone_str": tz_name,
+                "error": str(exc),
+            }
+        )
+    
+    match = re.match(r"^([+-])(\d{2}):?(\d{2})?$", tz_name.strip())
+    if match:
+        sign, hours, minutes = match.groups()
+        offset_mins = int(hours) * 60 + int(minutes or 0)
+        if sign == "-":
+            offset_mins = -offset_mins
+        tz = timezone(timedelta(minutes=offset_mins))
+        logger.info(
+            {
+                "message": "Resolved timezone as offset timedelta",
+                "timezone_str": tz_name,
+                "offset_minutes": offset_mins,
+            }
+        )
+        return tz
+        
+    logger.error(
+        {
+            "message": "Failed to parse timezone",
+            "timezone_str": tz_name,
+        }
+    )
+    raise ValueError(f"Invalid timezone: {tz_name}")
+
 
 MATCHDAY_STAT_LEADER_SPECS = (
     ("rating", MatchdayStats.statistics["rating"].astext.cast(Float)),
@@ -127,19 +181,41 @@ def get_all_matches(db: Session, status: str = None, page: int = 1, page_size: i
     return query.offset(skip).limit(page_size).all()
 
 
-def get_matches_by_date(db: Session, match_date: date, status: str | None = None):
+def get_matches_by_date(
+    db: Session,
+    match_date: date,
+    status: str | None = None,
+    timezone_str: str = "UTC",
+):
     logger.info(
         {
             "message": "Fetching matches by date",
             "match_date": match_date.isoformat(),
             "status": status,
+            "timezone": timezone_str,
         }
     )
     try:
+        tz = _parse_timezone(timezone_str)
+        day_start = datetime.combine(match_date, time.min, tzinfo=tz)
+        day_end = datetime.combine(match_date, time.max, tzinfo=tz)
+        day_start_utc = day_start.astimezone(timezone.utc).replace(tzinfo=None)
+        day_end_utc = day_end.astimezone(timezone.utc).replace(tzinfo=None)
+
+        logger.info(
+            {
+                "message": "Timezone bounds calculated",
+                "match_date": match_date.isoformat(),
+                "timezone": timezone_str,
+                "day_start_utc": day_start_utc.isoformat(),
+                "day_end_utc": day_end_utc.isoformat(),
+            }
+        )
+
         query = (
             db.query(Match)
             .options(joinedload(Match.home_team), joinedload(Match.away_team))
-            .filter(func.date(Match.kickoff_utc) == match_date)
+            .filter(Match.kickoff_utc >= day_start_utc, Match.kickoff_utc <= day_end_utc)
             .order_by(Match.kickoff_utc.asc(), Match.id.asc())
         )
 
@@ -152,6 +228,7 @@ def get_matches_by_date(db: Session, match_date: date, status: str | None = None
                 "message": "Resolved matches by date",
                 "match_date": match_date.isoformat(),
                 "status": status,
+                "timezone": timezone_str,
                 "count": len(matches),
             }
         )
@@ -162,6 +239,7 @@ def get_matches_by_date(db: Session, match_date: date, status: str | None = None
                 "message": "Failed to fetch matches by date",
                 "match_date": match_date.isoformat(),
                 "status": status,
+                "timezone": timezone_str,
                 "error": {"message": str(exc), "type": type(exc).__name__},
             }
         )

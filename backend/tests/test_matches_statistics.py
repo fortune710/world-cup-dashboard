@@ -172,6 +172,40 @@ class TestMatchesStatisticsRoute(unittest.TestCase):
         mock_get_matches.assert_called_once()
         self.assertEqual(mock_get_matches.call_args.kwargs["status"], "live")
 
+    def test_matches_by_date_route_with_timezone_query_parameter(self):
+        rows = []
+        with patch.object(matches_route, "get_matches_by_date", return_value=rows) as mock_get_matches:
+            response = self.client.get("/matches/2026-06-11?timezone=America/New_York")
+        self.assertEqual(response.status_code, 200)
+        mock_get_matches.assert_called_once_with(
+            mock_get_matches.call_args.args[0],
+            date(2026, 6, 11),
+            status=None,
+            timezone_str="America/New_York"
+        )
+
+    def test_matches_by_date_route_with_embedded_timezone(self):
+        rows = []
+        with patch.object(matches_route, "get_matches_by_date", return_value=rows) as mock_get_matches:
+            response = self.client.get("/matches/2026-06-11-04:00")
+        self.assertEqual(response.status_code, 200)
+        mock_get_matches.assert_called_once_with(
+            mock_get_matches.call_args.args[0],
+            date(2026, 6, 11),
+            status=None,
+            timezone_str="-04:00"
+        )
+
+    def test_matches_by_date_route_with_invalid_timezone(self):
+        response = self.client.get("/matches/2026-06-11?timezone=Invalid/Timezone")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid timezone", response.json()["detail"])
+
+    def test_matches_by_date_route_with_invalid_date(self):
+        response = self.client.get("/matches/not-a-date")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Invalid date format", response.json()["detail"])
+
 
 class TestMatchesStatisticsController(unittest.TestCase):
     def test_get_matchday_statistics_by_date_returns_top_one_per_metric(self):
@@ -221,6 +255,22 @@ class TestMatchesStatisticsController(unittest.TestCase):
         self.assertIsNotNone(fake_query.order_by_args)
         self.assertTrue(any("kickoff_utc" in str(arg) for arg in fake_query.filter_args))
         self.assertTrue(any("status" in str(arg) for arg in fake_query.filter_args))
+
+    def test_get_matches_by_date_timezone_aware_bounds(self):
+        rows = []
+        fake_query = FakeDateQuery(rows)
+        fake_db = Mock()
+        fake_db.query.return_value = fake_query
+
+        matches_controller.get_matches_by_date(fake_db, date(2026, 6, 11), timezone_str="America/New_York")
+
+        self.assertEqual(len(fake_query.filter_args), 2)
+        expr_start = fake_query.filter_args[0]
+        expr_end = fake_query.filter_args[1]
+
+        from datetime import datetime
+        self.assertEqual(expr_start.right.value, datetime(2026, 6, 11, 4, 0))
+        self.assertEqual(expr_end.right.value, datetime(2026, 6, 12, 3, 59, 59, 999999))
 
 
 if __name__ == "__main__":
