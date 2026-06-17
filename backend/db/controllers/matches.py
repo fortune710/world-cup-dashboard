@@ -20,6 +20,38 @@ MATCHDAY_STAT_LEADER_SPECS = (
     ("pass_accuracy", MatchdayStats.statistics["pass_accuracy"].astext.cast(Integer)),
 )
 
+BRACKET_KNOCKOUT_ROUNDS = (
+    "Round of 32",
+    "R32",
+    "Round of 16",
+    "R16",
+    "Quarter-final",
+    "QF",
+    "Semi-final",
+    "SF",
+    "3rd place",
+    "3rd",
+    "Final",
+    "final",
+)
+
+BRACKET_ROUND_NAME_MAP = {
+    "Round of 32": "R32",
+    "R32": "R32",
+    "Round of 16": "R16",
+    "R16": "R16",
+    "Quarter-final": "QF",
+    "QF": "QF",
+    "Semi-final": "SF",
+    "SF": "SF",
+    "3rd place": "3rd",
+    "3rd": "3rd",
+    "Final": "final",
+    "final": "final",
+}
+
+BRACKET_DISPLAY_ORDER = ["R32", "R16", "QF", "SF", "3rd", "final"]
+
 def upsert_match(db: Session, match_data: dict):
     logger.info(
         {
@@ -379,6 +411,68 @@ def _fetch_top_matchday_stat_leader(
     return payload
 
 
+def _resolve_bracket_team_payload(team, fallback_code: str | None, side: str, match_id: int) -> dict:
+    raw_code = (getattr(team, "code", None) or fallback_code or "").strip()
+    raw_name = (getattr(team, "name", None) or "").strip()
+    display_code = raw_code or "TBD"
+    display_name = raw_name or display_code
+
+    logger.info(
+        {
+            "message": "Resolved bracket team payload",
+            "match_id": match_id,
+            "side": side,
+            "team_code": raw_code or None,
+            "team_name": raw_name or None,
+            "display_code": display_code,
+            "placeholder": display_code == "TBD",
+        }
+    )
+
+    return {"name": display_name, "code": display_code}
+
+
+def _serialize_bracket_match(match: Match) -> dict:
+    logger.info(
+        {
+            "message": "Serializing bracket match",
+            "match_id": match.id,
+            "round": match.round,
+        }
+    )
+    serialized_match = {
+        "id": match.id,
+        "round": match.round,
+        "group": match.group,
+        "home_team_code": _resolve_bracket_team_payload(match.home_team, match.home_team_code, "home", match.id)[
+            "code"
+        ],
+        "away_team_code": _resolve_bracket_team_payload(match.away_team, match.away_team_code, "away", match.id)[
+            "code"
+        ],
+        "stadium": match.stadium,
+        "kickoff_utc": match.kickoff_utc,
+        "status": match.status.value if hasattr(match.status, "value") else match.status,
+        "phase": match.phase,
+        "home_score": match.home_score,
+        "away_score": match.away_score,
+        "home_pen": match.home_pen,
+        "away_pen": match.away_pen,
+        "home_team": _resolve_bracket_team_payload(match.home_team, match.home_team_code, "home", match.id),
+        "away_team": _resolve_bracket_team_payload(match.away_team, match.away_team_code, "away", match.id),
+    }
+
+    logger.info(
+        {
+            "message": "Serialized bracket match",
+            "match_id": match.id,
+            "home_team_code": serialized_match["home_team_code"],
+            "away_team_code": serialized_match["away_team_code"],
+        }
+    )
+    return serialized_match
+
+
 def get_matchday_statistics_by_date(db: Session, match_date: date):
     logger.info(
         {
@@ -419,49 +513,20 @@ def get_bracket_matches(db: Session):
     """
     logger.info({"message": "Fetching all knockout stage matches for bracket"})
 
-    knockout_rounds = [
-        "Round of 32", "R32",
-        "Round of 16", "R16",
-        "Quarter-final", "QF",
-        "Semi-final", "SF",
-        "3rd place", "3rd",
-        "Final", "final"
-    ]
-
     try:
         matches = (
             db.query(Match)
             .options(joinedload(Match.home_team), joinedload(Match.away_team))
-            .filter(Match.round.in_(knockout_rounds))
+            .filter(Match.round.in_(BRACKET_KNOCKOUT_ROUNDS))
             .order_by(Match.kickoff_utc.asc())
             .all()
         )
-
-        # Map to normalize round names for consistency
-        round_name_map = {
-            "Round of 32": "R32",
-            "R32": "R32",
-            "Round of 16": "R16",
-            "R16": "R16",
-            "Quarter-final": "QF",
-            "QF": "QF",
-            "Semi-final": "SF",
-            "SF": "SF",
-            "3rd place": "3rd",
-            "3rd": "3rd",
-            "Final": "final",
-            "final": "final"
-        }
-
-        # Define display order for frontend
-        display_order = ["R32", "R16", "QF", "SF", "3rd", "final"]
-        
-        bracket = {round_key: [] for round_key in display_order}
+        bracket = {round_key: [] for round_key in BRACKET_DISPLAY_ORDER}
 
         for match in matches:
-            normalized_round = round_name_map.get(match.round)
+            normalized_round = BRACKET_ROUND_NAME_MAP.get(match.round)
             if normalized_round:
-                bracket[normalized_round].append(match)
+                bracket[normalized_round].append(_serialize_bracket_match(match))
 
         logger.info(
             {
@@ -469,9 +534,7 @@ def get_bracket_matches(db: Session):
                 "round_counts": {r: len(m) for r, m in bracket.items()},
             }
         )
-        
-        # Return as a list of rounds for easier iteration in frontend
-        return [{"round": r, "matches": bracket[r]} for r in display_order if bracket[r]]
+        return [{"round": r, "matches": bracket[r]} for r in BRACKET_DISPLAY_ORDER if bracket[r]]
 
     except Exception as exc:
         logger.error(
