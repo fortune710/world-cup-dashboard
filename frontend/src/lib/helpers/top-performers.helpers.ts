@@ -6,6 +6,7 @@ import type {
   TopSaveScorer,
   TopPerformersData,
 } from "@/datatypes"
+import { getPlayerAvatarUrl } from "@/lib/players/player-image"
 
 export const topPerformers: TopPerformerTuple = [
   [
@@ -221,7 +222,7 @@ function buildPerformerRow(
     initials,
     nationality: player.country_code || "",
     value: (player as any)[valueKey] ?? 0,
-    avatar: player.image_url || `https://img.sofascore.com/api/v1/player/${player.id}/image`,
+    avatar: getPlayerAvatarUrl(player.id),
     position: positionMap[player.classification || ""] || player.classification || "FWD",
     group: meta.group,
     federation: meta.federation,

@@ -56,6 +56,19 @@ export interface BracketTeamViewModel {
 
 export type BracketMatchWinnerSide = "home" | "away" | null
 
+export function isBracketMatchCompleted(
+  status: string | null | undefined
+): boolean {
+  const value = String(status ?? "").toLowerCase()
+
+  return (
+    value === "ft" ||
+    value === "finished" ||
+    value === "ended" ||
+    value === "completed"
+  )
+}
+
 export interface BracketMatchViewModel {
   id: string
   round: BracketRoundKey
@@ -67,6 +80,7 @@ export interface BracketMatchViewModel {
   awayPen: number | null
   winnerSide: BracketMatchWinnerSide
   advancementLabel: string | null
+  isCompleted: boolean
 }
 
 export interface BracketRoundViewModel {
@@ -338,6 +352,7 @@ export function buildBracketViewModel(
             round.key,
             roundsByKey
           ),
+          isCompleted: isBracketMatchCompleted(match.status),
         }
       }),
     })

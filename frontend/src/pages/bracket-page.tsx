@@ -26,10 +26,11 @@ function BracketMatchCard({ match }: { match: BracketMatchViewModel }) {
       round: match.round,
       winner_side: match.winnerSide,
       advancement_label: match.advancementLabel,
+      is_completed: match.isCompleted,
     })
-  }, [match.id, match.round, match.winnerSide, match.advancementLabel])
+  }, [match.id, match.round, match.winnerSide, match.advancementLabel, match.isCompleted])
 
-  const renderTeamRow = (
+  const renderTeam = (
     side: "home" | "away",
     team: BracketMatchViewModel["homeTeam"],
     score: number | null,
@@ -38,68 +39,57 @@ function BracketMatchCard({ match }: { match: BracketMatchViewModel }) {
     const isWinner = match.winnerSide === side
 
     logger.info({
-      message: "Rendered bracket team row",
+      message: "Rendered bracket team",
       match_id: match.id,
       round: match.round,
       side,
       team_code: team.code,
-      team_name: team.name,
       placeholder: team.placeholder,
       score,
       penalty: pen,
       winner_side: match.winnerSide,
+      is_completed: match.isCompleted,
     })
 
     return (
       <div
         className={cn(
-          "flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors",
-          isWinner ? "bg-primary/10 text-foreground" : "bg-transparent"
+          "flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-lg px-1 py-1 transition-colors",
+          isWinner ? "bg-primary/10" : "bg-transparent"
         )}
       >
         {team.placeholder ? (
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-dashed border-foreground/20 bg-muted/30 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">
-            TBD
+          <div className="flex size-5 shrink-0 items-center justify-center rounded-full border border-dashed border-foreground/20 bg-muted/30 text-[8px] font-semibold text-muted-foreground">
+            ?
           </div>
         ) : (
-          <Avatar className="size-8 shrink-0 rounded-full border border-border/50">
+          <Avatar className="size-5 shrink-0 rounded-full border border-border/50">
             <AvatarImage
-              src={getTeamFlagUrl({ idCountry: team.code, teamName: team.name }, 40)}
-              alt={team.name}
+              src={getTeamFlagUrl({ idCountry: team.code, teamName: team.name }, 24)}
+              alt={team.code}
               className="object-cover"
             />
-            <AvatarFallback>{team.code.slice(0, 3)}</AvatarFallback>
+            <AvatarFallback className="text-[8px]">{team.code.slice(0, 3)}</AvatarFallback>
           </Avatar>
         )}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                "truncate text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground",
-                isWinner && "text-primary"
-              )}
-            >
-              {team.code}
-            </span>
-            {isWinner ? (
-              <Badge
-                variant="outline"
-                className="h-5 border-primary/25 bg-primary/10 px-1.5 text-[10px] uppercase tracking-[0.18em] text-primary"
-              >
-                Advancing
-              </Badge>
+        <span
+          className={cn(
+            "truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground",
+            isWinner && "text-primary"
+          )}
+        >
+          {team.code}
+        </span>
+        {match.isCompleted ? (
+          <div className="flex flex-col items-center leading-none">
+            <span className="tabular-nums text-xs font-semibold">{score ?? "—"}</span>
+            {pen != null && match.homeScore === match.awayScore ? (
+              <span className="text-[8px] uppercase tracking-wider text-muted-foreground">
+                P{pen}
+              </span>
             ) : null}
           </div>
-          <div className="truncate text-sm font-medium">{team.name}</div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end">
-          <span className="tabular-nums text-lg font-semibold">{score ?? "—"}</span>
-          {pen != null && match.homeScore === match.awayScore ? (
-            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              P {pen}
-            </span>
-          ) : null}
-        </div>
+        ) : null}
       </div>
     )
   }
@@ -112,15 +102,20 @@ function BracketMatchCard({ match }: { match: BracketMatchViewModel }) {
         match.winnerSide && "border-primary/20 bg-primary/5"
       )}
     >
-      <CardContent className="flex flex-col gap-2 px-3 py-3">
-        {renderTeamRow("home", match.homeTeam, match.homeScore, match.homePen)}
-        {renderTeamRow("away", match.awayTeam, match.awayScore, match.awayPen)}
+      <CardContent className="flex flex-col gap-1 px-1.5 py-1.5">
+        <div className="flex items-start justify-center gap-1">
+          {renderTeam("home", match.homeTeam, match.homeScore, match.homePen)}
+          <span className="shrink-0 pt-1 text-[9px] font-medium uppercase tracking-wider text-muted-foreground/70">
+            vs
+          </span>
+          {renderTeam("away", match.awayTeam, match.awayScore, match.awayPen)}
+        </div>
         {match.advancementLabel ? (
-          <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+          <div className="flex items-center justify-center gap-1 text-[9px] text-muted-foreground">
             {match.advancementLabel === "Champion" ? (
-              <Trophy className="size-3.5" />
+              <Trophy className="size-2.5" />
             ) : (
-              <ArrowRight className="size-3.5" />
+              <ArrowRight className="size-2.5" />
             )}
             <span>{match.advancementLabel}</span>
           </div>
@@ -151,7 +146,7 @@ export function BracketPage() {
     <div className="flex flex-col gap-4 px-4 py-4 md:gap-6 md:px-6 md:py-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-semibold tracking-tight">{t("routes.bracket")}</h1>
-        <p className="max-w-3xl text-sm text-muted-foreground">
+        <p className="max-w-5xl text-sm text-muted-foreground">
           {t("pages.bracket.description")}
         </p>
       </div>
@@ -159,16 +154,16 @@ export function BracketPage() {
       <div className="rounded-3xl border border-foreground/10 bg-card/70">
         {renderMode === "loading" ? (
           <div className="overflow-x-auto p-4">
-            <div className="grid min-w-[114rem] grid-flow-col auto-cols-[18rem] gap-4">
+            <div className="grid min-w-[54rem] grid-flow-col auto-cols-[8rem] gap-3">
               {BRACKET_ROUND_ORDER.map((roundKey) => (
-                <div key={roundKey} className="flex flex-col gap-3 rounded-3xl border border-foreground/10 bg-muted/20 p-3">
+                <div key={roundKey} className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-muted/20 p-2">
                   <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-8" />
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <Skeleton className="h-28 rounded-2xl" />
-                    <Skeleton className="h-28 rounded-2xl" />
+                  <div className="flex flex-col gap-1.5">
+                    <Skeleton className="h-12 rounded-lg" />
+                    <Skeleton className="h-12 rounded-lg" />
                   </div>
                 </div>
               ))}
@@ -184,28 +179,33 @@ export function BracketPage() {
           </div>
         ) : (
           <div className="overflow-x-auto p-4">
-            <div className="grid min-w-[114rem] grid-flow-col auto-cols-[18rem] gap-4">
+            <div className="grid min-w-[54rem] grid-flow-col auto-cols-[8rem] gap-3">
               {rounds.map((round: BracketRoundViewModel) => (
                 <section
                   key={round.key}
-                  className="flex flex-col gap-3 rounded-3xl border border-foreground/10 bg-muted/20 p-3"
+                  className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-muted/20 p-2"
                 >
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-foreground/10 bg-card/90 px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <GitBranch className="size-4 text-muted-foreground" />
-                      <span className="text-sm font-semibold">{round.label}</span>
+                  <div className="flex items-center justify-between gap-1 rounded-lg border border-foreground/10 bg-card/90 px-2 py-1">
+                    <div className="flex min-w-0 items-center gap-1">
+                      <GitBranch className="size-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-[10px] font-semibold leading-tight">
+                        {round.label}
+                      </span>
                     </div>
-                    <Badge variant="outline" className="text-[10px] uppercase tracking-[0.18em]">
+                    <Badge
+                      variant="outline"
+                      className="h-4 shrink-0 px-1 text-[8px] uppercase tracking-wider"
+                    >
                       {round.matches.length}
                     </Badge>
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
                     {round.matches.map((match) => (
                       <BracketMatchCard key={match.id} match={match} />
                     ))}
                     {round.matches.length === 0 ? (
-                      <div className="flex min-h-28 items-center justify-center rounded-2xl border border-dashed border-foreground/10 bg-card/70 text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                      <div className="flex min-h-12 items-center justify-center rounded-lg border border-dashed border-foreground/10 bg-card/70 text-[9px] uppercase tracking-wider text-muted-foreground">
                         TBD
                       </div>
                     ) : null}

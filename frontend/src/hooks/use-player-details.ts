@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { PlayerRow } from "@/pages/players-page";
 import { API_BASE_URL } from "@/lib/api-config";
+import { getPlayerAvatarUrl } from "@/lib/players/player-image";
 
 const countryMetadata: Record<string, { group: string; federation: string }> = {
   MEX: { group: "A", federation: "CONCACAF" },
@@ -118,7 +119,7 @@ export function usePlayerDetails(playerId: string | undefined) {
           rating: infoData.rating ?? stats.rating ?? 0.0,
           injuryStatus: infoData.injury_status || "Fit",
           cleanSheets: stats.clean_sheet ?? 0,
-          avatar: infoData.image_url || `https://img.sofascore.com/api/v1/player/${infoData.id}/image`,
+          avatar: getPlayerAvatarUrl(infoData.id),
         };
 
         setPlayer(mapped);

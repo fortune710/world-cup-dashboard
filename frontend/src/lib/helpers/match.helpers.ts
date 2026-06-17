@@ -19,6 +19,8 @@ export interface MatchDayGroup {
   matches: LiveRushMatch[]
 }
 
+const UTC_TIMESTAMP_PATTERN = /(Z|[+-]\d{2}:?\d{2})$/i
+
 function normalizeMatchStatus(status: string | null | undefined): LiveRushMatch["status"] {
   const value = String(status || "").toLowerCase()
 
@@ -33,7 +35,88 @@ function normalizeMatchStatus(status: string | null | undefined): LiveRushMatch[
   return "upcoming"
 }
 
-function buildKickoffLabel(status: LiveRushMatch["status"], kickoffUtc: string | null | undefined): string {
+function parseKickoffUtc(
+  kickoffUtc: string | null | undefined
+): Date | null {
+  if (!kickoffUtc) {
+    logger.warn({
+      message: "Missing kickoff time while parsing kickoff timestamp",
+      kickoff_utc: kickoffUtc ?? null,
+    })
+    return null
+  }
+
+  const normalizedKickoffUtc = UTC_TIMESTAMP_PATTERN.test(kickoffUtc)
+    ? kickoffUtc
+    : `${kickoffUtc}Z`
+  const kickoffDate = new Date(normalizedKickoffUtc)
+
+  if (Number.isNaN(kickoffDate.getTime())) {
+    logger.warn({
+      message: "Invalid kickoff time while parsing kickoff timestamp",
+      kickoff_utc: kickoffUtc,
+      normalized_kickoff_utc: normalizedKickoffUtc,
+    })
+    return null
+  }
+
+  logger.info({
+    message: "Parsed kickoff timestamp",
+    kickoff_utc: kickoffUtc,
+    normalized_kickoff_utc: normalizedKickoffUtc,
+  })
+
+  return kickoffDate
+}
+
+function resolveMatchTimeZone(timeZone?: string): string {
+  const resolvedTimeZone =
+    timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC"
+
+  logger.info({
+    message: "Resolved match time zone",
+    time_zone: resolvedTimeZone,
+  })
+
+  return resolvedTimeZone
+}
+
+function formatLocalDateKey(date: Date, timeZone: string): string {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+  const parts = formatter.formatToParts(date)
+  const year = parts.find((part) => part.type === "year")?.value
+  const month = parts.find((part) => part.type === "month")?.value
+  const day = parts.find((part) => part.type === "day")?.value
+
+  if (!year || !month || !day) {
+    logger.warn({
+      message: "Failed to format local date key from kickoff timestamp",
+      time_zone: timeZone,
+    })
+    return date.toISOString().slice(0, 10)
+  }
+
+  const dateKey = `${year}-${month}-${day}`
+
+  logger.info({
+    message: "Formatted local date key",
+    time_zone: timeZone,
+    date_key: dateKey,
+  })
+
+  return dateKey
+}
+
+function buildKickoffLabel(
+  status: LiveRushMatch["status"],
+  kickoffUtc: string | null | undefined,
+  timeZone?: string
+): string {
   if (status === "finished") {
     return "FT"
   }
@@ -42,12 +125,26 @@ function buildKickoffLabel(status: LiveRushMatch["status"], kickoffUtc: string |
     return "Live"
   }
 
-  if (!kickoffUtc) {
+  const kickoffDate = parseKickoffUtc(kickoffUtc)
+  if (!kickoffDate) {
     return ""
   }
 
-  const date = new Date(kickoffUtc)
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  const resolvedTimeZone = resolveMatchTimeZone(timeZone)
+  const kickoffLabel = kickoffDate.toLocaleTimeString([], {
+    timeZone: resolvedTimeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+
+  logger.info({
+    message: "Built kickoff label",
+    kickoff_utc: kickoffUtc ?? null,
+    time_zone: resolvedTimeZone,
+    kickoff_label: kickoffLabel,
+  })
+
+  return kickoffLabel
 }
 
 export function buildMatchesApiPath(matchDate: string, status?: string, timezone?: string) {
@@ -103,33 +200,36 @@ export function getCurrentLocalDate(
 
 export function getMatchLocalDateKey(
   kickoffUtc: string | null | undefined,
-  timezoneOffsetMinutes?: number
+  timeZoneOrOffset?: string | number
 ): string | null {
-  if (!kickoffUtc) {
-    logger.warn({
-      message: "Missing kickoff time while resolving match local date key",
-      kickoff_utc: kickoffUtc ?? null,
-    })
+  const kickoffDate = parseKickoffUtc(kickoffUtc)
+  if (!kickoffDate) {
     return null
   }
 
-  const kickoffDate = new Date(kickoffUtc)
-  if (Number.isNaN(kickoffDate.getTime())) {
-    logger.warn({
-      message: "Invalid kickoff time while resolving match local date key",
+  if (typeof timeZoneOrOffset === "number") {
+    const localDate = new Date(
+      kickoffDate.getTime() - timeZoneOrOffset * 60000
+    )
+    const dateKey = localDate.toISOString().slice(0, 10)
+
+    logger.info({
+      message: "Resolved match local date key from timezone offset",
       kickoff_utc: kickoffUtc,
+      timezone_offset_minutes: timeZoneOrOffset,
+      date_key: dateKey,
     })
-    return null
+
+    return dateKey
   }
 
-  const offsetMinutes = timezoneOffsetMinutes ?? kickoffDate.getTimezoneOffset()
-  const localDate = new Date(kickoffDate.getTime() - offsetMinutes * 60000)
-  const dateKey = localDate.toISOString().slice(0, 10)
+  const resolvedTimeZone = resolveMatchTimeZone(timeZoneOrOffset)
+  const dateKey = formatLocalDateKey(kickoffDate, resolvedTimeZone)
 
   logger.info({
     message: "Resolved match local date key",
     kickoff_utc: kickoffUtc,
-    timezone_offset_minutes: offsetMinutes,
+    time_zone: resolvedTimeZone,
     date_key: dateKey,
   })
 
@@ -138,7 +238,7 @@ export function getMatchLocalDateKey(
 
 export function groupMatchesByLocalDate(
   matches: LiveRushMatch[],
-  timezoneOffsetMinutes?: number
+  timeZoneOrOffset?: string | number
 ): MatchDayGroup[] {
   logger.info({
     message: "Grouping matches by local date",
@@ -150,7 +250,7 @@ export function groupMatchesByLocalDate(
   matches.forEach((match) => {
     const dateKey = getMatchLocalDateKey(
       match.kickoffUtc,
-      timezoneOffsetMinutes
+      timeZoneOrOffset
     )
 
     if (!dateKey) {

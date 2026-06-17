@@ -28,7 +28,7 @@ export function MatchesPage() {
         <h1 className="text-2xl font-semibold tracking-tight">
           {t("routes.matches")}
         </h1>
-        <p className="max-w-3xl text-sm text-muted-foreground">
+        <p className="max-w-5xl text-sm text-muted-foreground">
           {t("pages.matches.description")}
         </p>
       </div>

@@ -69,8 +69,8 @@ describe("top performers helpers", () => {
       federation: "UEFA",
       value: 3,
     })
+    expect(data.saves[0].avatar).toContain("/players/3/image")
     expect(data.saves[0]).toMatchObject({
-      avatar: "https://example.com/image.png",
       value: 5,
     })
     expect(data.rating[0]).toMatchObject({

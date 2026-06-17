@@ -40,6 +40,57 @@ describe("match helpers", () => {
     expect(getMatchLocalDateKey("2026-06-15T02:30:00Z", 240)).toBe("2026-06-14")
   })
 
+  it("treats naive kickoff timestamps as UTC when grouping and formatting", () => {
+    const kickoffUtc = "2026-06-15T02:30:00"
+    const previousTimeZone = process.env.TZ
+    process.env.TZ = "America/New_York"
+
+    try {
+      const expectedKickoffLabel = new Date(`${kickoffUtc}Z`).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+
+      expect(getMatchLocalDateKey(kickoffUtc)).toBe("2026-06-14")
+
+      const [match] = mapMatchApiRowsToLiveRushMatches([
+        {
+          id: 1,
+          home_team: { name: "Mexico" },
+          away_team: { name: "Poland" },
+          home_team_code: "MEX",
+          away_team_code: "POL",
+          home_score: 0,
+          away_score: 0,
+          kickoff_utc: kickoffUtc,
+          status: "scheduled",
+          group: "A",
+        },
+      ])
+
+      expect(match.kickoffLabel).toBe(expectedKickoffLabel)
+
+      const groupedMatches = groupMatchesByLocalDate([
+        {
+          id: "1",
+          homeTeam: "Mexico",
+          awayTeam: "Poland",
+          homeScore: 0,
+          awayScore: 0,
+          kickoffUtc,
+          kickoffLabel: expectedKickoffLabel,
+          status: "upcoming",
+          group: "A",
+        },
+      ])
+
+      expect(groupedMatches).toHaveLength(1)
+      expect(groupedMatches[0].dateKey).toBe("2026-06-14")
+    } finally {
+      process.env.TZ = previousTimeZone
+    }
+  })
+
   it("groupMatchesByLocalDate groups matches into local date buckets", () => {
     const groups = groupMatchesByLocalDate([
       {
