@@ -1,6 +1,9 @@
 import unittest
+import logging
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+
+logger = logging.getLogger(__name__)
 
 from db.controllers import players as players_controller
 from db.models.players import Player, PlayerClassification
@@ -9,6 +12,7 @@ from db.models.teams import Team
 
 class FakeLeaderboardQuery:
     def __init__(self):
+        logger.info("Initializing FakeLeaderboardQuery")
         self.join_calls = []
         self.filter_args = []
         self.order_by_args = None
@@ -19,6 +23,7 @@ class FakeLeaderboardQuery:
                     id=1,
                     name="Player One",
                     country_code="AAA",
+                    classification=PlayerClassification.F,
                     stats_json={
                         "appearances": 7,
                         "minutes_played": 630,
@@ -38,6 +43,7 @@ class FakeLeaderboardQuery:
                     id=2,
                     name="Player Two",
                     country_code="BBB",
+                    classification=PlayerClassification.F,
                     stats_json={
                         "appearances": 6,
                         "minutes_played": 540,

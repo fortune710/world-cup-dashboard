@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Literal
 
 import requests
 from fastapi import APIRouter, Depends, Path, HTTPException, Query
@@ -29,6 +29,9 @@ from server.schemas.players import (
     PlayerTopAssistsResponse,
     PlayerTopGoalsResponse,
     PlayerTopSavesResponse,
+    RadarPeersListResponse,
+    RadarPeerResponse,
+    RadarPeerStatistics,
 )
 
 logger = logging.getLogger(__name__)
@@ -331,3 +334,90 @@ def list_players(
         }
     )
     return leaderboard
+
+
+ROLE_TO_POSITIONS = {
+    "GK":  ["GK"],
+    "CB":  ["CB"],
+    "FB":  ["LB", "RB", "LWB", "RWB", "WB"],
+    "DM":  ["DM"],
+    "CM":  ["CM"],
+    "AMW": ["AM", "LW", "RW", "W", "SS"],
+    "ST":  ["ST", "CF", "FW", "F"],
+}
+
+
+@router.get("/radar-peers", response_model=RadarPeersListResponse)
+def get_radar_peers(
+    role: Literal["GK", "CB", "FB", "DM", "CM", "AMW", "ST"] = Query(..., description="Radar role to filter peers by"),
+    min_minutes: int = Query(default=270, ge=0),
+    db: Session = Depends(get_db)
+):
+    logger.info(
+        {
+            "message": "FastAPI fetching radar peers",
+            "role": role,
+            "min_minutes": min_minutes
+        }
+    )
+
+    position_codes = ROLE_TO_POSITIONS.get(role, [])
+    if not position_codes:
+        logger.warning(
+            {
+                "message": "Unknown radar role requested",
+                "role": role
+            }
+        )
+        raise HTTPException(status_code=400, detail=f"Unknown role: {role}")
+
+    from db.models.players import Player
+    import sqlalchemy as sa
+
+    # Exact token match for position codes (SQLite & Postgres compatible)
+    pos_filters = []
+    for code in position_codes:
+        pos_filters.extend([
+            Player.positions == code,
+            Player.positions.like(f"{code},%"),
+            Player.positions.like(f"%, {code},%"),
+            Player.positions.like(f"%, {code}")
+        ])
+    minutes_expr = sa.cast(Player.stats_json['minutes_played'].astext, sa.Integer)
+
+    rows = db.query(Player).filter(
+        sa.or_(*pos_filters),
+        minutes_expr >= min_minutes
+    ).all()
+
+    peers = []
+    for row in rows:
+        stats_json = row.stats_json or {}
+        if isinstance(stats_json, str):
+            import json
+            stats_json = json.loads(stats_json)
+
+        # Safely extract stats
+        stats_data = {}
+        for field in RadarPeerStatistics.model_fields.keys():
+            stats_data[field] = stats_json.get(field)
+
+        peers.append(
+            RadarPeerResponse(
+                id=str(row.id),
+                name=row.name,
+                radarRole=role,
+                statistics=RadarPeerStatistics(**stats_data)
+            )
+        )
+
+    logger.info(
+        {
+            "message": "FastAPI returning radar peers",
+            "role": role,
+            "count": len(peers)
+        }
+    )
+    return RadarPeersListResponse(peers=peers, total=len(peers))
+
+

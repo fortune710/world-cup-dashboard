@@ -10,7 +10,8 @@ export interface PlayerPerformance {
     goals?: number
     assists?: number
     cleanSheets?: number
-    category: "Top Goalscorer" | "Most Assists" | "Top Rated" | "Most Clean Sheets"
+    saves?: number
+    category: "Top Goalscorer" | "Most Assists" | "Top Rated" | "Most Clean Sheets" | "Most Saves"
     avatar?: string
     federation: string
     group: string
@@ -183,6 +184,8 @@ function getStatValue(player: PlayerPerformance): React.ReactNode {
             return player.rating
         case "Most Clean Sheets":
             return player.cleanSheets
+        case "Most Saves":
+            return player.saves
         default:
             return null
     }
@@ -197,7 +200,7 @@ export function PlayerPerformanceCard({ playerPerformance }: PlayerPerformanceCa
                         {player.category === "Top Goalscorer" && <GoalscorerSvg />}
                         {player.category === "Most Assists" && <AssistsSvg />}
                         {player.category === "Top Rated" && <TopRatedSvg />}
-                        {player.category === "Most Clean Sheets" && <CleanSheetsSvg />}
+                        {(player.category === "Most Clean Sheets" || player.category === "Most Saves") && <CleanSheetsSvg />}
 
                         <CardHeader>
                             <CardDescription>{player.category}</CardDescription>

@@ -184,13 +184,28 @@ class TeamsTransformations:
         if player_raw.get("dateOfBirthTimestamp"):
             dob = datetime.fromtimestamp(player_raw.get("dateOfBirthTimestamp")).date()
 
+        # Safely parse positionsDetailed list or string
+        positions_raw = player_raw.get("positionsDetailed")
+        if isinstance(positions_raw, list):
+            positions = ", ".join([str(p).strip() for p in positions_raw if p is not None and str(p).strip()])
+        elif isinstance(positions_raw, str) and positions_raw.strip():
+            positions = ", ".join([p.strip() for p in positions_raw.split(",") if p.strip()])
+        else:
+            positions = player_raw.get("position") or ""
+
+        if not positions:
+            logger.warning({
+                "message": "transform_squad_player: no position data for player",
+                "player_id": player_raw.get("id", "unknown")
+            })
+
         transformed = {
             "id": player_raw.get("id"),
             "name": player_raw.get("name"),
             "date_of_birth": dob,
             "classification": player_raw.get("position"),
             "club_name": (player_raw.get("team") or {}).get("name"),
-            "positions": ", ".join(player_raw.get("positionsDetailed") or []),
+            "positions": positions,
             "weight_kg": player_raw.get("weight"),
             "height_cm": player_raw.get("height"),
             "foot": player_raw.get("preferredFoot"),
@@ -199,6 +214,7 @@ class TeamsTransformations:
             "rating": player_raw.get("rating"),
             "image_url": image_url or player_raw.get("image_url")
         }
+
         
         logger.info({
             "message": "Completed transform_squad_player",

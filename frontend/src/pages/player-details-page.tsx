@@ -23,6 +23,8 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { usePlayerDetails } from "@/hooks/use-player-details"
+import { useRadarPeers } from "@/hooks/use-radar-peers"
+import { ErrorState } from "@/components/error-state"
 import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
 
 import { ChartRadarGridCircle } from "@/components/player-radar"
@@ -32,14 +34,16 @@ export function PlayerDetailsPage() {
   const { t } = useTranslation()
   const { playerId } = useParams<{ playerId: string }>()
 
-  const { player, loading, error } = usePlayerDetails(playerId)
+  const { player, loading, error, refetch } = usePlayerDetails(playerId)
+  const { peers, isLoading: peersLoading, error: peersError } = useRadarPeers(player?.radarRole)
+  console.log(player)
 
   const initials = player
     ? player.name
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
     : ""
   const flagUrl = player
     ? getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
@@ -62,9 +66,10 @@ export function PlayerDetailsPage() {
             {t("playerDetailsPage.backToPlayers", { defaultValue: "Back to players" })}
           </Link>
         </Button>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {error ? `Error: ${error}` : t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
-        </h1>
+        <ErrorState
+          message={error ? `Failed to load player details: ${error}` : t("playerDetailsPage.notFound", { defaultValue: "Player not found" })}
+          onRetry={error ? refetch : undefined}
+        />
       </div>
     )
   }
@@ -107,51 +112,103 @@ export function PlayerDetailsPage() {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        <Card className="@container/card">
-          <CardHeader>
-            <CardDescription>{t("playerDetailsPage.goals", { defaultValue: "Goals" })}</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {player.goals}
-            </CardTitle>
-            <CardAction>
-              <Badge variant="outline" className="flex items-center gap-1">
-                <TargetIcon className="size-3" />
-                {t("playerDetailsPage.xgBadge", { defaultValue: "xG" })} {player.xg.toFixed(2)}
-              </Badge>
-            </CardAction>
-          </CardHeader>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              {t("playerDetailsPage.expectedGoals", { defaultValue: "Expected Goals (xG)" })} <TrendingUpIcon className="size-4 text-emerald-500" />
-            </div>
-            <div className="text-muted-foreground">
-              {t("playerDetailsPage.goalsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? (player.goals / player.gamesPlayed).toFixed(2) : "0.00" })}
-            </div>
-          </CardFooter>
-        </Card>
+        {player.position === "GK" ? (
+          <>
+            <Card className="@container/card">
+              <CardHeader>
+                <CardDescription>{t("playerDetailsPage.saves", { defaultValue: "Saves" })}</CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                  {player.statistics?.saves ?? 0}
+                </CardTitle>
+                <CardAction>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <TargetIcon className="size-3" />
+                    {t("playerDetailsPage.goalsPreventedBadge", { defaultValue: "Prevented" })} {player.statistics?.goals_prevented?.toFixed(2) ?? "0.00"}
+                  </Badge>
+                </CardAction>
+              </CardHeader>
+              <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                <div className="line-clamp-1 flex items-center gap-2 font-medium">
+                  {t("playerDetailsPage.savesAvg", { defaultValue: "Saves per game" })} <TrendingUpIcon className="size-4 text-emerald-500" />
+                </div>
+                <div className="text-muted-foreground">
+                  {t("playerDetailsPage.savesAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? ((player.statistics?.saves ?? 0) / player.gamesPlayed).toFixed(2) : "0.00" })}
+                </div>
+              </CardFooter>
+            </Card>
 
-        <Card className="@container/card">
-          <CardHeader>
-            <CardDescription>{t("playerDetailsPage.assists", { defaultValue: "Assists" })}</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {player.assists}
-            </CardTitle>
-            <CardAction>
-              <Badge variant="outline" className="flex items-center gap-1">
-                <AwardIcon className="size-3" />
-                {t("playerDetailsPage.xaBadge", { defaultValue: "xA" })} {player.xa.toFixed(2)}
-              </Badge>
-            </CardAction>
-          </CardHeader>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="line-clamp-1 flex items-center gap-2 font-medium">
-              {t("playerDetailsPage.expectedAssists", { defaultValue: "Expected Assists (xA)" })} <TrendingUpIcon className="size-4 text-emerald-500" />
-            </div>
-            <div className="text-muted-foreground">
-              {t("playerDetailsPage.assistsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? (player.assists / player.gamesPlayed).toFixed(2) : "0.00" })}
-            </div>
-          </CardFooter>
-        </Card>
+            <Card className="@container/card">
+              <CardHeader>
+                <CardDescription>{t("playerDetailsPage.cleanSheets", { defaultValue: "Clean Sheets" })}</CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                  {player.cleanSheets ?? 0}
+                </CardTitle>
+                <CardAction>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <AwardIcon className="size-3" />
+                    CS
+                  </Badge>
+                </CardAction>
+              </CardHeader>
+              <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                <div className="line-clamp-1 flex items-center gap-2 font-medium">
+                  {t("playerDetailsPage.cleanSheetsTotal", { defaultValue: "Total Clean Sheets" })} <TrendingUpIcon className="size-4 text-emerald-500" />
+                </div>
+                <div className="text-muted-foreground">
+                  {t("playerDetailsPage.cleanSheetsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? ((player.cleanSheets ?? 0) / player.gamesPlayed).toFixed(2) : "0.00" })}
+                </div>
+              </CardFooter>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card className="@container/card">
+              <CardHeader>
+                <CardDescription>{t("playerDetailsPage.goals", { defaultValue: "Goals" })}</CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                  {player.goals}
+                </CardTitle>
+                <CardAction>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <TargetIcon className="size-3" />
+                    {t("playerDetailsPage.xgBadge", { defaultValue: "xG" })} {player.xg.toFixed(2)}
+                  </Badge>
+                </CardAction>
+              </CardHeader>
+              <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                <div className="line-clamp-1 flex items-center gap-2 font-medium">
+                  {t("playerDetailsPage.expectedGoals", { defaultValue: "Expected Goals (xG)" })} <TrendingUpIcon className="size-4 text-emerald-500" />
+                </div>
+                <div className="text-muted-foreground">
+                  {t("playerDetailsPage.goalsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? (player.goals / player.gamesPlayed).toFixed(2) : "0.00" })}
+                </div>
+              </CardFooter>
+            </Card>
+
+            <Card className="@container/card">
+              <CardHeader>
+                <CardDescription>{t("playerDetailsPage.assists", { defaultValue: "Assists" })}</CardDescription>
+                <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                  {player.assists}
+                </CardTitle>
+                <CardAction>
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <AwardIcon className="size-3" />
+                    {t("playerDetailsPage.xaBadge", { defaultValue: "xA" })} {player.xa.toFixed(2)}
+                  </Badge>
+                </CardAction>
+              </CardHeader>
+              <CardFooter className="flex-col items-start gap-1.5 text-sm">
+                <div className="line-clamp-1 flex items-center gap-2 font-medium">
+                  {t("playerDetailsPage.expectedAssists", { defaultValue: "Expected Assists (xA)" })} <TrendingUpIcon className="size-4 text-emerald-500" />
+                </div>
+                <div className="text-muted-foreground">
+                  {t("playerDetailsPage.assistsAvgPerGame", { defaultValue: "Avg {{avg}} per game", avg: player.gamesPlayed > 0 ? (player.assists / player.gamesPlayed).toFixed(2) : "0.00" })}
+                </div>
+              </CardFooter>
+            </Card>
+          </>
+        )}
 
         <Card className="@container/card">
           <CardHeader>
@@ -236,7 +293,7 @@ export function PlayerDetailsPage() {
 
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        <ChartRadarGridCircle player={player} />
+        <ChartRadarGridCircle player={player} peers={peers} peersLoading={peersLoading} peersError={peersError} />
         <Card>
           <CardHeader>
             <CardTitle>{t("playerDetailsPage.movementMaps", { defaultValue: "Movement maps" })}</CardTitle>

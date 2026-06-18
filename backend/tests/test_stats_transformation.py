@@ -1,5 +1,8 @@
 import unittest
+import logging
 from pipeline.transformations.players import PlayersTransformations
+
+logger = logging.getLogger(__name__)
 
 class TestStatsTransformation(unittest.TestCase):
     def setUp(self):
@@ -33,6 +36,51 @@ class TestStatsTransformation(unittest.TestCase):
         self.assertEqual(result["id"], 123)
         self.assertEqual(result["name"], "Test Player")
         self.assertEqual(result["image_url"], "https://example.com/player.png")
+
+    def test_transform_player_info_with_positions_detailed(self):
+        logger.info("Starting test_transform_player_info_with_positions_detailed")
+        # 1. Test positionsDetailed as list
+        logger.info("Testing positionsDetailed as list")
+        info_with_list = {
+            "player": {
+                "id": 124,
+                "name": "Detailed Player 1",
+                "positionsDetailed": ["ST", "LW"],
+                "position": "F"
+            }
+        }
+        result_list = self.transformer.transform_player_info(info_with_list)
+        self.assertEqual(result_list["positions"], "ST, LW")
+        logger.info("Assertions passed for positionsDetailed as list")
+
+        # 2. Test positionsDetailed as string
+        logger.info("Testing positionsDetailed as string")
+        info_with_str = {
+            "player": {
+                "id": 125,
+                "name": "Detailed Player 2",
+                "positionsDetailed": "CB, LB",
+                "position": "D"
+            }
+        }
+        result_str = self.transformer.transform_player_info(info_with_str)
+        self.assertEqual(result_str["positions"], "CB, LB")
+        logger.info("Assertions passed for positionsDetailed as string")
+
+        # 3. Test fallback to position when positionsDetailed is absent
+        logger.info("Testing fallback to position")
+        info_with_fallback = {
+            "player": {
+                "id": 126,
+                "name": "Fallback Player",
+                "position": "M"
+            }
+        }
+        result_fallback = self.transformer.transform_player_info(info_with_fallback)
+        self.assertEqual(result_fallback["positions"], "M")
+        logger.info("Assertions passed for fallback")
+        logger.info("Finished test_transform_player_info_with_positions_detailed")
+
 
     def test_transform_player_stats_only(self):
         rating, stats = self.transformer.transform_player_stats(self.mock_stats)

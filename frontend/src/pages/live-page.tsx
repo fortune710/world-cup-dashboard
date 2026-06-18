@@ -8,10 +8,11 @@ import { LiveRush } from "@/components/live-rush"
 import TopPerformers from "@/components/top-performers"
 import { useMatches } from "@/hooks/use-matches"
 import { Spinner } from "@/components/ui/spinner"
+import { ErrorState } from "@/components/error-state"
 
 export function LivePage() {
   const { t } = useTranslation()
-  const { matches, loading, error, dateLabel } = useMatches()
+  const { matches, loading, error, dateLabel, refetch } = useMatches()
 
   return (
     <div className="flex flex-col gap-3 py-4 md:gap-4 md:py-5">
@@ -21,9 +22,7 @@ export function LivePage() {
           <Spinner className="mr-2" /> {t("liveRush.loadingMatches", { defaultValue: "Loading matches..." })}
         </div>
       ) : error ? (
-        <div className="flex items-center justify-center p-6 text-sm text-destructive min-h-[200px]">
-          {t("liveRush.loadFailed", { defaultValue: "Failed to load matches." })}
-        </div>
+        <ErrorState message={`${t("liveRush.loadFailed", { defaultValue: "Failed to load matches." })}: ${error}`} onRetry={refetch} />
       ) : (
         <LiveRush matches={matches} dateLabel={dateLabel} />
       )}

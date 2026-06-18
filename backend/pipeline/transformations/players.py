@@ -41,13 +41,28 @@ class PlayersTransformations:
         # Convert timestamp to date
         dob = datetime.fromtimestamp(player.get("dateOfBirthTimestamp")).date() if player.get("dateOfBirthTimestamp") else None
 
+        # Safely parse positionsDetailed list or string
+        positions_raw = player.get("positionsDetailed")
+        if isinstance(positions_raw, list):
+            positions = ", ".join([str(p).strip() for p in positions_raw if p is not None and str(p).strip()])
+        elif isinstance(positions_raw, str) and positions_raw.strip():
+            positions = ", ".join([p.strip() for p in positions_raw.split(",") if p.strip()])
+        else:
+            positions = player.get("position") or ""
+
+        if not positions:
+            logger.warning({
+                "message": "transform_player_info: no position data for player",
+                "player_id": player_id
+            })
+
         transformed_player = {
             "id": player_id,
             "name": player_name,
             "date_of_birth": dob,
             "classification": player.get("position"), # Assumes model Enum matches (G, D, M, F)
             "club_name": (player.get("team") or {}).get("name"),
-            "positions": player.get("position"),
+            "positions": positions,
             "weight_kg": player.get("weight"),
             "height_cm": player.get("height"),
             "foot": player.get("preferredFoot"), # Assumes model Enum matches (Left, Right)
@@ -55,6 +70,7 @@ class PlayersTransformations:
             "market_value": player.get("proposedMarketValue"),
             "image_url": image_url
         }
+
 
         logger.info({
             "message": "Transformed player info payload",

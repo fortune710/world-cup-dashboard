@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card"
 import { Spinner } from "@/components/ui/spinner"
 import { useWc26Teams } from "@/hooks/use-wc26-teams"
+import { ErrorState } from "@/components/error-state"
 import { findTeamByRouteId, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -65,7 +66,7 @@ const RankChangeBadge = React.memo(function RankChangeBadge({
 export function TeamDetailsPage() {
   const { t } = useTranslation()
   const { teamId } = useParams<{ teamId: string }>()
-  const { teams, errorMessage, isLoading } = useWc26Teams()
+  const { teams, errorMessage, isLoading, refetch } = useWc26Teams()
 
   const team = React.useMemo(
     () => findTeamByRouteId(teams, teamId),
@@ -73,7 +74,7 @@ export function TeamDetailsPage() {
   )
 
   const teamCode = team?.idCountry ?? undefined
-  const { players: squad, loading: squadLoading, error: squadError } = useSquadPlayers(teamCode)
+  const { players: squad, loading: squadLoading, error: squadError, refetch: refetchSquad } = useSquadPlayers(teamCode)
   const { history: eloHistory, loading: eloLoading, error: eloError } = useTeamEloHistory(teamCode)
 
   if (isLoading) {
@@ -96,7 +97,7 @@ export function TeamDetailsPage() {
             {t("teamDetailsPage.backToTeams")}
           </Link>
         </Button>
-        <p className="text-sm text-destructive">{t("teamsPage.loadFailed")}</p>
+        <ErrorState message={`${t("teamsPage.loadFailed")}: ${errorMessage}`} onRetry={refetch} />
       </div>
     )
   }
@@ -159,9 +160,7 @@ export function TeamDetailsPage() {
                   Loading squad...
                 </div>
               ) : squadError ? (
-                <div className="text-destructive text-sm py-4">
-                  Error loading squad: {squadError}
-                </div>
+                <ErrorState message={`${t("teamDetailsPage.squadError", { defaultValue: "Failed to load squad:" })} ${squadError}`} onRetry={refetchSquad} />
               ) : squad.length === 0 ? (
                 <div className="text-muted-foreground text-sm py-4">
                   No squad players found.

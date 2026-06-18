@@ -17,6 +17,7 @@ import {
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ErrorState } from "@/components/error-state"
 import {
   Card,
   CardContent,
@@ -234,7 +235,7 @@ export function TeamsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [viewMode, setViewMode] = React.useState<TeamsViewMode>("list")
-  const { teams: sortedTeams, errorMessage, isLoading } = useWc26Teams()
+  const { teams: sortedTeams, errorMessage, isLoading, refetch } = useWc26Teams()
 
   const columns = React.useMemo(() => createTeamsColumns(t), [t])
 
@@ -350,19 +351,7 @@ export function TeamsPage() {
               {t("teamsPage.loading")}
             </div>
           ) : errorMessage ? (
-            <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-              <p className="text-sm text-destructive">{t("teamsPage.loadFailed")}</p>
-              <p className="text-xs text-muted-foreground">{errorMessage}</p>
-              <div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.location.reload()}
-                >
-                  {t("common.reload")}
-                </Button>
-              </div>
-            </div>
+            <ErrorState message={`${t("teamsPage.loadFailed")}: ${errorMessage}`} onRetry={refetch} />
           ) : viewMode === "list" ? (
             <div className="overflow-x-auto rounded-lg border">
               <Table aria-label={t("teamsPage.tableAriaLabel")}>

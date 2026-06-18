@@ -2,19 +2,26 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import { API_BASE_URL } from "@/lib/api-config";
-import { getPlayerAvatarUrl } from "@/lib/players/player-image";
+import { normalizePlayer, type Classification, type DisplayPosition, type RadarRole } from "@/lib/players/player-mapping";
 
 export interface PlayerInfo {
   id: string;
   name: string;
   position: string;
   avatarUrl?: string;
+  classification?: Classification;
+  positions?: string;
+  displayPosition?: DisplayPosition;
+  radarRole?: RadarRole;
 }
 
 export function useSquadPlayers(teamId: string | undefined) {
   const [players, setPlayers] = useState<PlayerInfo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  const refetch = () => setReloadTrigger((prev) => prev + 1);
 
   useEffect(() => {
     if (!teamId) {
@@ -42,12 +49,19 @@ export function useSquadPlayers(teamId: string | undefined) {
           G: "GK",
         };
 
-        const mapped = data.map((p: any) => ({
-          id: String(p.id),
-          name: p.name,
-          position: positionDisplayMap[p.classification] || p.classification,
-          avatarUrl: getPlayerAvatarUrl(p.id),
-        }));
+        const mapped = data.map((p: any) => {
+          const safeClassification = (p.classification === "G" || p.classification === "D" || p.classification === "M" || p.classification === "F" ? p.classification : "F") as Classification;
+          const positions = p.positionsDetailed ?? p.positions_detailed ?? p.position ?? "";
+
+          return normalizePlayer({
+            id: String(p.id),
+            name: p.name,
+            position: positionDisplayMap[safeClassification] || safeClassification,
+            avatarUrl: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
+            classification: safeClassification,
+            positions: Array.isArray(positions) ? positions.join(", ") : String(positions),
+          });
+        });
 
         setPlayers(mapped);
         logger.info("Squad players fetched", { teamId, count: mapped.length });
@@ -63,7 +77,7 @@ export function useSquadPlayers(teamId: string | undefined) {
     return () => {
       active = false;
     };
-  }, [teamId]);
+  }, [teamId, reloadTrigger]);
 
-  return { players, loading, error };
+  return { players, loading, error, refetch };
 }

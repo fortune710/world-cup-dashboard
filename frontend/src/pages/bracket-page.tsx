@@ -154,16 +154,16 @@ export function BracketPage() {
       <div className="rounded-3xl border border-foreground/10 bg-card/70">
         {renderMode === "loading" ? (
           <div className="overflow-x-auto p-4">
-            <div className="grid min-w-[54rem] grid-flow-col auto-cols-[8rem] gap-3">
+            <div className="grid w-full min-w-[54rem] grid-flow-col auto-cols-fr gap-3 md:gap-4 xl:gap-6">
               {BRACKET_ROUND_ORDER.map((roundKey) => (
-                <div key={roundKey} className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-muted/20 p-2">
+                <div key={roundKey} className="flex h-full flex-col gap-2 rounded-2xl border border-foreground/10 bg-muted/20 p-2">
                   <div className="flex items-center justify-between">
                     <Skeleton className="h-3 w-16" />
                     <Skeleton className="h-3 w-8" />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Skeleton className="h-12 rounded-lg" />
-                    <Skeleton className="h-12 rounded-lg" />
+                  <div className="flex flex-1 flex-col justify-around gap-2">
+                    <Skeleton className="h-14 rounded-lg" />
+                    <Skeleton className="h-14 rounded-lg" />
                   </div>
                 </div>
               ))}
@@ -179,13 +179,13 @@ export function BracketPage() {
           </div>
         ) : (
           <div className="overflow-x-auto p-4">
-            <div className="grid min-w-[54rem] grid-flow-col auto-cols-[8rem] gap-3">
+            <div className="grid w-full min-w-[54rem] grid-flow-col auto-cols-fr gap-3 md:gap-4 xl:gap-6">
               {rounds.map((round: BracketRoundViewModel) => (
                 <section
                   key={round.key}
-                  className="flex flex-col gap-2 rounded-2xl border border-foreground/10 bg-muted/20 p-2"
+                  className="flex h-full flex-col gap-2 rounded-2xl border border-foreground/10 bg-muted/20 p-2"
                 >
-                  <div className="flex items-center justify-between gap-1 rounded-lg border border-foreground/10 bg-card/90 px-2 py-1">
+                  <div className="flex shrink-0 items-center justify-between gap-1 rounded-lg border border-foreground/10 bg-card/90 px-2 py-1">
                     <div className="flex min-w-0 items-center gap-1">
                       <GitBranch className="size-3 shrink-0 text-muted-foreground" />
                       <span className="truncate text-[10px] font-semibold leading-tight">
@@ -200,12 +200,12 @@ export function BracketPage() {
                     </Badge>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
+                  <div className="flex flex-1 flex-col justify-around gap-2">
                     {round.matches.map((match) => (
                       <BracketMatchCard key={match.id} match={match} />
                     ))}
                     {round.matches.length === 0 ? (
-                      <div className="flex min-h-12 items-center justify-center rounded-lg border border-dashed border-foreground/10 bg-card/70 text-[9px] uppercase tracking-wider text-muted-foreground">
+                      <div className="flex min-h-12 flex-1 items-center justify-center rounded-lg border border-dashed border-foreground/10 bg-card/70 text-[9px] uppercase tracking-wider text-muted-foreground">
                         TBD
                       </div>
                     ) : null}

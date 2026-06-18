@@ -1,17 +1,20 @@
+/* eslint-disable react-refresh/only-export-components */
+import * as React from "react"
 import { createBrowserRouter } from "react-router"
 
 import { AppLayout } from "@/layouts/app-layout"
-import { BracketPage } from "@/pages/bracket-page"
-import { HelpPage } from "@/pages/help-page"
-import { LivePage } from "@/pages/live-page"
-import { MatchesPage } from "@/pages/matches-page"
-import { NotFoundPage } from "@/pages/not-found-page"
-import { PlayerDetailsPage } from "@/pages/player-details-page"
-import { PlayersPage } from "@/pages/players-page"
 import { RouteErrorPage } from "@/pages/route-error-page"
-import { SettingsPage } from "@/pages/settings-page"
-import { TeamDetailsPage } from "@/pages/team-details-page"
-import { TeamsPage } from "@/pages/teams-page"
+
+const BracketPage = React.lazy(() => import("@/pages/bracket-page").then(m => ({ default: m.BracketPage })))
+const HelpPage = React.lazy(() => import("@/pages/help-page").then(m => ({ default: m.HelpPage })))
+const LivePage = React.lazy(() => import("@/pages/live-page").then(m => ({ default: m.LivePage })))
+const MatchesPage = React.lazy(() => import("@/pages/matches-page").then(m => ({ default: m.MatchesPage })))
+const NotFoundPage = React.lazy(() => import("@/pages/not-found-page").then(m => ({ default: m.NotFoundPage })))
+const PlayerDetailsPage = React.lazy(() => import("@/pages/player-details-page").then(m => ({ default: m.PlayerDetailsPage })))
+const PlayersPage = React.lazy(() => import("@/pages/players-page").then(m => ({ default: m.PlayersPage })))
+const SettingsPage = React.lazy(() => import("@/pages/settings-page").then(m => ({ default: m.SettingsPage })))
+const TeamDetailsPage = React.lazy(() => import("@/pages/team-details-page").then(m => ({ default: m.TeamDetailsPage })))
+const TeamsPage = React.lazy(() => import("@/pages/teams-page").then(m => ({ default: m.TeamsPage })))
 
 export const router = createBrowserRouter([
   {
@@ -32,3 +35,4 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+

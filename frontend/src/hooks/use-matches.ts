@@ -29,6 +29,9 @@ export function useMatches(matchDate: string = getCurrentLocalDate(), status?: s
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+
+  const refetch = () => setReloadTrigger((prev) => prev + 1);
 
   const timezone = useMemo(() => getBrowserTimezone(), []);
 
@@ -64,9 +67,9 @@ export function useMatches(matchDate: string = getCurrentLocalDate(), status?: s
     return () => {
       active = false;
     };
-  }, [matchDate, status, timezone]);
+  }, [matchDate, status, reloadTrigger]);
 
   const dateLabel = useMemo(() => formatMatchDateLabel(matchDate), [matchDate]);
 
-  return { matches, loading, error, dateLabel };
+  return { matches, loading, error, dateLabel, refetch };
 }

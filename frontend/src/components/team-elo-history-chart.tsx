@@ -30,7 +30,7 @@ interface TeamEloHistoryChartProps {
 const chartConfig = {
   rating: {
     label: "ELO Rating",
-    color: "var(--chart-1)",
+    color: "var(--chart-possession)",
   },
 } satisfies ChartConfig
 

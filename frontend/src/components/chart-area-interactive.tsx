@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { useSearchParams } from "react-router"
 
 import {
   Card,
@@ -104,12 +105,24 @@ const StandingsTable = React.memo(function StandingsTable({
         <TableRow>
           <TableHead className="w-10">{t("common.pos")}</TableHead>
           <TableHead>{t("common.team")}</TableHead>
-          <TableHead className="text-end">P</TableHead>
-          <TableHead className="hidden text-end sm:table-cell">W</TableHead>
-          <TableHead className="hidden text-end sm:table-cell">D</TableHead>
-          <TableHead className="hidden text-end sm:table-cell">L</TableHead>
-          <TableHead className="text-end">GD</TableHead>
-          <TableHead className="text-end">Pts</TableHead>
+          <TableHead className="text-end" aria-label="Matches Played">
+            <abbr title="Matches Played" className="no-underline cursor-help">P</abbr>
+          </TableHead>
+          <TableHead className="hidden text-end sm:table-cell" aria-label="Wins">
+            <abbr title="Wins" className="no-underline cursor-help">W</abbr>
+          </TableHead>
+          <TableHead className="hidden text-end sm:table-cell" aria-label="Draws">
+            <abbr title="Draws" className="no-underline cursor-help">D</abbr>
+          </TableHead>
+          <TableHead className="hidden text-end sm:table-cell" aria-label="Losses">
+            <abbr title="Losses" className="no-underline cursor-help">L</abbr>
+          </TableHead>
+          <TableHead className="text-end" aria-label="Goal Difference">
+            <abbr title="Goal Difference" className="no-underline cursor-help">GD</abbr>
+          </TableHead>
+          <TableHead className="text-end" aria-label="Points">
+            <abbr title="Points" className="no-underline cursor-help">Pts</abbr>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -169,12 +182,23 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
   className,
 }: GroupStageStandingsProps) {
   const { t } = useTranslation()
-  const [activeGroup, setActiveGroup] = React.useState<GroupKey>("A")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const rawGroup = searchParams.get("group")
+  const activeGroup: GroupKey = (rawGroup && GROUPS.includes(rawGroup as GroupKey)) ? (rawGroup as GroupKey) : "A"
+
+  const setActiveGroup = React.useCallback((value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set("group", value)
+      return next
+    })
+  }, [setSearchParams])
+
   const { standings, loading, error } = useGroupStandings(activeGroup)
 
   const handleGroupChange = React.useCallback((value: string) => {
-    setActiveGroup(value as GroupKey)
-  }, [])
+    setActiveGroup(value)
+  }, [setActiveGroup])
 
   return (
     <Tabs

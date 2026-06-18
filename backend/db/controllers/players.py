@@ -386,6 +386,7 @@ def get_players_leaderboard(
                     "appearances": int(stats_json.get("appearances", 0) or 0),
                     "minutes_played": int(stats_json.get("minutes_played", 0) or 0),
                     "clean_sheets": int(stats_json.get("clean_sheet", 0) or 0),
+                    "saves": int(stats_json.get("saves", 0) or 0),
                     "goals": int(stats_json.get("goals", 0) or 0),
                     "assists": int(stats_json.get("assists", 0) or 0),
                     "expected_goals": float(stats_json.get("expected_goals", 0) or 0),
@@ -405,3 +406,138 @@ def get_players_leaderboard(
         }
     )
     return payload
+
+
+POSITION_CODE_TO_RADAR_ROLE = {
+    "GK": "GK",
+    "CB": "CB",
+    "LB": "FB",
+    "RB": "FB",
+    "LWB": "FB",
+    "RWB": "FB",
+    "WB": "FB",
+    "DM": "DM",
+    "CM": "CM",
+    "AM": "AMW",
+    "LW": "AMW",
+    "RW": "AMW",
+    "W": "AMW",
+    "SS": "AMW",
+    "ST": "ST",
+    "CF": "ST",
+    "FW": "ST",
+    "F": "ST",
+}
+
+CLASSIFICATION_TO_RADAR_ROLE = {
+    "G": "GK",
+    "D": "CB",
+    "M": "CM",
+    "F": "ST",
+}
+
+def get_radar_role(positions: str | None, classification: str | None) -> str:
+    logger.info(
+        {
+            "message": "Resolving radar role",
+            "positions": positions,
+            "classification": classification,
+        }
+    )
+    if positions and isinstance(positions, str) and positions.strip():
+        first_pos = positions.split(",")[0].strip().upper()
+        role = POSITION_CODE_TO_RADAR_ROLE.get(first_pos)
+        if role:
+            logger.info(
+                {
+                    "message": "Resolved radar role from positions",
+                    "positions": positions,
+                    "first_position": first_pos,
+                    "resolved_role": role,
+                }
+            )
+            return role
+    
+    if classification:
+        val = getattr(classification, "value", classification)
+        role = CLASSIFICATION_TO_RADAR_ROLE.get(val, "ST")
+        logger.info(
+            {
+                "message": "Resolved radar role from classification fallback",
+                "classification": val,
+                "resolved_role": role,
+            }
+        )
+        return role
+
+    logger.info(
+        {
+            "message": "Defaulting radar role to ST",
+            "resolved_role": "ST",
+        }
+    )
+    return "ST"
+
+def get_radar_peers_by_role(db: Session, role: str) -> list[dict]:
+    logger.info(
+        {
+            "message": "Fetching radar peers by role",
+            "role": role,
+        }
+    )
+    
+    classification_map = {
+        "GK": ["G"],
+        "CB": ["D"],
+        "FB": ["D"],
+        "DM": ["M"],
+        "CM": ["M"],
+        "AMW": ["M", "F"],
+        "ST": ["F"],
+    }
+    
+    classifications = classification_map.get(role, ["G", "D", "M", "F"])
+    
+    from db.models.players import PlayerClassification
+    enum_classes = []
+    for c in classifications:
+        try:
+            enum_classes.append(PlayerClassification[c])
+        except KeyError:
+            pass
+            
+    query = db.query(Player).filter(Player.classification.in_(enum_classes))
+    players = query.all()
+    
+    peers_payload = []
+    for player in players:
+        stats_json = player.stats_json or {}
+        if isinstance(stats_json, str):
+            import json
+            stats_json = json.loads(stats_json)
+            
+        minutes = int(stats_json.get("minutes_played", 0) or 0)
+        if minutes < 270:
+            continue
+            
+        p_class = player.classification.value if player.classification else None
+        p_role = get_radar_role(player.positions, p_class)
+        if p_role != role:
+            continue
+            
+        peers_payload.append({
+            "id": str(player.id),
+            "name": player.name,
+            "radarRole": p_role,
+            "statistics": stats_json
+        })
+        
+    logger.info(
+        {
+            "message": "Successfully fetched radar peers",
+            "role": role,
+            "count": len(peers_payload),
+        }
+    )
+    return peers_payload
+
