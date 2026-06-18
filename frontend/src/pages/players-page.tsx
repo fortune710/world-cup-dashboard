@@ -685,7 +685,6 @@ export function PlayersPage() {
     limit: 100,
     search: debouncedFilter,
     position: positionTab,
-    page: page,
     team: teamFilter,
   })
   const { data: topPerformers, loading: topLoading, error: topError } = useTopPerformers()
