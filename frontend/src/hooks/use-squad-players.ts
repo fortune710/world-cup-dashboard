@@ -56,10 +56,10 @@ export function useSquadPlayers(teamId: string | undefined) {
           return normalizePlayer({
             id: String(p.id),
             name: p.name,
-            position: positionDisplayMap[p.classification] || p.classification,
+            position: positionDisplayMap[safeClassification] || safeClassification,
             avatarUrl: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
             classification: safeClassification,
-            positions: positions,
+            positions: Array.isArray(positions) ? positions.join(", ") : String(positions),
           });
         });
 

@@ -14,6 +14,8 @@ export type MatchApiRow = {
   group?: string | null
 }
 
+export type MatchResult = "W" | "D" | "L"
+
 export interface MatchDayGroup {
   dateKey: string
   matches: LiveRushMatch[]

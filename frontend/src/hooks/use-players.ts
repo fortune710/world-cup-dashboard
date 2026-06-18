@@ -52,6 +52,7 @@ const fetcher = (url: string): Promise<FetcherResult> => {
           red_cards?: number;
           rating?: number;
           clean_sheets?: number;
+          saves?: number;
         };
       }>;
 
@@ -86,6 +87,7 @@ const fetcher = (url: string): Promise<FetcherResult> => {
           rating: stats.rating ?? 0.0,
           injuryStatus: p.injury_status || "Fit",
           cleanSheets: stats.clean_sheets ?? 0,
+          saves: stats.saves ?? 0,
           avatar: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
           classification: safeClassification,
           positions: positions,

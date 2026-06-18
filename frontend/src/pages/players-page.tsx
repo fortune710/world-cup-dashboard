@@ -102,6 +102,7 @@ export interface PlayerRow {
   rating: number
   injuryStatus: "Fit" | "injured" | "questionable"
   cleanSheets?: number
+  saves?: number
   avatar?: string
   matchHistory?: MatchPerformance[]
   classification?: Classification
@@ -130,6 +131,7 @@ export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
 
   let goalsLeft = player.goals
   let assistsLeft = player.assists
+  let savesLeft = player.saves || 0
 
   for (let i = 0; i < numMatches; i++) {
     const isKnockout = i >= 3
@@ -197,7 +199,15 @@ export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
       matchTackles = Math.floor(random(seed + i * 70) * 5) + 1
       matchInterceptions = Math.floor(random(seed + i * 80) * 4) + 1
     } else if (player.position === "GK") {
-      matchSaves = Math.floor(random(seed + i * 90) * 7) + 2
+      if (i === numMatches - 1) {
+        matchSaves = savesLeft
+      } else {
+        const avgSaves = savesLeft / (numMatches - i)
+        const chance = random(seed + i * 90)
+        matchSaves = Math.floor(avgSaves * 0.5 + chance * avgSaves)
+        matchSaves = Math.min(savesLeft, matchSaves)
+      }
+      savesLeft -= matchSaves
     }
 
     let formScore = matchRating
@@ -463,6 +473,27 @@ function createPlayerColumns(): ColumnDef<PlayerRow>[] {
       ),
     },
     {
+      accessorKey: "saves",
+      header: ({ column }) => (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="-mr-3 h-8 font-semibold text-foreground hover:bg-accent"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Saves
+            <ArrowUpDownIcon className="ml-2 size-3.5" />
+          </Button>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-end font-semibold tabular-nums text-foreground">
+          {row.original.saves !== undefined ? row.original.saves : "—"}
+        </div>
+      ),
+    },
+    {
       accessorKey: "xg",
       header: ({ column }) => (
         <div className="flex justify-end">
@@ -603,7 +634,9 @@ export function PlayersPage() {
 
   const globalFilter = searchParams.get("search") ?? ""
   const positionTab = searchParams.get("position") ?? "all"
-  const page = Number(searchParams.get("page") ?? "1")
+  const rawPage = Number(searchParams.get("page") ?? "1")
+  const page = (!Number.isNaN(rawPage) && rawPage >= 1) ? Math.floor(rawPage) : 1
+  const teamFilter = searchParams.get("team") ?? ""
 
   const setGlobalFilter = React.useCallback((value: string) => {
     setSearchParams((prev) => {
@@ -653,6 +686,7 @@ export function PlayersPage() {
     search: debouncedFilter,
     position: positionTab,
     page: page,
+    team: teamFilter,
   })
   const { data: topPerformers, loading: topLoading, error: topError } = useTopPerformers()
 
@@ -702,15 +736,15 @@ export function PlayersPage() {
         group: r.group || "A",
       })
     }
-    // 4. Most Clean Sheets
+    // 4. Most Saves
     if (topPerformers.saves?.[0]) {
       const s = topPerformers.saves[0]
       list.push({
         name: s.name,
         position: s.position || "GK",
         country: s.nationality,
-        cleanSheets: s.value,
-        category: "Most Clean Sheets",
+        saves: s.value,
+        category: "Most Saves",
         avatar: s.avatar,
         federation: s.federation || "UEFA",
         group: s.group || "A",

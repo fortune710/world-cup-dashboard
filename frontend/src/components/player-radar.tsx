@@ -22,7 +22,7 @@ import { type PlayerRow } from "@/pages/players-page"
 import { positionsToRadarRole, type Classification, type RadarRole } from "@/lib/players/player-mapping"
 import { computeRadarData } from "@/lib/players/radar-calculations"
 import { applyPercentiles } from "@/lib/players/radar-percentiles"
-import { RADAR_MINUTE_TIERS } from "@/lib/players/radar-metrics"
+
 
 const formatMetricValue = (key: string, val: number | null): string => {
     if (val === null || val === undefined) return "N/A"
@@ -116,11 +116,15 @@ const CustomRadarTooltip = ({ active, payload }: any) => {
         const suffix = (data.percentile !== null && data.percentile !== undefined)
             ? `${data.percentile}th percentile`
             : `small sample`
+            
+        const avgDisplay = data.averageValue !== null && data.averageValue !== undefined
+            ? ` | Avg: ${formatMetricValue(data.key, data.averageValue)}`
+            : ''
 
         return (
             <div className="rounded-xl border bg-popover p-3 text-popover-foreground shadow-md text-xs">
                 <div className="font-semibold text-foreground">
-                    {data.subject}: <span className="font-mono font-bold">{rawFormatted}</span> <span className="text-muted-foreground text-[10px]">({suffix})</span>
+                    {data.subject}: <span className="font-mono font-bold">{rawFormatted}</span> <span className="text-muted-foreground text-[10px] ml-1">({suffix}{avgDisplay})</span>
                 </div>
             </div>
         )
@@ -132,9 +136,10 @@ interface ChartRadarGridCircleProps {
     player: PlayerRow
     peers?: any[]
     peersLoading?: boolean
+    peersError?: Error | string | null
 }
 
-export function ChartRadarGridCircle({ player, peers = [], peersLoading = false }: ChartRadarGridCircleProps) {
+export function ChartRadarGridCircle({ player, peers = [], peersLoading = false, peersError = null }: ChartRadarGridCircleProps) {
     const { t } = useTranslation()
     const [selectedDimension, setSelectedDimension] = React.useState<string>("rating")
 
@@ -147,7 +152,7 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false 
             return {
                 role,
                 minutesPlayed: player.minutesPlayed ?? 0,
-                tier: "insufficient" as const,
+                tier: "show_only" as const,
                 spokes: [],
             }
         }
@@ -156,7 +161,7 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false 
 
     const result = React.useMemo(() => {
         const peerList = peersLoading ? [] : peers
-        return applyPercentiles(radarData, peerList, role, player.id, player.statistics)
+        return applyPercentiles(radarData, peerList, role, String(player.id), player.statistics)
     }, [radarData, peers, peersLoading, role, player.id, player.statistics])
 
     const spokesToRender = result.spokes
@@ -189,6 +194,7 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false 
             key: spoke.key,
             rawValue: spoke.rawValue,
             percentile: spoke.percentile,
+            averageValue: spoke.averageValue,
             playerNormalized: spoke.percentile ?? normalizeAbsolute(spoke.rawValue, spoke.key),
             avgNormalized: isPercentileReady ? 50 : null,
             fullMark: 100,
@@ -229,15 +235,8 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false 
                 </CardDescription>
             </CardHeader>
             <CardContent className="pb-0 flex-1 flex flex-col justify-between min-h-[350px] justify-center">
-                {radarData.tier === 'insufficient' ? (
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-sm text-muted-foreground min-h-[300px]">
-                        Not enough minutes played to display radar
-                        <br />
-                        <span className="text-xs opacity-60">Requires at least {RADAR_MINUTE_TIERS.MINIMUM_SHOW} minutes</span>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex-1 flex flex-col items-center justify-center">
+                <>
+                    <div className="flex-1 flex flex-col items-center justify-center">
                             <ChartContainer
                                 config={chartConfig}
                                 className="mx-auto aspect-square w-full max-w-[315px]"
@@ -306,9 +305,14 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false 
                                     Small sample — based on {player.statistics?.minutes_played ?? player.minutesPlayed}min played
                                 </p>
                             )}
-                            {!peersLoading && result.peerCountBelowThreshold && (
+                            {!peersLoading && result.peerCountBelowThreshold && radarData.tier !== 'show_only' && !peersError && (
                                 <p className="text-xs text-amber-500 mt-1 text-center">
-                                    Percentile comparison unavailable — too few peers with sufficient minutes
+                                    {t("playerDetailsPage.fewPeers", { defaultValue: "Percentile rank hidden — fewer than 5 qualified peers" })}
+                                </p>
+                            )}
+                            {peersError && (
+                                <p className="text-xs text-destructive mt-1 text-center">
+                                    {t("playerDetailsPage.peersError", { defaultValue: "Failed to load peers data" })}
                                 </p>
                             )}
                         </div>
@@ -412,7 +416,6 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false 
                             </div>
                         )}
                     </>
-                )}
             </CardContent>
         </Card>
     )

@@ -1,4 +1,5 @@
 import type { FormResult } from "@/datatypes"
+import type { FormType } from "@/lib/teams/team-form"
 import { getAdjustedElo, powerRankingRows } from "@/lib/helpers/power-ranking.helpers"
 
 export interface FifaRankingTeamName {
@@ -69,7 +70,7 @@ export type Wc26TeamRow = {
   confederation: string | null
   rankChange: number
   groupStageElo: number | null
-  form: FormResult[] | null
+  form: (FormResult | FormType)[] | null
   group: string
   eloRank?: number
 }

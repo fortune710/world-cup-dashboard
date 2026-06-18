@@ -9,6 +9,8 @@ import {
   normalizeTeamKey,
 } from "@/lib/teams/wc26-teams"
 import { powerRankingRows } from "@/lib/helpers/power-ranking.helpers"
+import { useMatchesList } from "@/hooks/use-matches-list"
+import { teamForm } from "@/lib/teams/team-form"
 
 export function useWc26Teams(): {
   teams: Wc26TeamRow[]
@@ -21,6 +23,9 @@ export function useWc26Teams(): {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [reloadTrigger, setReloadTrigger] = React.useState(0)
+
+  const { groups: matchGroups, hasData: matchesHasData } = useMatchesList()
+  const allMatches = React.useMemo(() => matchGroups.flatMap(g => g.matches), [matchGroups])
 
   const refetch = React.useCallback(() => {
     setReloadTrigger((prev) => prev + 1)
@@ -56,7 +61,11 @@ export function useWc26Teams(): {
             powerTeamMap.get(item.code.toUpperCase()) ??
             powerTeamMap.get(normalizeTeamKey(item.name)) ??
             null
-          const form = powerRow?.form ?? null
+          
+          let form = powerRow?.form ?? null
+          if (matchesHasData && allMatches.length > 0) {
+            form = teamForm(allMatches, { code: item.code, name: item.name }) as any
+          }
 
           return {
             idCountry: item.code,
@@ -66,7 +75,7 @@ export function useWc26Teams(): {
             confederation: getFederationByCountryCode(item.code),
             rankChange: 0,
             groupStageElo: item.elo_rating ?? 1500,
-            form: form,
+            form,
             group: item.group || "A",
           }
         })
@@ -111,6 +120,28 @@ export function useWc26Teams(): {
 
     return () => controller.abort()
   }, [t, reloadTrigger])
+
+  React.useEffect(() => {
+    if (teams.length === 0 || allMatches.length === 0) {
+      return
+    }
+
+    setTeams((prev) =>
+      prev.map((team) => ({
+        ...team,
+        form: teamForm(allMatches, {
+          code: team.idCountry ?? team.teamName,
+          name: team.teamName,
+        }) as any,
+      }))
+    )
+
+    logger.info({
+      message: "Updated WC26 team form from matches",
+      team_count: teams.length,
+      match_count: allMatches.length,
+    })
+  }, [allMatches, teams.length])
 
   return { teams, errorMessage, isLoading, refetch }
 }

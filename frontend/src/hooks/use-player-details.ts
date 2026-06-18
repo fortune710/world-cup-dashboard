@@ -74,6 +74,7 @@ export function usePlayerDetails(playerId: string | undefined) {
           rating: infoData.rating ?? stats.rating ?? 0.0,
           injuryStatus: infoData.injury_status || "Fit",
           cleanSheets: stats.clean_sheet ?? 0,
+          saves: stats.saves ?? 0,
           avatar: infoData.image_url || `https://img.sofascore.com/api/v1/player/${infoData.id}/image`,
           classification: safeClassification,
           positions: positions,

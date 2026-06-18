@@ -9,6 +9,7 @@ export function ErrorState({ message = "Something went wrong.", onRetry }: Error
       <p className="text-sm text-destructive font-medium">{message}</p>
       {onRetry && (
         <button
+          type="button"
           onClick={onRetry}
           className="rounded-md border border-input px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
         >

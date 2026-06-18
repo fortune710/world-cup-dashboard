@@ -386,6 +386,7 @@ def get_players_leaderboard(
                     "appearances": int(stats_json.get("appearances", 0) or 0),
                     "minutes_played": int(stats_json.get("minutes_played", 0) or 0),
                     "clean_sheets": int(stats_json.get("clean_sheet", 0) or 0),
+                    "saves": int(stats_json.get("saves", 0) or 0),
                     "goals": int(stats_json.get("goals", 0) or 0),
                     "assists": int(stats_json.get("assists", 0) or 0),
                     "expected_goals": float(stats_json.get("expected_goals", 0) or 0),

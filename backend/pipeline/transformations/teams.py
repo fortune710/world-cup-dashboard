@@ -187,7 +187,7 @@ class TeamsTransformations:
         # Safely parse positionsDetailed list or string
         positions_raw = player_raw.get("positionsDetailed")
         if isinstance(positions_raw, list):
-            positions = ", ".join(positions_raw)
+            positions = ", ".join([str(p).strip() for p in positions_raw if p is not None and str(p).strip()])
         elif isinstance(positions_raw, str) and positions_raw.strip():
             positions = ", ".join([p.strip() for p in positions_raw.split(",") if p.strip()])
         else:

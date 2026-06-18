@@ -25,7 +25,7 @@ export function applyPercentiles(
       return false;
     }
 
-    if (targetPlayerId !== undefined && peer.id !== undefined && peer.id === targetPlayerId) {
+    if (targetPlayerId !== undefined && peer.id !== undefined && String(peer.id) === String(targetPlayerId)) {
       return false;
     }
 
@@ -38,8 +38,9 @@ export function applyPercentiles(
 
   const peerCount = qualifyingPeers.length;
 
-  // 2. Check qualifying count - if < 15, do NOT compute percentile - return null
-  if (peerCount < 15) {
+  // 2. Check qualifying count - if < 5, do NOT compute percentile - return null
+  const PEER_THRESHOLD = 5;
+  if (peerCount < PEER_THRESHOLD) {
     const spokes = radarData.spokes.map((spoke) => ({
       ...spoke,
       percentile: null,
@@ -69,15 +70,19 @@ export function applyPercentiles(
         const peerMinutes = peer.statistics.minutes_played ?? 0;
         return computeSpokeRawValue(
           peer.statistics,
-          spoke.key,
-          metric.type,
-          metric.statField,
+          metric,
           peerMinutes
         );
       })
       .filter((val): val is number => val !== null);
 
     let percentile: number | null = null;
+    let averageValue: number | null = null;
+
+    if (peerValues.length > 0) {
+      const sum = peerValues.reduce((a, b) => a + b, 0);
+      averageValue = sum / peerValues.length;
+    }
 
     if (spoke.rawValue !== null && peerValues.length > 0) {
       const count = peerValues.filter((val) => val < spoke.rawValue!).length;
@@ -92,6 +97,7 @@ export function applyPercentiles(
     return {
       ...spoke,
       percentile,
+      averageValue,
     };
   });
 

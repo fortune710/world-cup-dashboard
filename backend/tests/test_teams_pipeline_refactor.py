@@ -1,7 +1,10 @@
 import unittest
+import logging
 from unittest.mock import patch, MagicMock
 from pipeline.sources.teams import TeamsSource
 from pipeline.transformations.teams import TeamsTransformations
+
+logger = logging.getLogger(__name__)
 
 class TestTeamsSourceRefactor(unittest.TestCase):
     @patch("pipeline.sources.teams.requests.get")
@@ -110,7 +113,9 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
         self.assertEqual(transformed[0]["logo_url"], "https://sofascore.com/team-image.png")
 
     def test_transform_squad_player(self):
+        logger.info("Starting test_transform_squad_player")
         # 1. Test positionsDetailed as list
+        logger.debug("Scenario 1: positionsDetailed as list")
         player_list = {
             "id": 999,
             "name": "Squad Player List",
@@ -126,8 +131,10 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
         }
         res_list = self.transformations.transform_squad_player(player_list, "ESP")
         self.assertEqual(res_list["positions"], "ST, LW")
+        logger.debug("Passed Scenario 1")
 
         # 2. Test positionsDetailed as string
+        logger.debug("Scenario 2: positionsDetailed as string")
         player_str = {
             "id": 998,
             "name": "Squad Player Str",
@@ -136,8 +143,10 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
         }
         res_str = self.transformations.transform_squad_player(player_str, "ESP")
         self.assertEqual(res_str["positions"], "CB, RB")
+        logger.debug("Passed Scenario 2")
 
         # 3. Test fallback
+        logger.debug("Scenario 3: fallback to simple position")
         player_fallback = {
             "id": 997,
             "name": "Squad Player Fallback",
@@ -145,4 +154,6 @@ class TestTeamsTransformationsRefactor(unittest.TestCase):
         }
         res_fallback = self.transformations.transform_squad_player(player_fallback, "ESP")
         self.assertEqual(res_fallback["positions"], "M")
+        logger.debug("Passed Scenario 3")
+        logger.info("Finished test_transform_squad_player")
 

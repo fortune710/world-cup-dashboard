@@ -183,7 +183,8 @@ export const GroupStageStandings = React.memo(function GroupStageStandings({
 }: GroupStageStandingsProps) {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
-  const activeGroup = (searchParams.get("group") ?? "A") as GroupKey
+  const rawGroup = searchParams.get("group")
+  const activeGroup: GroupKey = (rawGroup && GROUPS.includes(rawGroup as GroupKey)) ? (rawGroup as GroupKey) : "A"
 
   const setActiveGroup = React.useCallback((value: string) => {
     setSearchParams((prev) => {

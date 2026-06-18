@@ -374,8 +374,15 @@ def get_radar_peers(
     from db.models.players import Player
     import sqlalchemy as sa
 
-    # SQLite & Postgres compatible ILIKE match for position codes
-    pos_filters = [Player.positions.ilike(f"%{code}%") for code in position_codes]
+    # Exact token match for position codes (SQLite & Postgres compatible)
+    pos_filters = []
+    for code in position_codes:
+        pos_filters.extend([
+            Player.positions == code,
+            Player.positions.like(f"{code},%"),
+            Player.positions.like(f"%, {code},%"),
+            Player.positions.like(f"%, {code}")
+        ])
     minutes_expr = sa.cast(Player.stats_json['minutes_played'].astext, sa.Integer)
 
     rows = db.query(Player).filter(

@@ -58,6 +58,7 @@ class PlayerLeaderboardStatisticsResponse(BaseModel):
     appearances: int
     minutes_played: int
     clean_sheets: int
+    saves: int
     goals: int
     assists: int
     expected_goals: float

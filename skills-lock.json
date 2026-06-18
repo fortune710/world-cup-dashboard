@@ -18,6 +18,12 @@
       "sourceType": "github",
       "skillPath": "engineering-team/skills/senior-frontend/SKILL.md",
       "computedHash": "ca02ec6926e9f516dea055ae56c6845fbb9b3e9f3e92f8bbde8797a4425e4620"
+    },
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "b0e7741886c0c32270cedc1a2fc21c2879d90964d3ce00f24952de7064613404"
     }
   }
 }

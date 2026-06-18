@@ -160,7 +160,7 @@ export function TeamDetailsPage() {
                   Loading squad...
                 </div>
               ) : squadError ? (
-                <ErrorState message={`Failed to load squad: ${squadError}`} onRetry={refetchSquad} />
+                <ErrorState message={`${t("teamDetailsPage.squadError", { defaultValue: "Failed to load squad:" })} ${squadError}`} onRetry={refetchSquad} />
               ) : squad.length === 0 ? (
                 <div className="text-muted-foreground text-sm py-4">
                   No squad players found.
