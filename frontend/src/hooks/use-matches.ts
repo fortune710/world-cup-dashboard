@@ -4,12 +4,9 @@ import type { LiveRushMatch } from "@/datatypes";
 import { API_BASE_URL } from "@/lib/api-config";
 import {
   buildMatchesApiPath,
+  getCurrentLocalDate,
   mapMatchApiRowsToLiveRushMatches,
 } from "@/lib/helpers/match.helpers";
-
-function getCurrentUtcDate(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function formatMatchDateLabel(matchDate: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -20,7 +17,15 @@ function formatMatchDateLabel(matchDate: string): string {
   }).format(new Date(`${matchDate}T00:00:00Z`));
 }
 
-export function useMatches(matchDate: string = getCurrentUtcDate(), status?: string) {
+function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
+
+export function useMatches(matchDate: string = getCurrentLocalDate(), status?: string) {
   const [matches, setMatches] = useState<LiveRushMatch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,14 +33,16 @@ export function useMatches(matchDate: string = getCurrentUtcDate(), status?: str
 
   const refetch = () => setReloadTrigger((prev) => prev + 1);
 
+  const timezone = useMemo(() => getBrowserTimezone(), []);
+
   useEffect(() => {
     let active = true;
     async function fetchMatches() {
-      logger.info("Fetching matches from backend", { matchDate, status });
+      logger.info("Fetching matches from backend", { matchDate, status, timezone });
       setError(null);
       setLoading(true);
       try {
-        const url = `${API_BASE_URL}${buildMatchesApiPath(matchDate, status)}`;
+        const url = `${API_BASE_URL}${buildMatchesApiPath(matchDate, status, timezone)}`;
         const res = await fetch(url);
 
         if (!res.ok) throw new Error("Failed to fetch matches");

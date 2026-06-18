@@ -9,6 +9,7 @@ from pipeline.transformations.elo import EloTransformations
 from pipeline.load.matches import MatchesLoader
 from pipeline.load.elo import EloLoader
 from config.db import SessionLocal
+from db.models.matches import Match, MatchStatus
 from db.controllers.matches import get_matches_for_matchday_stats_queue
 from db.controllers.elo import get_elo_inputs
 from db.controllers.players import (
@@ -82,13 +83,15 @@ def load_matches(**context):
 
 def enqueue_matchday_stats(**context):
     logger.info({"message": "Starting matchday stats enqueue"})
-    db = SessionLocal()
+    db = None
     from config.settings import Settings
     from services.queue_service import QueueService
 
-    queue = QueueService()
-    settings = Settings()
+    queue = None
     try:
+        db = SessionLocal()
+        queue = QueueService()
+        settings = Settings()
         matches = get_matches_for_matchday_stats_queue(db)
         if not matches:
             logger.info({"message": "No live or completed matches found in this run"})
@@ -96,6 +99,25 @@ def enqueue_matchday_stats(**context):
 
         queued_count = 0
         for match in matches:
+            match_status = match.status.value if hasattr(match.status, "value") else match.status
+            if match_status == MatchStatus.SCHEDULED.value:
+                logger.info({
+                    "message": "Skipping scheduled match for matchday stats enqueue",
+                    "match_id": match.id,
+                    "home_team_code": match.home_team_code,
+                    "away_team_code": match.away_team_code,
+                })
+                continue
+
+            if getattr(match, "matchday_stats_indexed", False):
+                logger.info({
+                    "message": "Skipping match already indexed for matchday stats enqueue",
+                    "match_id": match.id,
+                    "home_team_code": match.home_team_code,
+                    "away_team_code": match.away_team_code,
+                })
+                continue
+
             if getattr(match, "sofascore_id", None) is None:
                 logger.warning({
                     "message": "Skipping match without sofascore id for matchday stats enqueue",
@@ -114,6 +136,17 @@ def enqueue_matchday_stats(**context):
                     "away_team_code": match.away_team_code,
                 },
             )
+            db.query(Match).filter(Match.id == match.id).update(
+                {Match.matchday_stats_indexed: True},
+                synchronize_session=False,
+            )
+            db.commit()
+            logger.info({
+                "message": "Marked match as matchday stats indexed",
+                "match_id": match.id,
+                "home_team_code": match.home_team_code,
+                "away_team_code": match.away_team_code,
+            })
             queued_count += 1
 
         logger.info({
@@ -121,14 +154,18 @@ def enqueue_matchday_stats(**context):
             "queued_count": queued_count,
         })
     except Exception as exc:
+        if db is not None:
+            db.rollback()
         logger.error({
             "message": "Failed to enqueue matchday stats",
             "error": {"message": str(exc), "type": type(exc).__name__},
         })
         raise
     finally:
-        db.close()
-        queue.close()
+        if db is not None:
+            db.close()
+        if queue is not None:
+            queue.close()
 
 
 def extract_elo_inputs(**context):
@@ -208,7 +245,7 @@ def load_elo_ratings(**context):
         inserted_count = loader.load_elo_ratings(elo_result)
         logger.info({
             "message": "Successfully loaded Elo ratings task",
-            "inserted_history_count": inserted_count,
+            "inserted_hiPleasestory_count": inserted_count,
         })
     except Exception as exc:
         logger.error({
@@ -225,45 +262,98 @@ def enqueue_player_stats(**context):
         logger.warning({"message": "No transformed matches found", "count": 0})
         return
 
-    # Identify teams in completed matches
+    db = None
+    queue = None
     completed_matches = []
     teams_to_update = set()
-    for match in transformed_matches:
-        if match.get('status') == 'completed':
-            completed_matches.append(match)
-            teams_to_update.add(match.get('home_team_code'))
-            teams_to_update.add(match.get('away_team_code'))
-
-    if not teams_to_update:
-        logger.info({"message": "No completed matches found in this run"})
-        return
-
-    completed_match_ids = sorted(
-        str(match.get("id"))
-        for match in completed_matches
-        if match.get("id") is not None
-    )
-    if not completed_match_ids:
-        logger.warning({
-            "message": "No valid completed match ids found for player stats enqueue",
-            "completed_match_count": len(completed_matches),
-        })
-        return
-    batch_key = ",".join(completed_match_ids)
-
-    logger.info({
-        "message": "Found teams from completed matches",
-        "count": len(teams_to_update),
-        "batch_key": batch_key,
-    })
-
-    db = SessionLocal()
     from config.settings import Settings
     from services.queue_service import QueueService
 
-    queue = QueueService()
-    settings = Settings()
     try:
+        db = SessionLocal()
+        for match in transformed_matches:
+            if match.get("status") != MatchStatus.COMPLETED.value:
+                logger.info({
+                    "message": "Skipping non-completed match for player stats enqueue",
+                    "match_id": match.get("id"),
+                    "status": match.get("status"),
+                })
+                continue
+
+            match_id = match.get("id")
+            if match_id is None:
+                logger.warning({
+                    "message": "Skipping completed match without id for player stats enqueue",
+                    "status": match.get("status"),
+                    "home_team_code": match.get("home_team_code"),
+                    "away_team_code": match.get("away_team_code"),
+                })
+                continue
+
+            db_match = db.get(Match, match_id)
+            if db_match is None:
+                logger.warning({
+                    "message": "Skipping completed match missing from database for player stats enqueue",
+                    "match_id": match_id,
+                    "home_team_code": match.get("home_team_code"),
+                    "away_team_code": match.get("away_team_code"),
+                })
+                continue
+
+            if getattr(db_match, "player_stats_indexed", False):
+                logger.info({
+                    "message": "Skipping match already indexed for player stats enqueue",
+                    "match_id": match_id,
+                    "home_team_code": match.get("home_team_code"),
+                    "away_team_code": match.get("away_team_code"),
+                })
+                continue
+
+            completed_matches.append(match)
+            home_team_code = match.get("home_team_code")
+            away_team_code = match.get("away_team_code")
+            if home_team_code:
+                teams_to_update.add(home_team_code)
+            if away_team_code:
+                teams_to_update.add(away_team_code)
+
+            db.query(Match).filter(Match.id == match_id).update(
+                {Match.player_stats_indexed: True},
+                synchronize_session=False,
+            )
+            db.commit()
+            logger.info({
+                "message": "Marked match as player stats indexed",
+                "match_id": match_id,
+                "home_team_code": home_team_code,
+                "away_team_code": away_team_code,
+            })
+
+        if not teams_to_update:
+            logger.info({"message": "No completed matches found in this run"})
+            return
+
+        completed_match_ids = sorted(
+            str(match.get("id"))
+            for match in completed_matches
+            if match.get("id") is not None
+        )
+        if not completed_match_ids:
+            logger.warning({
+                "message": "No valid completed match ids found for player stats enqueue",
+                "completed_match_count": len(completed_matches),
+            })
+            return
+        batch_key = ",".join(completed_match_ids)
+
+        logger.info({
+            "message": "Found teams from completed matches",
+            "count": len(teams_to_update),
+            "batch_key": batch_key,
+        })
+
+        queue = QueueService()
+        settings = Settings()
         queued_count = 0
         skipped_pending_count = 0
         for team_code in teams_to_update:
@@ -313,6 +403,8 @@ def enqueue_player_stats(**context):
             "skipped_pending_count": skipped_pending_count,
         })
     except Exception as exc:
+        if db is not None:
+            db.rollback()
         logger.error({
             "message": "Failed to enqueue player stats",
             "error": {"message": str(exc), "type": type(exc).__name__},
@@ -320,8 +412,10 @@ def enqueue_player_stats(**context):
         raise
     
     finally:
-        db.close()
-        queue.close()
+        if db is not None:
+            db.close()
+        if queue is not None:
+            queue.close()
 
 with DAG(
     'world_cup_matches_pipeline',

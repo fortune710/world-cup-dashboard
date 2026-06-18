@@ -1,7 +1,9 @@
 import logging
 from typing import Optional, Literal
 
+import requests
 from fastapi import APIRouter, Depends, Path, HTTPException, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from config.db import get_db
 from db.controllers.players import (
@@ -12,6 +14,11 @@ from db.controllers.players import (
     get_top_players_by_goals,
     get_top_players_by_rating,
     get_top_players_by_saves,
+)
+from server.player_image import (
+    build_player_image_api_path,
+    fetch_player_image_bytes,
+    resolve_player_image_source_url,
 )
 from server.schemas.players import (
     PlayerClassification,
@@ -74,7 +81,7 @@ def _player_info_payload(player):
         "foot": player.foot,
         "country_code": country_code,
         "market_value": player.market_value,
-        "image_url": player.image_url or f"https://img.sofascore.com/api/v1/player/{player.id}/image",
+        "image_url": build_player_image_api_path(player.id),
         "rating": player.rating,
     }
     logger.info(
@@ -105,6 +112,45 @@ def _player_stat_value(player, stat_key: str, cast_type):
         }
     )
     return stat_value
+
+
+@router.get("/{player_id}/image")
+def get_player_image(
+    player_id: int = Path(..., gt=0, description="Positive integer player ID"),
+    db: Session = Depends(get_db),
+):
+    """
+    Proxy player headshots through the API so browsers are not blocked by Sofascore hotlink protection.
+    """
+    logger.info({"message": "Fetching proxied player image", "player_id": player_id})
+
+    player = get_player_by_id(db, player_id)
+    if player is None:
+        logger.warning({"message": "Player image not found", "player_id": player_id})
+        raise HTTPException(status_code=404, detail=f"Player with id {player_id} not found.")
+
+    source_url = resolve_player_image_source_url(player_id, player.image_url)
+    try:
+        image_bytes, content_type = fetch_player_image_bytes(source_url)
+    except requests.RequestException:
+        raise HTTPException(status_code=502, detail="Failed to fetch player image.") from None
+    except ValueError as exc:
+        status_code = 404 if str(exc) == "upstream_status_404" else 502
+        raise HTTPException(status_code=status_code, detail="Player image unavailable.") from None
+
+    logger.info(
+        {
+            "message": "Returning proxied player image",
+            "player_id": player_id,
+            "content_type": content_type,
+            "byte_length": len(image_bytes),
+        }
+    )
+    return Response(
+        content=image_bytes,
+        media_type=content_type,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.get("/{player_id}/info", response_model=PlayerInfoResponse)

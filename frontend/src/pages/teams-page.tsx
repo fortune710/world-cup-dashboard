@@ -224,7 +224,7 @@ function createTeamsColumns(t: TFunction): ColumnDef<Wc26TeamRow>[] {
       ),
       cell: ({ row }) => (
         <div className="hidden text-end font-medium tabular-nums lg:table-cell">
-          {row.original.groupStageElo != null ? row.original.groupStageElo : "—"}
+          {row.original.groupStageElo != null ? Math.round(row.original.groupStageElo) : "—"}
         </div>
       ),
     },
@@ -504,7 +504,7 @@ export function TeamsPage() {
                               {t("teamsPage.groupStageElo")}
                             </span>
                             <span className="font-medium tabular-nums">
-                              {team.groupStageElo != null ? team.groupStageElo : "—"}
+                              {team.groupStageElo != null ? Math.round(team.groupStageElo) : "—"}
                             </span>
                           </div>
                         </div>

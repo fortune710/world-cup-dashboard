@@ -211,6 +211,25 @@ class TestPlayersRoutes(unittest.TestCase):
         self.assertEqual(payload[-1]["saves"], 7)
         self.assertNotIn("stats_json", payload[0])
 
+    def test_player_image_route_proxies_upstream_image(self):
+        player = SimpleNamespace(id=7, image_url=None)
+        with patch.object(players_route, "get_player_by_id", return_value=player), patch.object(
+            players_route,
+            "fetch_player_image_bytes",
+            return_value=(b"fake-image", "image/jpeg"),
+        ):
+            response = self.client.get("/players/7/image")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, b"fake-image")
+        self.assertEqual(response.headers["content-type"], "image/jpeg")
+
+    def test_player_image_route_returns_404_for_missing_player(self):
+        with patch.object(players_route, "get_player_by_id", return_value=None):
+            response = self.client.get("/players/404/image")
+
+        self.assertEqual(response.status_code, 404)
+
     def test_players_root_returns_leaderboard_payload(self):
         with patch.object(
             players_route,

@@ -74,6 +74,7 @@ class PlayerLeaderboardResponse(BaseModel):
     classification: Optional[PlayerClassification] = None
     team_image: Optional[str] = None
     group: Optional[str] = None
+    image_url: Optional[str] = None
     statistics: PlayerLeaderboardStatisticsResponse
 
     model_config = ConfigDict(from_attributes=True)

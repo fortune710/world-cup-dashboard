@@ -4,6 +4,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from config.db import get_db
 from server.main import app
@@ -50,6 +52,30 @@ class TestBracketRoute(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.history, [])
         self.assertEqual(response.json()[0]["round"], "R32")
+
+    def test_bracket_route_serializes_missing_team_codes_as_tbd(self):
+        engine = create_engine("postgresql://postgres:postgres@localhost:5432/world_cup_db")
+        test_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+        def override_get_db():
+            db = test_session()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        app.dependency_overrides[get_db] = override_get_db
+
+        response = self.client.get("/bracket", follow_redirects=False)
+
+        self.assertEqual(response.status_code, 200)
+        matches = [match for round_data in response.json() for match in round_data["matches"]]
+        tbd_matches = [
+            match
+            for match in matches
+            if match["home_team_code"] == "TBD" or match["away_team_code"] == "TBD"
+        ]
+        self.assertGreater(len(tbd_matches), 0)
 
 
 if __name__ == "__main__":

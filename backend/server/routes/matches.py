@@ -1,8 +1,8 @@
 import logging
-from datetime import date as Date
+from datetime import date as Date, datetime, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, HTTPException
 from sqlalchemy.orm import Session
 from config.db import get_db
 from db.controllers.matches import (
@@ -74,25 +74,112 @@ def get_matchday_statistics(
 
 @router.get("/{match_date}", response_model=List[MatchResponse])
 def get_matches_for_date(
-    match_date: Date = Path(..., description="Match date in YYYY-MM-DD format"),
+    match_date: str = Path(..., description="Match date in YYYY-MM-DD format (optionally with timezone suffix)"),
     status: Optional[str] = Query(None, description="Filter matches by status"),
+    timezone: Optional[str] = Query(None, description="Timezone name or offset, e.g. America/New_York or -04:00"),
     db: Session = Depends(get_db),
 ):
     """
-    Get all matches for a specific date, optionally filtered by status.
+    Get all matches for a specific date, optionally filtered by status and timezone.
     """
     logger.info(
         {
             "message": "Fetching matches for date",
-            "match_date": match_date.isoformat(),
+            "match_date_raw": match_date,
+            "status": status,
+            "timezone_query": timezone,
+        }
+    )
+    
+    resolved_tz = timezone or "UTC"
+    try:
+        match_date_str = match_date.strip()
+        resolved_date = None
+
+        if len(match_date_str) == 10:
+            try:
+                resolved_date = Date.fromisoformat(match_date_str)
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid date format: {match_date_str}. Expected YYYY-MM-DD."
+                )
+        else:
+            date_part = match_date_str[:10]
+            tz_part = match_date_str[10:]
+            
+            if tz_part == "Z":
+                tz_part = "UTC"
+            elif tz_part.startswith("T"):
+                try:
+                    dt = datetime.fromisoformat(match_date_str)
+                    resolved_date = dt.date()
+                    if dt.tzinfo is not None:
+                        offset = dt.utcoffset()
+                        if offset is not None:
+                            total_seconds = int(offset.total_seconds())
+                            sign = "-" if total_seconds < 0 else "+"
+                            abs_seconds = abs(total_seconds)
+                            hours = abs_seconds // 3600
+                            minutes = (abs_seconds % 3600) // 60
+                            tz_part = f"{sign}{hours:02d}:{minutes:02d}"
+                        else:
+                            tz_part = "UTC"
+                    else:
+                        tz_part = "UTC"
+                except ValueError:
+                    pass
+            
+            if resolved_date is None:
+                try:
+                    resolved_date = Date.fromisoformat(date_part)
+                    resolved_tz = tz_part
+                except ValueError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid date format: {match_date_str}. Expected YYYY-MM-DD with optional timezone offset."
+                    )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(
+            {
+                "message": "Unexpected error parsing match date or timezone",
+                "match_date_raw": match_date,
+                "timezone_query": timezone,
+                "error": str(exc),
+            }
+        )
+        raise HTTPException(status_code=400, detail="Error parsing request parameters")
+
+    logger.info(
+        {
+            "message": "Resolved match date parameters",
+            "match_date_raw": match_date,
+            "resolved_date": resolved_date.isoformat(),
+            "resolved_timezone": resolved_tz,
             "status": status,
         }
     )
-    matches = get_matches_by_date(db, match_date, status=status)
+
+    try:
+        matches = get_matches_by_date(db, resolved_date, status=status, timezone_str=resolved_tz)
+    except ValueError as val_err:
+        logger.warning(
+            {
+                "message": "Validation error getting matches by date",
+                "match_date": resolved_date.isoformat(),
+                "timezone": resolved_tz,
+                "error": str(val_err),
+            }
+        )
+        raise HTTPException(status_code=400, detail=str(val_err))
+    
     logger.info(
         {
             "message": "Returning matches for date",
-            "match_date": match_date.isoformat(),
+            "match_date": resolved_date.isoformat(),
+            "resolved_timezone": resolved_tz,
             "status": status,
             "count": len(matches),
         }

@@ -98,7 +98,7 @@ export function buildMatchdayStatisticsCards(
           : "passAccuracy"
 
     cards[cardKey] = {
-      statName: row.stat_name,
+      statName: row.stat_name as MatchdayStatisticName,
       value: Number(row.value ?? 0),
       playerName: row.player_name || "-",
     }

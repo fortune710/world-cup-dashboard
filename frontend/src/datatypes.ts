@@ -75,6 +75,7 @@ export interface LiveRushMatch {
   awayTeam: string
   homeScore?: number
   awayScore?: number
+  kickoffUtc?: string
   kickoffLabel: string
   status: LiveRushMatchStatus
   group?: string

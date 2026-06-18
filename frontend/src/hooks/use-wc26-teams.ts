@@ -1,28 +1,14 @@
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { API_BASE_URL } from "@/lib/api-config"
+import { getFederationByCountryCode } from "@/lib/helpers/federation.helpers"
+import { logger } from "@/lib/logger"
 
 import {
   type Wc26TeamRow,
   normalizeTeamKey,
 } from "@/lib/teams/wc26-teams"
 import { powerRankingRows } from "@/lib/helpers/power-ranking.helpers"
-
-function getConfederationByCode(code: string): string {
-  const codeUpper = code.toUpperCase();
-  const uefa = ["FRA", "ENG", "ESP", "POR", "GER", "NED", "BEL", "CRO", "SWE", "NOR", "AUT", "SCO", "CZE", "POL", "DEN", "ITA", "WAL"];
-  const conmebol = ["ARG", "BRA", "URU", "COL", "PAR", "CHI", "PER"];
-  const concacaf = ["USA", "MEX", "CAN", "PAN", "HON", "JAM", "CRC", "HAI", "CUW"];
-  const afc = ["KOR", "JPN", "IRN", "KSA", "IRQ", "JOR", "UZB", "QAT", "AUS"];
-  const caf = ["SEN", "MAR", "EGY", "NGA", "CMR", "RSA", "TUN", "ALG", "GHA", "COD", "CPV"];
-  
-  if (uefa.includes(codeUpper)) return "UEFA";
-  if (conmebol.includes(codeUpper)) return "CONMEBOL";
-  if (concacaf.includes(codeUpper)) return "CONCACAF";
-  if (afc.includes(codeUpper)) return "AFC";
-  if (caf.includes(codeUpper)) return "CAF";
-  return "OFC";
-}
 
 export function useWc26Teams(): {
   teams: Wc26TeamRow[]
@@ -43,6 +29,9 @@ export function useWc26Teams(): {
   React.useEffect(() => {
     const controller = new AbortController()
 
+    logger.info({
+      message: "Fetching WC26 teams",
+    })
     setIsLoading(true)
     setErrorMessage(null)
 
@@ -74,7 +63,7 @@ export function useWc26Teams(): {
             teamName: item.name,
             fifaRank: item.fifa_ranking,
             fifaPoints: item.points,
-            confederation: getConfederationByCode(item.code),
+            confederation: getFederationByCountryCode(item.code),
             rankChange: 0,
             groupStageElo: item.elo_rating ?? 1500,
             form: form,
@@ -94,16 +83,30 @@ export function useWc26Teams(): {
         }))
 
         setTeams(withRanks)
+        logger.info({
+          message: "Fetched WC26 teams",
+          count: withRanks.length,
+        })
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return
         setErrorMessage(
           error instanceof Error ? error.message : t("teamsPage.loadFailed")
         )
+        logger.error({
+          message: "Failed to fetch WC26 teams",
+          error:
+            error instanceof Error
+              ? { message: error.message, type: error.name }
+              : { message: String(error), type: "UnknownError" },
+        })
       })
       .finally(() => {
         if (controller.signal.aborted) return
         setIsLoading(false)
+        logger.info({
+          message: "WC26 teams fetch settled",
+        })
       })
 
     return () => controller.abort()
