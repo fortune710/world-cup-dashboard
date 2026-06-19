@@ -56,6 +56,33 @@ class TestTeamsRoutes(unittest.TestCase):
             elo_rating=None,
         ).model_dump()])
 
+    def test_group_standings_uses_group_query_parameter(self):
+        teams = [
+            SimpleNamespace(
+                name="Team B",
+                code="B",
+                matches_played=2,
+                matches_won=1,
+                matches_drawn=0,
+                matches_lost=1,
+                goals_for=3,
+                goals_against=2,
+                points=3,
+                group="B",
+                fifa_ranking=10,
+                elo_rating=1500.0,
+            )
+        ]
+
+        with patch.object(teams_route, "get_all_teams", return_value=teams) as mock_get_all_teams:
+            response = self.client.get("/teams/groups?group=B")
+
+        self.assertEqual(response.status_code, 200)
+        mock_get_all_teams.assert_called_once()
+        self.assertEqual(mock_get_all_teams.call_args.kwargs["group"], "B")
+        payload = response.json()
+        self.assertEqual(payload[0]["group"], "B")
+
 
 if __name__ == "__main__":
     unittest.main()
