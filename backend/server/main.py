@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from server.routes import predictions, teams, matches, ratings, players, bracket
+from server.routes import predictions, teams, matches, ratings, players, bracket, image_proxy
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +23,7 @@ app.include_router(matches.router)
 app.include_router(ratings.router)
 app.include_router(players.router)
 app.include_router(bracket.router)
+app.include_router(image_proxy.router)
 
 @app.get("/")
 def read_root():
