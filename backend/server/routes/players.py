@@ -383,11 +383,9 @@ def get_radar_peers(
             Player.positions.like(f"%, {code},%"),
             Player.positions.like(f"%, {code}")
         ])
-    minutes_expr = sa.cast(Player.stats_json['minutes_played'].astext, sa.Integer)
 
     rows = db.query(Player).filter(
-        sa.or_(*pos_filters),
-        minutes_expr >= min_minutes
+        sa.or_(*pos_filters)
     ).all()
 
     peers = []
@@ -396,6 +394,14 @@ def get_radar_peers(
         if isinstance(stats_json, str):
             import json
             stats_json = json.loads(stats_json)
+
+        try:
+            player_minutes = int(stats_json.get("minutes_played") or 0)
+        except (ValueError, TypeError):
+            player_minutes = 0
+
+        if player_minutes < min_minutes:
+            continue
 
         # Safely extract stats
         stats_data = {}
