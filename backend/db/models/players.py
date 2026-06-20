@@ -164,6 +164,7 @@ class Player(Base):
         Index('ix_players_stats_saves', stats_json['saves'].astext.cast(SmallInteger)),
         Index('ix_players_stats_big_chances_created', stats_json['big_chances_created'].astext.cast(SmallInteger)),
         Index('ix_players_name_search', func.to_tsvector('english', name), postgresql_using='gin'),
+        Index('ix_players_name_trgm', name, postgresql_using='gin', postgresql_ops={'name': 'gin_trgm_ops'}),
     )
 
 
