@@ -44,14 +44,21 @@ def get_teams(db: Session = Depends(get_db)):
 
 @router.get("/groups", response_model=List[TeamStandingResponse])
 def get_team_groups(
-    name: str = Query("A", pattern="^[A-L]$"),
+    group: str | None = Query(None, pattern="^[A-L]$"),
+    name: str | None = Query(None, pattern="^[A-L]$"),
     db: Session = Depends(get_db)
 ):
     """
     Get standings for a specific group (A-L).
     """
-    logger.info({"message": "Fetching group standings", "group_name": name})
-    teams = get_all_teams(db, group=name)
+    group_name = group or name or "A"
+    logger.info({
+        "message": "Fetching group standings",
+        "group_name": group_name,
+        "group_query": group,
+        "name_query": name,
+    })
+    teams = get_all_teams(db, group=group_name)
     
     standings = []
     for team in teams:
@@ -75,7 +82,11 @@ def get_team_groups(
             fifa_ranking=team.fifa_ranking,
             elo_rating=team.elo_rating
         ))
-    logger.info({"message": "Successfully fetched group standings", "group_name": name, "count": len(standings)})
+    logger.info({
+        "message": "Successfully fetched group standings",
+        "group_name": group_name,
+        "count": len(standings),
+    })
     return standings
 
 @router.get("/players/{code}", response_model=List[TeamPlayerResponse])

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import { API_BASE_URL } from "@/lib/api-config";
+import { getPlayerAvatarUrl } from "@/lib/players/player-image";
 import { normalizePlayer, type Classification, type DisplayPosition, type RadarRole } from "@/lib/players/player-mapping";
 
 export interface PlayerInfo {
@@ -57,7 +58,7 @@ export function useSquadPlayers(teamId: string | undefined) {
             id: String(p.id),
             name: p.name,
             position: positionDisplayMap[safeClassification] || safeClassification,
-            avatarUrl: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
+            avatarUrl: getPlayerAvatarUrl(p.image_url),
             classification: safeClassification,
             positions: Array.isArray(positions) ? positions.join(", ") : String(positions),
           });

@@ -24,10 +24,12 @@ class FakeLeaderboardQuery:
                     name="Player One",
                     country_code="AAA",
                     classification=PlayerClassification.F,
+                    image_url="https://img.example.com/player-one.jpg",
                     stats_json={
                         "appearances": 7,
                         "minutes_played": 630,
                         "clean_sheet": 3,
+                        "saves": 4,
                         "goals": 2,
                         "assists": 1,
                         "expected_goals": 1.4,
@@ -44,10 +46,12 @@ class FakeLeaderboardQuery:
                     name="Player Two",
                     country_code="BBB",
                     classification=PlayerClassification.F,
+                    image_url=None,
                     stats_json={
                         "appearances": 6,
                         "minutes_played": 540,
                         "clean_sheet": 2,
+                        "saves": 5,
                         "goals": 1,
                         "assists": 0,
                         "expected_goals": 0.8,
@@ -113,9 +117,11 @@ class TestPlayersLeaderboardQueries(unittest.TestCase):
         self.assertEqual(len(result), 2)
         self.assertEqual(result[0]["id"], 1)
         self.assertEqual(result[0]["player_name"], "Player One")
+        self.assertEqual(result[0]["image_url"], "https://img.example.com/player-one.jpg")
         self.assertEqual(result[0]["team_image"], "https://img.example.com/team-a.png")
         self.assertEqual(result[0]["group"], "A")
         self.assertEqual(result[0]["statistics"]["clean_sheets"], 3)
+        self.assertEqual(result[0]["statistics"]["saves"], 4)
         self.assertEqual(result[1]["statistics"]["rating"], 7.7)
         db.query.assert_called_once()
         query_args = db.query.call_args.args

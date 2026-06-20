@@ -243,12 +243,14 @@ class TestPlayersRoutes(unittest.TestCase):
                     player_name="Player One",
                     country_code="AAA",
                     classification="F",
+                    image_url="https://img.example.com/player-one.jpg",
                     team_image="https://img.example.com/team-a.png",
                     group="A",
                     statistics={
                         "appearances": 7,
                         "minutes_played": 630,
                         "clean_sheets": 3,
+                        "saves": 4,
                         "goals": 2,
                         "assists": 1,
                         "expected_goals": 1.4,
@@ -271,9 +273,11 @@ class TestPlayersRoutes(unittest.TestCase):
         self.assertEqual(payload[0]["player_name"], "Player One")
         self.assertEqual(payload[0]["country_code"], "AAA")
         self.assertEqual(payload[0]["classification"], "F")
+        self.assertEqual(payload[0]["image_url"], "https://img.example.com/player-one.jpg")
         self.assertEqual(payload[0]["team_image"], "https://img.example.com/team-a.png")
         self.assertEqual(payload[0]["group"], "A")
         self.assertEqual(payload[0]["statistics"]["rating"], 8.1)
+        self.assertEqual(payload[0]["statistics"]["saves"], 4)
 
     def test_players_root_rejects_invalid_limit(self):
         response = self.client.get("/players?limit=0")

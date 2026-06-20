@@ -6,6 +6,7 @@ import type {
   TopSaveScorer,
   TopPerformersData,
 } from "@/datatypes"
+import { logger } from "@/lib/logger"
 import { getPlayerAvatarUrl } from "@/lib/players/player-image"
 
 export const topPerformers: TopPerformerTuple = [
@@ -206,6 +207,13 @@ function buildPerformerRow(
   player: TopPerformerApiPlayer,
   valueKey: "goals" | "assists" | "saves" | "rating"
 ): PerformerRow {
+  logger.info({
+    message: "Building top performer row",
+    player_id: player.id,
+    value_key: valueKey,
+    image_url: player.image_url ?? null,
+  })
+
   const name = player.name ?? ""
   const initials = name
     .trim()
@@ -222,7 +230,7 @@ function buildPerformerRow(
     initials,
     nationality: player.country_code || "",
     value: (player as any)[valueKey] ?? 0,
-    avatar: getPlayerAvatarUrl(player.id),
+    avatar: getPlayerAvatarUrl(player.image_url, player.id),
     position: positionMap[player.classification || ""] || player.classification || "FWD",
     group: meta.group,
     federation: meta.federation,

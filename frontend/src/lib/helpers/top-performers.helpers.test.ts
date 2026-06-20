@@ -69,7 +69,9 @@ describe("top performers helpers", () => {
       federation: "UEFA",
       value: 3,
     })
-    expect(data.saves[0].avatar).toContain("/players/3/image")
+    expect(data.saves[0].avatar).toBe(
+      `/api/image-proxy?url=${encodeURIComponent("https://example.com/image.png")}`
+    )
     expect(data.saves[0]).toMatchObject({
       value: 5,
     })
