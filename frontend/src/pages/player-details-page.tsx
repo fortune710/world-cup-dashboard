@@ -1,8 +1,10 @@
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import * as React from "react"
 import { Link, useParams } from "react-router"
 import {
   ArrowLeftIcon,
+  ArrowUpDownIcon,
   TargetIcon,
   AwardIcon,
   StarIcon,
@@ -32,10 +34,12 @@ import { positionsToRadarRole, type Classification } from "@/lib/players/player-
 import { ChartRadarGridCircle } from "@/components/player-radar"
 import { ChartAreaInteractive } from "@/components/bar-graph"
 import { ChartPlayerPercentiles } from "@/components/player-bars"
+import { PlayerCompareDialog } from "@/components/player-compare-dialog"
 
 export function PlayerDetailsPage() {
   const { t } = useTranslation()
   const { playerId } = useParams<{ playerId: string }>()
+  const [compareOpen, setCompareOpen] = React.useState(false)
 
   const { player, loading, error, refetch } = usePlayerDetails(playerId)
   const role = React.useMemo(() => {
@@ -92,32 +96,54 @@ export function PlayerDetailsPage() {
       </Button>
 
       <div className="flex flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <Avatar className="size-10 rounded-full border border-border/50 overflow-hidden">
-            <AvatarImage src={player.avatar} alt={player.name} className="object-cover" />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-          <Badge variant="outline" className="font-semibold border-primary/50 bg-primary/10 text-primary">
-            {player.position}
-          </Badge>
-          <h1 className="text-2xl font-semibold tracking-tight">{player.name}</h1>
-        </div>
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Link
-            to={teams.getTeamHref({ idCountry: player.country, teamName: player.country })}
-            className="inline-flex items-center gap-1.5 rounded-md  py-0.5 underline cursor-pointer hover:underline-dashed hover:underline-primary"
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Avatar className="size-10 overflow-hidden rounded-full border border-border/50">
+                <AvatarImage src={player.avatar} alt={player.name} className="object-cover" />
+                <AvatarFallback>{initials}</AvatarFallback>
+              </Avatar>
+              <Badge variant="outline" className="border-primary/50 bg-primary/10 font-semibold text-primary">
+                {player.position}
+              </Badge>
+              <h1 className="text-2xl font-semibold tracking-tight">{player.name}</h1>
+            </div>
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+              <Link
+                to={getTeamHref({ idCountry: player.country, teamName: player.country })}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-md py-0.5 underline hover:underline-dashed hover:underline-primary"
+              >
+                <Avatar className="size-5 shrink-0 overflow-hidden rounded-xs border border-border/50">
+                  <AvatarImage src={flagUrl} alt={player.country} className="object-cover" />
+                  <AvatarFallback>{player.country}</AvatarFallback>
+                </Avatar>
+                <span className="font-medium">{player.country}</span>
+              </Link>
+              <span>
+                · {player.federation} · Group {player.group}
+              </span>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+            onClick={() => setCompareOpen(true)}
           >
-            <Avatar className="size-5 rounded-xs border border-border/50 overflow-hidden shrink-0">
-              <AvatarImage src={flagUrl} alt={player.country} className="object-cover" />
-              <AvatarFallback>{player.country}</AvatarFallback>
-            </Avatar>
-            <span className="font-medium group-hover:underline">{player.country}</span>
-          </Link>
-          <span>
-            · {player.federation} · Group {player.group}
-          </span>
+            <ArrowUpDownIcon data-icon="inline-start" />
+            <span className="hidden sm:inline">
+              {t("playerCompare.compare", { defaultValue: "Compare" })}
+            </span>
+          </Button>
         </div>
       </div>
+
+      <PlayerCompareDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        currentPlayerId={player.id}
+      />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {player.position === "GK" ? (
           <>

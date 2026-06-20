@@ -1,7 +1,8 @@
 import logging
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func, case, Integer, Float
 from db.models.teams import Team
+from db.models.players import Player
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,145 @@ def upsert_team(db: Session, team_data: dict):
     db.commit()
     db.refresh(db_team)
     return db_team
+
+def get_team_by_code(db: Session, code: str):
+    logger.info({"message": "Fetching team by code", "team_code": code})
+    team = db.query(Team).filter(Team.code == code).first()
+    logger.info(
+        {
+            "message": "Fetched team by code",
+            "team_code": code,
+            "found": team is not None,
+        }
+    )
+    return team
+
+
+def _compute_team_ranks(values: dict[str, float], higher_is_better: bool) -> dict[str, int]:
+    logger.info(
+        {
+            "message": "Computing team ranks",
+            "team_count": len(values),
+            "higher_is_better": higher_is_better,
+        }
+    )
+    sorted_codes = sorted(
+        values.keys(),
+        key=lambda code: (values[code], code),
+        reverse=higher_is_better,
+    )
+    ranks = {code: rank + 1 for rank, code in enumerate(sorted_codes)}
+    logger.info(
+        {
+            "message": "Computed team ranks",
+            "team_count": len(ranks),
+            "higher_is_better": higher_is_better,
+        }
+    )
+    return ranks
+
+
+def get_team_statistics_rank(db: Session, team_code: str):
+    logger.info(
+        {
+            "message": "Computing team statistics rank",
+            "team_code": team_code,
+        }
+    )
+    goals_col = func.coalesce(func.cast(Player.stats_json["goals"].astext, Integer), 0)
+    minutes_col = func.coalesce(
+        func.cast(Player.stats_json["minutes_played"].astext, Integer), 0
+    )
+    pass_acc_col = func.cast(
+        Player.stats_json["accurate_passes_percentage"].astext, Float
+    )
+    chances_col = func.coalesce(
+        func.cast(Player.stats_json["big_chances_created"].astext, Integer), 0
+    )
+    yellow_col = func.coalesce(
+        func.cast(Player.stats_json["yellow_cards"].astext, Integer), 0
+    )
+    red_col = func.coalesce(func.cast(Player.stats_json["red_cards"].astext, Integer), 0)
+
+    rows = (
+        db.query(
+            Player.country_code,
+            func.sum(goals_col).label("total_goals"),
+            func.avg(case((minutes_col > 0, pass_acc_col), else_=None)).label(
+                "avg_pass_accuracy"
+            ),
+            func.sum(chances_col).label("total_chances_created"),
+            func.sum(yellow_col + red_col).label("total_discipline"),
+        )
+        .filter(Player.country_code.isnot(None))
+        .group_by(Player.country_code)
+        .all()
+    )
+
+    total_teams = db.query(Team).count()
+    if not rows:
+        logger.info(
+            {
+                "message": "No team statistics available for ranking",
+                "team_code": team_code,
+            }
+        )
+        return None
+
+    goals_map = {row.country_code: float(row.total_goals or 0) for row in rows}
+    pass_map = {
+        row.country_code: float(row.avg_pass_accuracy or 0) for row in rows
+    }
+    chances_map = {
+        row.country_code: float(row.total_chances_created or 0) for row in rows
+    }
+    discipline_map = {
+        row.country_code: float(row.total_discipline or 0) for row in rows
+    }
+
+    if team_code not in goals_map:
+        logger.info(
+            {
+                "message": "Team has no player statistics for ranking",
+                "team_code": team_code,
+            }
+        )
+        return None
+
+    goals_ranks = _compute_team_ranks(goals_map, True)
+    pass_ranks = _compute_team_ranks(pass_map, True)
+    chances_ranks = _compute_team_ranks(chances_map, True)
+    discipline_ranks = _compute_team_ranks(discipline_map, False)
+
+    result = {
+        "team_code": team_code,
+        "total_teams": total_teams,
+        "goals": {
+            "value": goals_map[team_code],
+            "rank": goals_ranks[team_code],
+        },
+        "pass_accuracy": {
+            "value": pass_map[team_code],
+            "rank": pass_ranks[team_code],
+        },
+        "chances_created": {
+            "value": chances_map[team_code],
+            "rank": chances_ranks[team_code],
+        },
+        "discipline": {
+            "value": discipline_map[team_code],
+            "rank": discipline_ranks[team_code],
+        },
+    }
+    logger.info(
+        {
+            "message": "Computed team statistics rank",
+            "team_code": team_code,
+            "total_teams": total_teams,
+        }
+    )
+    return result
+
 
 def get_all_teams(db: Session, group: str = None):
     logger.info({

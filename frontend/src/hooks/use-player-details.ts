@@ -6,6 +6,20 @@ import { getPlayerAvatarUrl } from "@/lib/players/player-image";
 import { normalizePlayer, type Classification } from "@/lib/players/player-mapping";
 import { countryMetadata } from "@/lib/teams/wc26-teams";
 
+function calculateAge(dateOfBirth: string | null | undefined): number | null {
+  if (!dateOfBirth) return null;
+  const dob = new Date(dateOfBirth);
+  if (Number.isNaN(dob.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
 export function usePlayerDetails(playerId: string | undefined) {
   const [player, setPlayer] = useState<PlayerRow | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
@@ -80,6 +94,13 @@ export function usePlayerDetails(playerId: string | undefined) {
           classification: safeClassification,
           positions: positions,
           statistics: statsData.statistics || undefined,
+          dateOfBirth: infoData.date_of_birth ?? null,
+          age: calculateAge(infoData.date_of_birth),
+          weightKg: infoData.weight_kg ?? null,
+          heightCm: infoData.height_cm ?? null,
+          foot: infoData.foot ?? null,
+          clubName: infoData.club_name ?? null,
+          marketValue: infoData.market_value ?? null,
         });
 
         setPlayer(mapped);

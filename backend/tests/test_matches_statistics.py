@@ -143,6 +143,36 @@ class TestMatchesStatisticsRoute(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()[0]["stadium"], None)
 
+    def test_team_matches_route_returns_completed_matches(self):
+        rows = [
+            SimpleNamespace(
+                id=10,
+                round="Group",
+                group="A",
+                home_team_code="ARG",
+                away_team_code="FRA",
+                stadium="Stadium",
+                kickoff_utc="2026-06-11T18:00:00",
+                status="completed",
+                phase=None,
+                home_score=2,
+                away_score=1,
+                home_pen=None,
+                away_pen=None,
+                home_team=SimpleNamespace(name="Argentina", code="ARG"),
+                away_team=SimpleNamespace(name="France", code="FRA"),
+            )
+        ]
+
+        with patch.object(matches_route, "get_matches_by_team_code", return_value=rows):
+            response = self.client.get("/matches/team/ARG")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["home_team_code"], "ARG")
+        self.assertEqual(payload[0]["home_score"], 2)
+
     def test_matches_by_date_route_forwards_status_filter(self):
         rows = [
             SimpleNamespace(
