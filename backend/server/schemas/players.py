@@ -81,6 +81,16 @@ class PlayerLeaderboardResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PlayerSearchResponse(BaseModel):
+    id: int
+    name: str
+    country_code: str
+    position: str
+    image_url: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class RadarPeerStatistics(BaseModel):
     goals: Optional[float] = None
     assists: Optional[float] = None

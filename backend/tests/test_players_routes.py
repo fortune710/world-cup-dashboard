@@ -289,6 +289,46 @@ class TestPlayersRoutes(unittest.TestCase):
 
         self.assertEqual(response.status_code, 422)
 
+    def test_players_search_returns_lightweight_results(self):
+        with patch.object(
+            players_route,
+            "search_players_by_name",
+            return_value=[
+                {
+                    "id": 10,
+                    "name": "Lionel Messi",
+                    "country_code": "ARG",
+                    "position": "RW",
+                    "image_url": "/players/10/image",
+                }
+            ],
+        ) as mock_search:
+            response = self.client.get("/players/search?query=Messi&limit=3")
+
+        self.assertEqual(response.status_code, 200)
+        mock_search.assert_called_once()
+        self.assertEqual(mock_search.call_args.kwargs["query"], "Messi")
+        self.assertEqual(mock_search.call_args.kwargs["limit"], 3)
+        payload = response.json()
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["name"], "Lionel Messi")
+        self.assertEqual(payload[0]["country_code"], "ARG")
+        self.assertEqual(payload[0]["position"], "RW")
+        self.assertEqual(payload[0]["image_url"], "/players/10/image")
+        self.assertNotIn("rating", payload[0])
+
+    def test_players_search_defaults_limit_to_five(self):
+        with patch.object(players_route, "search_players_by_name", return_value=[]) as mock_search:
+            response = self.client.get("/players/search?query=Pedri")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(mock_search.call_args.kwargs["limit"], 5)
+
+    def test_players_search_rejects_empty_query(self):
+        response = self.client.get("/players/search?query=")
+
+        self.assertEqual(response.status_code, 422)
+
     def test_get_radar_peers_success(self):
         logger.info("Starting test_get_radar_peers_success")
         mock_db = MagicMock()
