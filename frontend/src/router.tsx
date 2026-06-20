@@ -10,6 +10,7 @@ const HelpPage = React.lazy(() => import("@/pages/help-page").then(m => ({ defau
 const LivePage = React.lazy(() => import("@/pages/live-page").then(m => ({ default: m.LivePage })))
 const MatchesPage = React.lazy(() => import("@/pages/matches-page").then(m => ({ default: m.MatchesPage })))
 const NotFoundPage = React.lazy(() => import("@/pages/not-found-page").then(m => ({ default: m.NotFoundPage })))
+const PlayerComparePage = React.lazy(() => import("@/pages/player-compare-page").then(m => ({ default: m.PlayerComparePage })))
 const PlayerDetailsPage = React.lazy(() => import("@/pages/player-details-page").then(m => ({ default: m.PlayerDetailsPage })))
 const PlayersPage = React.lazy(() => import("@/pages/players-page").then(m => ({ default: m.PlayersPage })))
 const SettingsPage = React.lazy(() => import("@/pages/settings-page").then(m => ({ default: m.SettingsPage })))
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: "teams", element: <TeamsPage /> },
       { path: "teams/:teamId", element: <TeamDetailsPage /> },
       { path: "players", element: <PlayersPage /> },
+      { path: "players/:playerId/compare", element: <PlayerComparePage /> },
       { path: "players/:playerId", element: <PlayerDetailsPage /> },
       { path: "matches", element: <MatchesPage /> },
       { path: "bracket", element: <BracketPage /> },

@@ -13,6 +13,7 @@ export interface PlayersParams {
   team?: string;
   page?: number;
   limit?: number;
+  enabled?: boolean;
 }
 
 interface FetcherResult {
@@ -111,7 +112,7 @@ const fetcher = (url: string): Promise<FetcherResult> => {
 };
 
 export function usePlayers(params: PlayersParams = {}) {
-  const { search, position, team, page, limit } = params;
+  const { search, position, team, page, limit, enabled = true } = params;
 
   const queryParams = new URLSearchParams();
   queryParams.append("limit", String(limit ?? 50));
@@ -134,7 +135,7 @@ export function usePlayers(params: PlayersParams = {}) {
   logger.info("Initializing SWR usePlayers", { search, position, team, page, limit });
 
   const { data, error, isLoading, mutate } = useSWR(
-    `${API_BASE_URL}/players?${queryParams.toString()}`,
+    enabled ? `${API_BASE_URL}/players?${queryParams.toString()}` : null,
     fetcher,
     {
       keepPreviousData: true,

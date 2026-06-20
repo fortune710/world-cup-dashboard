@@ -67,7 +67,7 @@ export function RouteErrorPage() {
 
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-10 lg:px-6">
-      <Card className="w-full max-w-lg">
+      <Card className="w-full max-w-128">
         <CardHeader className="gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>{safeCopy.title}</CardTitle>
