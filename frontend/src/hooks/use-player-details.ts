@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import type { PlayerRow } from "@/pages/players-page";
 import { API_BASE_URL } from "@/lib/api-config";
+import { getPlayerAvatarUrl } from "@/lib/players/player-image";
 import { normalizePlayer, type Classification } from "@/lib/players/player-mapping";
 import { countryMetadata } from "@/lib/teams/wc26-teams";
 
@@ -75,7 +76,7 @@ export function usePlayerDetails(playerId: string | undefined) {
           injuryStatus: infoData.injury_status || "Fit",
           cleanSheets: stats.clean_sheet ?? 0,
           saves: stats.saves ?? 0,
-          avatar: infoData.image_url || `https://img.sofascore.com/api/v1/player/${infoData.id}/image`,
+          avatar: getPlayerAvatarUrl(infoData.image_url),
           classification: safeClassification,
           positions: positions,
           statistics: statsData.statistics || undefined,

@@ -3,6 +3,8 @@ import { logger } from "@/lib/logger";
 import type { PlayerRow } from "@/pages/players-page";
 import { API_BASE_URL } from "@/lib/api-config";
 import { normalizePlayer, type Classification } from "@/lib/players/player-mapping";
+import { getFederationByCountryCode } from "@/lib/helpers/federation.helpers";
+import { getPlayerAvatarUrl } from "@/lib/players/player-image";
 import { countryMetadata } from "@/lib/teams/wc26-teams";
 
 export interface PlayersParams {
@@ -67,14 +69,15 @@ const fetcher = (url: string): Promise<FetcherResult> => {
         const stats = p.statistics || {};
         const safeClassification = (p.classification === "G" || p.classification === "D" || p.classification === "M" || p.classification === "F" ? p.classification : "F") as Classification;
         const positions = p.positionsDetailed ?? p.positions_detailed ?? p.position ?? "";
-        const meta = countryMetadata[p.country_code.toUpperCase()] || { group: "A", federation: "UEFA" };
+        const meta = countryMetadata[p.country_code.toUpperCase()] || { group: "A", federation: null };
+        const federation = p.federation || getFederationByCountryCode(p.country_code) || "—";
 
         return normalizePlayer({
           id: p.id,
           name: p.player_name,
           position: positionMap[p.classification] || p.classification || "FWD",
           country: p.country_code,
-          federation: p.federation || meta.federation,
+          federation,
           group: p.group || meta.group,
           gamesPlayed: stats.appearances ?? 0,
           minutesPlayed: stats.minutes_played ?? 0,
@@ -88,7 +91,7 @@ const fetcher = (url: string): Promise<FetcherResult> => {
           injuryStatus: p.injury_status || "Fit",
           cleanSheets: stats.clean_sheets ?? 0,
           saves: stats.saves ?? 0,
-          avatar: p.image_url || `https://img.sofascore.com/api/v1/player/${p.id}/image`,
+          avatar: getPlayerAvatarUrl(p.image_url, p.id),
           classification: safeClassification,
           positions: positions,
         });
