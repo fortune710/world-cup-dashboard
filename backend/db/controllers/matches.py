@@ -4,7 +4,7 @@ from datetime import date, datetime, time, timezone, timedelta, tzinfo as dateti
 from zoneinfo import ZoneInfo
 from typing import Any
 
-from sqlalchemy import Float, Integer, func, text
+from sqlalchemy import Float, Integer, func, text, or_
 from sqlalchemy.orm import Session, joinedload
 
 from db.models.matchday_stats import MatchdayStats
@@ -167,6 +167,34 @@ def upsert_match(db: Session, match_data: dict):
         }
     )
     return db_match
+
+def get_matches_by_team_code(db: Session, team_code: str):
+    logger.info(
+        {
+            "message": "Fetching matches by team code",
+            "team_code": team_code,
+        }
+    )
+
+    matches = (
+        db.query(Match)
+        .options(joinedload(Match.home_team), joinedload(Match.away_team))
+        .filter(
+            or_(Match.home_team_code == team_code, Match.away_team_code == team_code),
+            Match.status == MatchStatus.COMPLETED,
+        )
+        .order_by(Match.kickoff_utc.asc(), Match.id.asc())
+        .all()
+    )
+    logger.info(
+        {
+            "message": "Fetched matches by team code",
+            "team_code": team_code,
+            "count": len(matches),
+        }
+    )
+    return matches
+
 
 def get_all_matches(db: Session, status: str = None, page: int = 1, page_size: int = 5):
     skip = (page - 1) * page_size

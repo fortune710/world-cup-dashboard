@@ -8,6 +8,7 @@ from config.db import get_db
 from db.controllers.matches import (
     get_all_matches,
     get_matches_by_date,
+    get_matches_by_team_code,
     get_matchday_statistics_by_date,
 )
 from server.schemas.matches import MatchResponse, MatchdayStatisticResponse
@@ -41,6 +42,26 @@ def get_matches(
             "status": status,
             "page": page,
             "page_size": page_size,
+            "count": len(matches),
+        }
+    )
+    return matches
+
+
+@router.get("/team/{code}", response_model=List[MatchResponse])
+def get_team_matches(
+    code: str = Path(..., min_length=3, max_length=3, description="3-character country code"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get all completed matches for a specific team, ordered by kickoff time.
+    """
+    logger.info({"message": "Fetching team matches", "team_code": code})
+    matches = get_matches_by_team_code(db, code)
+    logger.info(
+        {
+            "message": "Returning team matches",
+            "team_code": code,
             "count": len(matches),
         }
     )

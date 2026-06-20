@@ -2,16 +2,47 @@ import logging
 from fastapi import APIRouter, Depends, Query, Path, HTTPException
 from sqlalchemy.orm import Session
 from config.db import get_db
-from db.controllers.teams import get_all_teams
-from db.controllers.players import get_team_players
-from server.schemas.teams import TeamStandingResponse
+from db.controllers.teams import get_all_teams, get_team_by_code, get_team_statistics_rank
+from db.controllers.players import get_team_players, get_team_top_performers
+from server.schemas.teams import (
+    TeamStandingResponse,
+    TeamStatisticsRankResponse,
+    TeamTopPerformersResponse,
+    TeamTopPerformerRating,
+    TeamTopPerformerGoals,
+    TeamTopPerformerAssists,
+    TeamTopPerformerChances,
+)
 from server.schemas.players import TeamPlayerResponse
 from server.player_image import build_player_image_api_path
+from server.routes.players import _player_info_payload, _player_stats_dict
 from typing import List
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/teams", tags=["teams"])
+
+
+def _build_team_top_performer_entry(player, stat_key: str, cast_type):
+    logger.info(
+        {
+            "message": "Building team top performer entry",
+            "player_id": getattr(player, "id", None),
+            "stat_key": stat_key,
+        }
+    )
+    base = _player_info_payload(player)
+    stats_json = _player_stats_dict(player)
+    base[stat_key] = cast_type(stats_json.get(stat_key, 0) or 0)
+    logger.info(
+        {
+            "message": "Built team top performer entry",
+            "player_id": getattr(player, "id", None),
+            "stat_key": stat_key,
+            "value": base[stat_key],
+        }
+    )
+    return base
 
 @router.get("", response_model=List[TeamStandingResponse])
 def get_teams(db: Session = Depends(get_db)):
@@ -88,6 +119,75 @@ def get_team_groups(
         "count": len(standings),
     })
     return standings
+
+@router.get("/{code}/top-performers", response_model=TeamTopPerformersResponse)
+def get_team_top_performers_route(
+    code: str = Path(..., min_length=3, max_length=3, description="3-character country code"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get the top-rated, top-scoring, top-assisting, and most creative players for a team.
+    """
+    logger.info({"message": "Fetching team top performers", "team_code": code})
+    team = get_team_by_code(db, code)
+    if not team:
+        raise HTTPException(status_code=404, detail=f"Team not found: {code}")
+
+    performers = get_team_top_performers(db, code, limit=1)
+    rating_player = performers["rating"][0] if performers["rating"] else None
+    goals_player = performers["goals"][0] if performers["goals"] else None
+    assists_player = performers["assists"][0] if performers["assists"] else None
+    chances_player = (
+        performers["big_chances_created"][0]
+        if performers["big_chances_created"]
+        else None
+    )
+
+    payload = TeamTopPerformersResponse(
+        rating=TeamTopPerformerRating(**_build_team_top_performer_entry(rating_player, "rating", float))
+        if rating_player
+        else None,
+        goals=TeamTopPerformerGoals(**_build_team_top_performer_entry(goals_player, "goals", int))
+        if goals_player
+        else None,
+        assists=TeamTopPerformerAssists(**_build_team_top_performer_entry(assists_player, "assists", int))
+        if assists_player
+        else None,
+        big_chances_created=TeamTopPerformerChances(
+            **_build_team_top_performer_entry(
+                chances_player, "big_chances_created", int
+            )
+        )
+        if chances_player
+        else None,
+    )
+    logger.info({"message": "Returning team top performers", "team_code": code})
+    return payload
+
+
+@router.get("/{code}/statistics-rank", response_model=TeamStatisticsRankResponse)
+def get_team_statistics_rank_route(
+    code: str = Path(..., min_length=3, max_length=3, description="3-character country code"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get aggregated team statistics and tournament rank out of all teams.
+    """
+    logger.info({"message": "Fetching team statistics rank", "team_code": code})
+    team = get_team_by_code(db, code)
+    if not team:
+        raise HTTPException(status_code=404, detail=f"Team not found: {code}")
+
+    rank_data = get_team_statistics_rank(db, code)
+    if not rank_data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No player statistics available for team: {code}",
+        )
+
+    payload = TeamStatisticsRankResponse(**rank_data)
+    logger.info({"message": "Returning team statistics rank", "team_code": code})
+    return payload
 
 @router.get("/players/{code}", response_model=List[TeamPlayerResponse])
 def get_team_players_route(
