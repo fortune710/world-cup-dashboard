@@ -14,6 +14,7 @@ from db.controllers.players import (
     get_top_players_by_goals,
     get_top_players_by_rating,
     get_top_players_by_saves,
+    search_players_by_name,
 )
 from server.player_image import (
     build_player_image_api_path,
@@ -24,6 +25,7 @@ from server.schemas.players import (
     PlayerClassification,
     PlayerInfoResponse,
     PlayerLeaderboardResponse,
+    PlayerSearchResponse,
     PlayerStatisticsResponse,
     PlayerTopCleanSheetsResponse,
     PlayerTopAssistsResponse,
@@ -112,6 +114,34 @@ def _player_stat_value(player, stat_key: str, cast_type):
         }
     )
     return stat_value
+
+
+@router.get("/search", response_model=list[PlayerSearchResponse])
+def search_players(
+    query: str = Query(..., min_length=1, description="Player name search term"),
+    limit: int = Query(5, ge=1, le=50, description="Maximum number of results to return"),
+    db: Session = Depends(get_db),
+):
+    """
+    Fuzzy-search players by name. Returns lightweight rows for autocomplete and compare pickers.
+    """
+    logger.info(
+        {
+            "message": "Searching players by name",
+            "query": query,
+            "limit": limit,
+        }
+    )
+    results = search_players_by_name(db=db, query=query, limit=limit)
+    logger.info(
+        {
+            "message": "Returning player search results",
+            "query": query,
+            "limit": limit,
+            "count": len(results),
+        }
+    )
+    return results
 
 
 @router.get("/{player_id}/image")

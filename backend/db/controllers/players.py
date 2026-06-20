@@ -314,6 +314,124 @@ def get_top_players_by_saves(db: Session, limit: int = 5):
     return _get_top_players_by_stat(db, "saves", "integer", "saves", limit)
 
 
+CLASSIFICATION_POSITION_MAP = {
+    PlayerClassification.G: "GK",
+    PlayerClassification.D: "DEF",
+    PlayerClassification.M: "MID",
+    PlayerClassification.F: "FWD",
+}
+
+
+def _resolve_player_position(
+    positions: str | None,
+    classification: PlayerClassification | None,
+) -> str:
+    logger.info(
+        {
+            "message": "Resolving player position for search payload",
+            "positions": positions,
+            "classification": getattr(classification, "value", None) if classification else None,
+        }
+    )
+    if positions and isinstance(positions, str) and positions.strip():
+        position = positions.split(",")[0].strip()
+        logger.info(
+            {
+                "message": "Resolved player position from positions field",
+                "position": position,
+            }
+        )
+        return position
+
+    if classification is not None:
+        position = CLASSIFICATION_POSITION_MAP.get(classification, "FWD")
+        logger.info(
+            {
+                "message": "Resolved player position from classification fallback",
+                "position": position,
+            }
+        )
+        return position
+
+    logger.info({"message": "Defaulting player position to empty string"})
+    return ""
+
+
+def search_players_by_name(db: Session, query: str, limit: int = 5) -> list[dict]:
+    logger.info(
+        {
+            "message": "Searching players by name",
+            "query": query,
+            "limit": limit,
+        }
+    )
+    search_term = query.strip()
+    if not search_term:
+        logger.info({"message": "Empty player search query; returning no results"})
+        return []
+
+    similarity_expression = sa.func.similarity(
+        sa.func.coalesce(Player.name, ""),
+        search_term,
+    )
+    tsvector_expression = sa.func.to_tsvector(
+        "english",
+        sa.func.coalesce(Player.name, ""),
+    )
+    tsquery_expression = sa.func.plainto_tsquery("english", search_term)
+    ilike_pattern = f"%{search_term}%"
+    prefix_pattern = f"{search_term}%"
+
+    db_query = (
+        db.query(Player)
+        .filter(
+            sa.or_(
+                Player.name.ilike(ilike_pattern),
+                similarity_expression >= 0.2,
+                tsvector_expression.op("@@")(tsquery_expression),
+            )
+        )
+        .order_by(
+            sa.case((sa.func.lower(Player.name) == search_term.lower(), 0), else_=1),
+            sa.case((Player.name.ilike(prefix_pattern), 0), else_=1),
+            similarity_expression.desc(),
+            Player.name.asc(),
+        )
+        .limit(limit)
+    )
+    players = db_query.all()
+    logger.info(
+        {
+            "message": "Fetched players by fuzzy name search",
+            "query": search_term,
+            "limit": limit,
+            "count": len(players),
+        }
+    )
+
+    payload = []
+    for player in players:
+        payload.append(
+            {
+                "id": player.id,
+                "name": player.name,
+                "country_code": player.country_code or "",
+                "position": _resolve_player_position(player.positions, player.classification),
+                "image_url": f"/players/{player.id}/image",
+            }
+        )
+
+    logger.info(
+        {
+            "message": "Built player search payload",
+            "query": search_term,
+            "limit": limit,
+            "count": len(payload),
+        }
+    )
+    return payload
+
+
 def get_players_leaderboard(
     db: Session,
     limit: int,
