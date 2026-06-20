@@ -314,6 +314,82 @@ def get_top_players_by_saves(db: Session, limit: int = 5):
     return _get_top_players_by_stat(db, "saves", "integer", "saves", limit)
 
 
+def _get_team_top_players_by_stat(
+    db: Session,
+    team_code: str,
+    stat_key: str,
+    cast_sql: str,
+    stat_label: str,
+    limit: int = 1,
+):
+    logger.info(
+        {
+            "message": "Fetching team top players by stat",
+            "team_code": team_code,
+            "stat_key": stat_key,
+            "stat_label": stat_label,
+            "limit": limit,
+        }
+    )
+    stat_expression = sa.literal_column(
+        f"coalesce((players.stats_json ->> '{stat_key}')::{cast_sql}, 0)"
+    )
+    players = (
+        db.query(Player)
+        .filter(Player.country_code == team_code)
+        .order_by(stat_expression.desc(), Player.id.asc())
+        .limit(limit)
+        .all()
+    )
+    logger.info(
+        {
+            "message": "Fetched team top players by stat",
+            "team_code": team_code,
+            "stat_key": stat_key,
+            "stat_label": stat_label,
+            "count": len(players),
+        }
+    )
+    return players
+
+
+def get_team_top_performers(db: Session, team_code: str, limit: int = 1):
+    logger.info(
+        {
+            "message": "Fetching team top performers",
+            "team_code": team_code,
+            "limit": limit,
+        }
+    )
+    performers = {
+        "rating": _get_team_top_players_by_stat(
+            db, team_code, "rating", "double precision", "rating", limit
+        ),
+        "goals": _get_team_top_players_by_stat(
+            db, team_code, "goals", "integer", "goals", limit
+        ),
+        "assists": _get_team_top_players_by_stat(
+            db, team_code, "assists", "integer", "assists", limit
+        ),
+        "big_chances_created": _get_team_top_players_by_stat(
+            db,
+            team_code,
+            "big_chances_created",
+            "integer",
+            "big_chances_created",
+            limit,
+        ),
+    }
+    logger.info(
+        {
+            "message": "Fetched team top performers",
+            "team_code": team_code,
+            "limit": limit,
+        }
+    )
+    return performers
+
+
 CLASSIFICATION_POSITION_MAP = {
     PlayerClassification.G: "GK",
     PlayerClassification.D: "DEF",
