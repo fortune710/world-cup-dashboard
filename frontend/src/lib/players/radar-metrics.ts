@@ -135,6 +135,6 @@ export function getTemplateForRole(role: RadarRole): RadarTemplate {
 
 export const RADAR_MINUTE_TIERS = {
   MINIMUM_SHOW: 0,         // Unused now — we show radar at 0 min
-  PERCENTILE_ENABLE: 180,  // ~2 matches — below this: show values but not percentile rank
+  PERCENTILE_ENABLE: 90,   // ~1 match — below this: show values but not percentile rank
   FULL_CONFIDENCE: 360,    // ~4 matches — at or above this: full percentile rank display
 } as const;

@@ -1,3 +1,4 @@
+import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { Link, useParams } from "react-router"
 import {
@@ -25,17 +26,23 @@ import {
 import { usePlayerDetails } from "@/hooks/use-player-details"
 import { useRadarPeers } from "@/hooks/use-radar-peers"
 import { ErrorState } from "@/components/error-state"
-import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
+import * as teams from "@/lib/teams/wc26-teams"
+import { positionsToRadarRole, type Classification } from "@/lib/players/player-mapping"
 
 import { ChartRadarGridCircle } from "@/components/player-radar"
 import { ChartAreaInteractive } from "@/components/bar-graph"
+import { ChartPlayerPercentiles } from "@/components/player-bars"
 
 export function PlayerDetailsPage() {
   const { t } = useTranslation()
   const { playerId } = useParams<{ playerId: string }>()
 
   const { player, loading, error, refetch } = usePlayerDetails(playerId)
-  const { peers, isLoading: peersLoading, error: peersError } = useRadarPeers(player?.radarRole)
+  const role = React.useMemo(() => {
+    if (!player) return undefined
+    return player.radarRole || positionsToRadarRole(player.positions, player.classification as Classification) || "ST"
+  }, [player])
+  const { peers, isLoading: peersLoading, error: peersError } = useRadarPeers(role)
   console.log(player)
 
   const initials = player
@@ -46,7 +53,7 @@ export function PlayerDetailsPage() {
       .slice(0, 2)
     : ""
   const flagUrl = player
-    ? getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
+    ? teams.getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
     : ""
 
   if (loading) {
@@ -97,7 +104,7 @@ export function PlayerDetailsPage() {
         </div>
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <Link
-            to={getTeamHref({ idCountry: player.country, teamName: player.country })}
+            to={teams.getTeamHref({ idCountry: player.country, teamName: player.country })}
             className="inline-flex items-center gap-1.5 rounded-md  py-0.5 underline cursor-pointer hover:underline-dashed hover:underline-primary"
           >
             <Avatar className="size-5 rounded-xs border border-border/50 overflow-hidden shrink-0">
@@ -294,14 +301,7 @@ export function PlayerDetailsPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <ChartRadarGridCircle player={player} peers={peers} peersLoading={peersLoading} peersError={peersError} />
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("playerDetailsPage.movementMaps", { defaultValue: "Movement maps" })}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{t("playerDetailsPage.cardContent", { defaultValue: "Card content" })}</p>
-          </CardContent>
-        </Card>
+        <ChartPlayerPercentiles player={player} peers={peers} peersLoading={peersLoading} />
 
 
         <Card>
