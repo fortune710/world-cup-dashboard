@@ -1,6 +1,5 @@
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import * as React from "react"
 import { Link, useParams } from "react-router"
 import {
   ArrowLeftIcon,
@@ -110,7 +109,7 @@ export function PlayerDetailsPage() {
             </div>
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Link
-                to={getTeamHref({ idCountry: player.country, teamName: player.country })}
+                to={teams.getTeamHref({ idCountry: player.country, teamName: player.country })}
                 className="inline-flex cursor-pointer items-center gap-1.5 rounded-md py-0.5 underline hover:underline-dashed hover:underline-primary"
               >
                 <Avatar className="size-5 shrink-0 overflow-hidden rounded-xs border border-border/50">

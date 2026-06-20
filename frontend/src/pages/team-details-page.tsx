@@ -16,6 +16,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel"
 import { Spinner } from "@/components/ui/spinner"
 import { useWc26Teams } from "@/hooks/use-wc26-teams"
 import { ErrorState } from "@/components/error-state"
@@ -192,53 +199,6 @@ export function TeamDetailsPage() {
           {team.idCountry ?? "—"} · {confed} · {t("teamsPage.group")} {team.group} · FIFA #{team.fifaRank != null ? team.fifaRank : "—"}
         </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mt-4">
-        <div className="col-span-1 md:col-span-2 flex flex-col">
-          <TeamEloHistoryChart history={eloHistory} loading={eloLoading} error={eloError} />
-        </div>
-        <div className="col-span-1 flex flex-col">
-          <Card className="flex flex-col h-full">
-            <CardHeader className="pb-2">
-              <CardTitle>{t("teamDetailsPage.squadTitle", { defaultValue: "Team Squad" })}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto max-h-[260px] pr-2">
-              {squadLoading ? (
-                <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
-                  Loading squad...
-                </div>
-              ) : squadError ? (
-                <ErrorState message={`${t("teamDetailsPage.squadError", { defaultValue: "Failed to load squad:" })} ${squadError}`} onRetry={refetchSquad} />
-              ) : squad.length === 0 ? (
-                <div className="text-muted-foreground text-sm py-4">
-                  No squad players found.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {squad.map((player) => (
-                    <Link
-                      key={player.id}
-                      to={`/players/${player.id}`}
-                      className="flex items-center justify-between p-1.5 rounded-lg hover:bg-primary/10 transition-colors border border-transparent hover:border-border/50 group"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Avatar className="size-7 rounded-full border border-border/50 overflow-hidden shrink-0">
-                          <AvatarImage src={player.avatarUrl} alt={player.name} className="object-cover" />
-                          <AvatarFallback>{player.name.slice(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1">{player.name}</span>
-                      </div>
-                      <Badge variant="outline" className="text-[10px] font-bold px-1.5 py-0.5 leading-none border-primary/40 bg-primary/5 text-primary">
-                        {player.position}
-                      </Badge>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold tracking-tight">
           {t("teamDetailsPage.topPerformersTitle", { defaultValue: "Top Performers" })}
@@ -317,6 +277,61 @@ export function TeamDetailsPage() {
           </div>
         )}
       </section>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch mt-4">
+        <div className="col-span-1 md:col-span-3 flex flex-col">
+          <TeamEloHistoryChart history={eloHistory} loading={eloLoading} error={eloError} />
+        </div>
+        <div className="col-span-1 md:col-span-3 flex flex-col">
+          <Carousel opts={{ align: "start" }} className="w-full">
+            <Card className="flex flex-col h-full">
+              <CardHeader className="flex flex-row items-center justify-between pb-4 space-y-0">
+                <CardTitle>{t("teamDetailsPage.squadTitle", { defaultValue: "Team Squad" })}</CardTitle>
+                <div className="flex items-center gap-1.5">
+                  <CarouselPrevious className="static translate-y-0 left-auto right-auto top-auto bottom-auto" />
+                  <CarouselNext className="static translate-y-0 left-auto right-auto top-auto bottom-auto" />
+                </div>
+              </CardHeader>
+              <CardContent className="pb-6">
+                {squadLoading ? (
+                  <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
+                    Loading squad...
+                  </div>
+                ) : squadError ? (
+                  <ErrorState message={`${t("teamDetailsPage.squadError", { defaultValue: "Failed to load squad:" })} ${squadError}`} onRetry={refetchSquad} />
+                ) : squad.length === 0 ? (
+                  <div className="text-muted-foreground text-sm py-4">
+                    No squad players found.
+                  </div>
+                ) : (
+                  <CarouselContent className="-ms-2 md:-ms-4">
+                    {squad.map((player) => (
+                      <CarouselItem key={player.id} className="ps-2 md:ps-4 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6">
+                        <Link
+                          to={`/players/${player.id}`}
+                          className="flex flex-col items-center justify-center p-4 rounded-xl border border-border bg-card/50 hover:bg-accent/40 hover:border-primary/30 transition-all duration-300 group text-center h-full gap-3"
+                        >
+                          <Avatar className="size-16 rounded-full border-2 border-primary/10 overflow-hidden shrink-0 group-hover:border-primary/30 transition-colors">
+                            <AvatarImage src={player.avatarUrl} alt={player.name} className="object-cover" />
+                            <AvatarFallback className="font-bold text-lg">{player.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col gap-1.5 items-center w-full min-w-0">
+                            <span className="text-sm font-semibold group-hover:text-primary transition-colors line-clamp-1 w-full">{player.name}</span>
+                            <Badge variant="outline" className="text-[10px] font-bold px-1.5 py-0.5 leading-none border-primary/40 bg-primary/5 text-primary">
+                              {player.position}
+                            </Badge>
+                          </div>
+                        </Link>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                )}
+              </CardContent>
+            </Card>
+          </Carousel>
+        </div>
+      </div>
+
+
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold tracking-tight">
