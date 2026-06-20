@@ -1,3 +1,4 @@
+import * as React from "react"
 import { useTranslation } from "react-i18next"
 import * as React from "react"
 import { Link, useParams } from "react-router"
@@ -27,10 +28,12 @@ import {
 import { usePlayerDetails } from "@/hooks/use-player-details"
 import { useRadarPeers } from "@/hooks/use-radar-peers"
 import { ErrorState } from "@/components/error-state"
-import { getTeamFlagUrl, getTeamHref } from "@/lib/teams/wc26-teams"
+import * as teams from "@/lib/teams/wc26-teams"
+import { positionsToRadarRole, type Classification } from "@/lib/players/player-mapping"
 
 import { ChartRadarGridCircle } from "@/components/player-radar"
 import { ChartAreaInteractive } from "@/components/bar-graph"
+import { ChartPlayerPercentiles } from "@/components/player-bars"
 import { PlayerCompareDialog } from "@/components/player-compare-dialog"
 
 export function PlayerDetailsPage() {
@@ -39,7 +42,12 @@ export function PlayerDetailsPage() {
   const [compareOpen, setCompareOpen] = React.useState(false)
 
   const { player, loading, error, refetch } = usePlayerDetails(playerId)
-  const { peers, isLoading: peersLoading, error: peersError } = useRadarPeers(player?.radarRole)
+  const role = React.useMemo(() => {
+    if (!player) return undefined
+    return player.radarRole || positionsToRadarRole(player.positions, player.classification as Classification) || "ST"
+  }, [player])
+  const { peers, isLoading: peersLoading, error: peersError } = useRadarPeers(role)
+  console.log(player)
 
   const initials = player
     ? player.name
@@ -49,7 +57,7 @@ export function PlayerDetailsPage() {
       .slice(0, 2)
     : ""
   const flagUrl = player
-    ? getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
+    ? teams.getTeamFlagUrl({ idCountry: player.country, teamName: "" }, 40)
     : ""
 
   if (loading) {
@@ -319,14 +327,7 @@ export function PlayerDetailsPage() {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         <ChartRadarGridCircle player={player} peers={peers} peersLoading={peersLoading} peersError={peersError} />
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("playerDetailsPage.movementMaps", { defaultValue: "Movement maps" })}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{t("playerDetailsPage.cardContent", { defaultValue: "Card content" })}</p>
-          </CardContent>
-        </Card>
+        <ChartPlayerPercentiles player={player} peers={peers} peersLoading={peersLoading} />
 
 
         <Card>

@@ -69,7 +69,7 @@ export function usePlayerDetails(playerId: string | undefined) {
         const meta = countryMetadata[infoData.country_code.toUpperCase()] || { group: "A", federation: "UEFA" };
 
         const safeClassification = (infoData.classification === "G" || infoData.classification === "D" || infoData.classification === "M" || infoData.classification === "F" ? infoData.classification : "F") as Classification;
-        const positions = infoData.positionsDetailed ?? infoData.positions_detailed ?? infoData.position ?? "";
+        const positions = infoData.positionsDetailed ?? infoData.positions_detailed ?? infoData.position ?? infoData.positions ?? "";
 
         const mapped: PlayerRow = normalizePlayer({
           id: infoData.id,

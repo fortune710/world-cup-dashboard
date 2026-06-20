@@ -13,7 +13,22 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        "lodash": "lodash-es",
+        "es-toolkit/compat/isPlainObject": "lodash-es/isPlainObject",
+        "es-toolkit/compat/sortBy": "lodash-es/sortBy",
+        "es-toolkit/compat/get": "lodash-es/get",
+        "es-toolkit/compat/throttle": "lodash-es/throttle",
+        "es-toolkit/compat/range": "lodash-es/range",
+        "es-toolkit/compat/last": "lodash-es/last",
+        "es-toolkit/compat/maxBy": "lodash-es/maxBy",
+        "es-toolkit/compat/minBy": "lodash-es/minBy",
+        "es-toolkit/compat/omit": "lodash-es/omit",
+        "es-toolkit/compat/sumBy": "lodash-es/sumBy",
+        "es-toolkit/compat/uniqBy": "lodash-es/uniqBy",
       },
+    },
+    build: {
+      sourcemap: true,
     },
     server: {
       proxy: {
