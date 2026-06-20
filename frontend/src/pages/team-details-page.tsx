@@ -24,7 +24,15 @@ import { findTeamByRouteId, getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSquadPlayers } from "@/hooks/use-squad-players"
 import { useTeamEloHistory } from "@/hooks/use-team-elo-history"
+import { useTeamTopPerformers } from "@/hooks/use-team-top-performers"
+import { useTeamMatches } from "@/hooks/use-team-matches"
+import { useTeamStatisticsRank } from "@/hooks/use-team-statistics-rank"
 import { TeamEloHistoryChart } from "@/components/team-elo-history-chart"
+import {
+  PlayerPerformanceCard,
+  type PlayerPerformance,
+} from "@/components/player-performance-card"
+import { LiveRushMatchCard } from "@/components/live-rush-match-card"
 
 const RankChangeBadge = React.memo(function RankChangeBadge({
   change,
@@ -76,6 +84,45 @@ export function TeamDetailsPage() {
   const teamCode = team?.idCountry ?? undefined
   const { players: squad, loading: squadLoading, error: squadError, refetch: refetchSquad } = useSquadPlayers(teamCode)
   const { history: eloHistory, loading: eloLoading, error: eloError } = useTeamEloHistory(teamCode)
+  const {
+    performers: topPerformers,
+    loading: topPerformersLoading,
+    error: topPerformersError,
+    refetch: refetchTopPerformers,
+  } = useTeamTopPerformers(teamCode)
+  const {
+    matches: teamMatches,
+    loading: teamMatchesLoading,
+    error: teamMatchesError,
+    refetch: refetchTeamMatches,
+  } = useTeamMatches(teamCode)
+  const {
+    data: statisticsRank,
+    loading: statisticsRankLoading,
+    error: statisticsRankError,
+    refetch: refetchStatisticsRank,
+  } = useTeamStatisticsRank(teamCode)
+
+  const performanceCards = React.useMemo<PlayerPerformance[]>(
+    () =>
+      topPerformers
+        .filter((performer): performer is NonNullable<typeof performer> => performer !== null)
+        .map((performer) => ({
+          name: performer.name,
+          position: performer.position,
+          country: performer.country,
+          rating: "rating" in performer ? performer.rating : undefined,
+          goals: "goals" in performer ? performer.goals : undefined,
+          assists: "assists" in performer ? performer.assists : undefined,
+          chancesCreated:
+            "chancesCreated" in performer ? performer.chancesCreated : undefined,
+          category: performer.category,
+          avatar: performer.avatar,
+          federation: team?.confederation ?? "—",
+          group: team?.group ?? "—",
+        })),
+    [team?.confederation, team?.group, topPerformers]
+  )
 
   if (isLoading) {
     return (
@@ -191,6 +238,110 @@ export function TeamDetailsPage() {
           </Card>
         </div>
       </div>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t("teamDetailsPage.topPerformersTitle", { defaultValue: "Top Performers" })}
+        </h2>
+        {topPerformersLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <Spinner aria-label="Loading top performers" />
+            Loading top performers...
+          </div>
+        ) : topPerformersError ? (
+          <ErrorState
+            message={`Failed to load top performers: ${topPerformersError}`}
+            onRetry={refetchTopPerformers}
+          />
+        ) : performanceCards.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">No performer data available.</p>
+        ) : (
+          <PlayerPerformanceCard playerPerformance={performanceCards} />
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t("teamDetailsPage.statisticsRankTitle", { defaultValue: "Tournament Rankings" })}
+        </h2>
+        {statisticsRankLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <Spinner aria-label="Loading statistics rank" />
+            Loading tournament rankings...
+          </div>
+        ) : statisticsRankError ? (
+          <ErrorState
+            message={`Failed to load tournament rankings: ${statisticsRankError}`}
+            onRetry={refetchStatisticsRank}
+          />
+        ) : !statisticsRank ? (
+          <p className="text-sm text-muted-foreground py-2">No ranking data available.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                label: "Goals",
+                value: statisticsRank.goals.value.toFixed(0),
+                rank: statisticsRank.goals.rank,
+              },
+              {
+                label: "Pass Accuracy",
+                value: `${statisticsRank.pass_accuracy.value.toFixed(1)}%`,
+                rank: statisticsRank.pass_accuracy.rank,
+              },
+              {
+                label: "Chances Created",
+                value: statisticsRank.chances_created.value.toFixed(0),
+                rank: statisticsRank.chances_created.rank,
+              },
+              {
+                label: "Discipline",
+                value: statisticsRank.discipline.value.toFixed(0),
+                rank: statisticsRank.discipline.rank,
+              },
+            ].map((stat) => (
+              <Card key={stat.label}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.label}
+                  </CardTitle>
+                  <div className="flex items-end justify-between gap-2">
+                    <span className="text-2xl font-semibold tabular-nums">{stat.value}</span>
+                    <Badge variant="outline" className="tabular-nums">
+                      #{stat.rank} / {statisticsRank.total_teams}
+                    </Badge>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold tracking-tight">
+          {t("teamDetailsPage.matchesTitle", { defaultValue: "Match Results" })}
+        </h2>
+        {teamMatchesLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+            <Spinner aria-label="Loading team matches" />
+            Loading matches...
+          </div>
+        ) : teamMatchesError ? (
+          <ErrorState
+            message={`Failed to load matches: ${teamMatchesError}`}
+            onRetry={refetchTeamMatches}
+          />
+        ) : teamMatches.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">No completed matches yet.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {teamMatches.map((match) => (
+              <LiveRushMatchCard key={match.id} match={match} />
+            ))}
+          </div>
+        )}
+      </section>
 
 
     </div >

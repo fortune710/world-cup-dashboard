@@ -110,6 +110,13 @@ export interface PlayerRow {
   displayPosition?: DisplayPosition
   radarRole?: RadarRole
   statistics?: PlayerStatistics
+  dateOfBirth?: string | null
+  age?: number | null
+  weightKg?: number | null
+  heightCm?: number | null
+  foot?: string | null
+  clubName?: string | null
+  marketValue?: number | null
 }
 
 export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
