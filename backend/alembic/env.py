@@ -13,6 +13,10 @@ from db.models.teams import Team
 from db.models.matches import Match
 from db.models.players import Player
 from db.models.elo import TeamEloHistory
+from db.models.historical_matches import HistoricalMatch
+from db.models.fifa_ranking_snapshot import FifaRankingSnapshot
+from db.models.ml_elo_history import MlEloHistory
+from db.models.training_examples import TrainingExample
 
 # this is the Alembic Config object, which provides access to the values within the .ini file in use.
 config = context.config
