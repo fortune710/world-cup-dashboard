@@ -9,8 +9,20 @@ class Settings:
     PLAYER_STATS_UPDATES_QUEUE = os.getenv("PLAYER_STATS_UPDATES_QUEUE", "player_stats_updates")
     MATCHDAY_STATS_QUEUE = os.getenv("MATCHDAY_STATS_QUEUE", "matchday_stats")
     WC_LEAGUE_ID = 16
+    WC_SEASON_ID_2010 = 2531
+    WC_SEASON_ID_2014 = 7528
+    WC_SEASON_ID_2018 = 15586
     WC_SEASON_ID_2022 = 41087
     WC_SEASON_ID_2026 = 58210
+
+    # Historical World Cups included in the match-outcome ML training corpus,
+    # oldest first. Each id was discovered via League(api, league_id=WC_LEAGUE_ID).get_seasons().
+    ML_TRAINING_SEASON_IDS = {
+        2010: WC_SEASON_ID_2010,
+        2014: WC_SEASON_ID_2014,
+        2018: WC_SEASON_ID_2018,
+        2022: WC_SEASON_ID_2022,
+    }
 
     # MLflow (match outcome predictor)
     MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")

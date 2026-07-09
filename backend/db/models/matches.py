@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import BigInteger, Boolean, Column, Integer, String, DateTime, ForeignKey, Enum
+from sqlalchemy import BigInteger, Boolean, Column, Index, Integer, String, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from config.db import Base
 from db.models.teams import Team
@@ -14,6 +14,8 @@ class MatchStatus(enum.Enum):
 
 class Match(Base):
     __tablename__ = "matches"
+    # serves the bracket query: WHERE round IN (...) ORDER BY kickoff_utc
+    __table_args__ = (Index("ix_matches_round_kickoff_utc", "round", "kickoff_utc"),)
 
     id = Column(Integer, primary_key=True, index=True)
     round = Column(String)

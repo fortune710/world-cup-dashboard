@@ -5,11 +5,12 @@ from zoneinfo import ZoneInfo
 from typing import Any
 
 from sqlalchemy import Float, Integer, func, text, or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, aliased, joinedload
 
 from db.models.matchday_stats import MatchdayStats
 from db.models.matches import Match, MatchStatus
 from db.models.players import Player
+from db.models.teams import Team
 
 logger = logging.getLogger(__name__)
 
@@ -517,9 +518,15 @@ def _fetch_top_matchday_stat_leader(
     return payload
 
 
-def _resolve_bracket_team_payload(team, fallback_code: str | None, side: str, match_id: int) -> dict:
-    raw_code = (getattr(team, "code", None) or fallback_code or "").strip()
-    raw_name = (getattr(team, "name", None) or "").strip()
+def _resolve_bracket_team_payload(
+    team_name: str | None,
+    team_code: str | None,
+    fallback_code: str | None,
+    side: str,
+    match_id: int,
+) -> dict:
+    raw_code = (team_code or fallback_code or "").strip()
+    raw_name = (team_name or "").strip()
     display_code = raw_code or "TBD"
     display_name = raw_name or display_code
 
@@ -538,40 +545,35 @@ def _resolve_bracket_team_payload(team, fallback_code: str | None, side: str, ma
     return {"name": display_name, "code": display_code}
 
 
-def _serialize_bracket_match(match: Match) -> dict:
-    logger.info(
-        {
-            "message": "Serializing bracket match",
-            "match_id": match.id,
-            "round": match.round,
-        }
+def _serialize_bracket_match(row) -> dict:
+    """
+    Shape a slim bracket query row into the response payload. Only the
+    fields the bracket frontend consumes are included.
+    """
+    home_team = _resolve_bracket_team_payload(
+        row.home_team_name, row.home_team_resolved_code, row.home_team_code, "home", row.id
+    )
+    away_team = _resolve_bracket_team_payload(
+        row.away_team_name, row.away_team_resolved_code, row.away_team_code, "away", row.id
     )
     serialized_match = {
-        "id": match.id,
-        "round": match.round,
-        "group": match.group,
-        "home_team_code": _resolve_bracket_team_payload(match.home_team, match.home_team_code, "home", match.id)[
-            "code"
-        ],
-        "away_team_code": _resolve_bracket_team_payload(match.away_team, match.away_team_code, "away", match.id)[
-            "code"
-        ],
-        "stadium": match.stadium,
-        "kickoff_utc": match.kickoff_utc,
-        "status": match.status.value if hasattr(match.status, "value") else match.status,
-        "phase": match.phase,
-        "home_score": match.home_score,
-        "away_score": match.away_score,
-        "home_pen": match.home_pen,
-        "away_pen": match.away_pen,
-        "home_team": _resolve_bracket_team_payload(match.home_team, match.home_team_code, "home", match.id),
-        "away_team": _resolve_bracket_team_payload(match.away_team, match.away_team_code, "away", match.id),
+        "id": row.id,
+        "round": row.round,
+        "home_team_code": home_team["code"],
+        "away_team_code": away_team["code"],
+        "status": row.status.value if hasattr(row.status, "value") else row.status,
+        "home_score": row.home_score,
+        "away_score": row.away_score,
+        "home_pen": row.home_pen,
+        "away_pen": row.away_pen,
+        "home_team": home_team,
+        "away_team": away_team,
     }
 
     logger.info(
         {
             "message": "Serialized bracket match",
-            "match_id": match.id,
+            "match_id": serialized_match["id"],
             "home_team_code": serialized_match["home_team_code"],
             "away_team_code": serialized_match["away_team_code"],
         }
@@ -616,23 +618,41 @@ def get_bracket_matches(db: Session):
     """
     Retrieve all knockout stage matches and group them by round.
     Knockout rounds include: R32, R16, QF, SF, 3rd place, and Final.
+    Selects only the columns the bracket frontend consumes.
     """
     logger.info({"message": "Fetching all knockout stage matches for bracket"})
 
     try:
-        matches = (
-            db.query(Match)
-            .options(joinedload(Match.home_team), joinedload(Match.away_team))
+        home_team = aliased(Team)
+        away_team = aliased(Team)
+        rows = (
+            db.query(
+                Match.id,
+                Match.round,
+                Match.home_team_code,
+                Match.away_team_code,
+                Match.status,
+                Match.home_score,
+                Match.away_score,
+                Match.home_pen,
+                Match.away_pen,
+                home_team.name.label("home_team_name"),
+                home_team.code.label("home_team_resolved_code"),
+                away_team.name.label("away_team_name"),
+                away_team.code.label("away_team_resolved_code"),
+            )
+            .outerjoin(home_team, Match.home_team_code == home_team.code)
+            .outerjoin(away_team, Match.away_team_code == away_team.code)
             .filter(Match.round.in_(BRACKET_KNOCKOUT_ROUNDS))
             .order_by(Match.kickoff_utc.asc())
             .all()
         )
         bracket = {round_key: [] for round_key in BRACKET_DISPLAY_ORDER}
 
-        for match in matches:
-            normalized_round = BRACKET_ROUND_NAME_MAP.get(match.round)
+        for row in rows:
+            normalized_round = BRACKET_ROUND_NAME_MAP.get(row.round)
             if normalized_round:
-                bracket[normalized_round].append(_serialize_bracket_match(match))
+                bracket[normalized_round].append(_serialize_bracket_match(row))
 
         logger.info(
             {
