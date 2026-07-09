@@ -81,6 +81,7 @@ export interface BracketMatchViewModel {
   winnerSide: BracketMatchWinnerSide
   advancementLabel: string | null
   isCompleted: boolean
+  isLive: boolean
 }
 
 export interface BracketRoundViewModel {
@@ -353,6 +354,7 @@ export function buildBracketViewModel(
             roundsByKey
           ),
           isCompleted: isBracketMatchCompleted(match.status),
+          isLive: String(match.status ?? "").toLowerCase() === "live",
         }
       }),
     })

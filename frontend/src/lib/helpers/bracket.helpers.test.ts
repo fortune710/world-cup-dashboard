@@ -107,4 +107,26 @@ describe("bracket helpers", () => {
       })
     ).toBe("home")
   })
+
+  it("buildBracketViewModel flags in-progress matches as live", () => {
+    const rounds = buildBracketViewModel([
+      {
+        round: "R16",
+        matches: [
+          {
+            id: 9,
+            round: "R16",
+            home_team: { name: "Canada", code: "CAN" },
+            away_team: { name: "Morocco", code: "MAR" },
+            home_score: 0,
+            away_score: 2,
+            status: "live",
+          },
+        ],
+      },
+    ])
+
+    expect(rounds[0].matches[0].isLive).toBe(true)
+    expect(rounds[0].matches[0].isCompleted).toBe(false)
+  })
 })

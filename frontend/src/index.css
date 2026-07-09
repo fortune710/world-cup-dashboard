@@ -253,3 +253,18 @@
     cursor: pointer;
   }
 }
+
+@keyframes maze-confetti-fall {
+  0% { transform: translateY(-24px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(640px) rotate(680deg); opacity: 0.85; }
+}
+
+@keyframes maze-champion-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes maze-banner-in {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
