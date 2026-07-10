@@ -4,9 +4,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from server import image_browser
+from server.logging_config import configure_logging
 from server.routes import predictions, teams, matches, ratings, players, bracket, image_proxy
 
 
+configure_logging()
 logger = logging.getLogger(__name__)
 
 

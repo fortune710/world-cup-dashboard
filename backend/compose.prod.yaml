@@ -192,8 +192,34 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on:
       - prometheus
+      - loki
+    restart: always
+
+  loki:
+    image: grafana/loki:3.3.2
+    container_name: world_cup_loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./monitoring/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    restart: always
+
+  alloy:
+    image: grafana/alloy:v1.5.1
+    container_name: world_cup_alloy
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    volumes:
+      - ./monitoring/alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
     restart: always
 
   nginx:
@@ -214,3 +240,5 @@ volumes:
   prometheus_data:
   grafana_data:
   airflow_logs:
+  loki_data:
+  alloy_data:
