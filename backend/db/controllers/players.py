@@ -735,3 +735,74 @@ def get_radar_peers_by_role(db: Session, role: str) -> list[dict]:
     )
     return peers_payload
 
+
+def get_player_match_history(db: Session, player_id: int) -> list[dict]:
+    from db.models.matches import Match, MatchStatus
+    from db.models.matchday_stats import MatchdayStats
+
+    logger.info({"message": "Fetching player match history", "player_id": player_id})
+
+    player = db.query(Player).filter(Player.id == player_id).first()
+    if player is None or not player.country_code:
+        return []
+
+    team_code = player.country_code
+
+    matches = (
+        db.query(Match)
+        .filter(
+            sa.or_(Match.home_team_code == team_code, Match.away_team_code == team_code),
+            Match.status == MatchStatus.COMPLETED,
+        )
+        .order_by(Match.kickoff_utc.asc(), Match.id.asc())
+        .all()
+    )
+
+    match_sofascore_ids = [m.sofascore_id for m in matches if m.sofascore_id is not None]
+    stats_by_match_id = {}
+    if match_sofascore_ids:
+        stats_rows = (
+            db.query(MatchdayStats)
+            .filter(
+                MatchdayStats.player_id == player_id,
+                MatchdayStats.match_id.in_(match_sofascore_ids),
+            )
+            .all()
+        )
+        stats_by_match_id = {row.match_id: (row.statistics or {}) for row in stats_rows}
+
+    history = []
+    for match in matches:
+        is_home = match.home_team_code == team_code
+        opponent_code = match.away_team_code if is_home else match.home_team_code
+        team_score = match.home_score if is_home else match.away_score
+        opponent_score = match.away_score if is_home else match.home_score
+        stats = stats_by_match_id.get(match.sofascore_id, {})
+
+        history.append({
+            "match_id": match.id,
+            "round": match.round,
+            "phase": match.phase,
+            "kickoff_utc": match.kickoff_utc.isoformat() if match.kickoff_utc else None,
+            "opponent": opponent_code,
+            "team_score": team_score,
+            "opponent_score": opponent_score,
+            "clean_sheet": (opponent_score == 0) if opponent_score is not None else None,
+            "rating": stats.get("rating"),
+            "minutes_played": stats.get("minutes_played"),
+            "goal_contributions": stats.get("goal_contributions"),
+            "tackles": stats.get("total_tackle"),
+            "interceptions": stats.get("interception_won"),
+            "pass_accuracy": stats.get("pass_accuracy"),
+            "has_player_stats": match.sofascore_id in stats_by_match_id,
+        })
+
+    logger.info(
+        {
+            "message": "Fetched player match history",
+            "player_id": player_id,
+            "count": len(history),
+        }
+    )
+    return history
+
