@@ -1,9 +1,10 @@
 import logging
 from urllib.parse import urlparse
 
-import requests
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
+
+from server.image_browser import fetch_image_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -15,18 +16,9 @@ ALLOWED_IMAGE_HOSTS = {
     "flagcdn.com",
 }
 
-IMAGE_REQUEST_HEADERS = {
-    "Referer": "https://www.sofascore.com/",
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/123.0.0.0 Safari/537.36"
-    ),
-}
-
 
 @router.get("/image-proxy")
-def proxy_image(url: str = Query(..., min_length=1, description="Image URL to proxy")):
+async def proxy_image(url: str = Query(..., min_length=1, description="Image URL to proxy")):
     logger.info({
         "message": "Proxying image request",
         "url": url,
@@ -49,8 +41,16 @@ def proxy_image(url: str = Query(..., min_length=1, description="Image URL to pr
         raise HTTPException(status_code=400, detail="Image host not allowed")
 
     try:
-        upstream = requests.get(url, headers=IMAGE_REQUEST_HEADERS, timeout=10)
-    except requests.RequestException as exc:
+        content, content_type = await fetch_image_bytes(url)
+    except ValueError as exc:
+        logger.warning({
+            "message": "Upstream image request returned non-success status",
+            "url": url,
+            "error": str(exc),
+        })
+        status_code = 404 if str(exc) == "upstream_status_404" else 502
+        raise HTTPException(status_code=status_code, detail="Image unavailable") from None
+    except Exception as exc:
         logger.error({
             "message": "Failed to fetch image from upstream",
             "url": url,
@@ -58,25 +58,15 @@ def proxy_image(url: str = Query(..., min_length=1, description="Image URL to pr
         })
         raise HTTPException(status_code=502, detail="Failed to fetch image") from None
 
-    if upstream.status_code != 200:
-        logger.warning({
-            "message": "Upstream image request returned non-success status",
-            "url": url,
-            "status_code": upstream.status_code,
-        })
-        status_code = 404 if upstream.status_code == 404 else 502
-        raise HTTPException(status_code=status_code, detail="Image unavailable")
-
-    content_type = upstream.headers.get("Content-Type", "image/jpeg")
     logger.info({
         "message": "Fetched image from upstream",
         "url": url,
         "content_type": content_type,
-        "byte_length": len(upstream.content),
+        "byte_length": len(content),
     })
 
     return Response(
-        content=upstream.content,
+        content=content,
         media_type=content_type,
         headers={"Cache-Control": "public, max-age=86400"},
     )

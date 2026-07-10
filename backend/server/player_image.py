@@ -1,19 +1,10 @@
 import logging
 
-import requests
+from server.image_browser import fetch_image_bytes
 
 logger = logging.getLogger(__name__)
 
-SOFASCORE_IMAGE_REFERER = "https://www.sofascore.com/"
 SOFASCORE_PLAYER_IMAGE_TEMPLATE = "https://img.sofascore.com/api/v1/player/{player_id}/image"
-DEFAULT_IMAGE_REQUEST_HEADERS = {
-    "Referer": SOFASCORE_IMAGE_REFERER,
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/123.0.0.0 Safari/537.36"
-    ),
-}
 
 
 def build_player_image_api_path(player_id: int) -> str:
@@ -42,7 +33,7 @@ def resolve_player_image_source_url(player_id: int, stored_url: str | None) -> s
     return source_url
 
 
-def fetch_player_image_bytes(source_url: str) -> tuple[bytes, str]:
+async def fetch_player_image_bytes(source_url: str) -> tuple[bytes, str]:
     logger.info(
         {
             "message": "Fetching player image from upstream",
@@ -50,12 +41,16 @@ def fetch_player_image_bytes(source_url: str) -> tuple[bytes, str]:
         }
     )
     try:
-        upstream = requests.get(
-            source_url,
-            headers=DEFAULT_IMAGE_REQUEST_HEADERS,
-            timeout=10,
+        content, content_type = await fetch_image_bytes(source_url)
+    except ValueError:
+        logger.warning(
+            {
+                "message": "Upstream player image request returned non-success status",
+                "source_url": source_url,
+            }
         )
-    except requests.RequestException as exc:
+        raise
+    except Exception as exc:
         logger.error(
             {
                 "message": "Failed to fetch player image from upstream",
@@ -65,23 +60,12 @@ def fetch_player_image_bytes(source_url: str) -> tuple[bytes, str]:
         )
         raise
 
-    if upstream.status_code != 200:
-        logger.warning(
-            {
-                "message": "Upstream player image request returned non-success status",
-                "source_url": source_url,
-                "status_code": upstream.status_code,
-            }
-        )
-        raise ValueError(f"upstream_status_{upstream.status_code}")
-
-    content_type = upstream.headers.get("Content-Type", "image/jpeg")
     logger.info(
         {
             "message": "Fetched player image from upstream",
             "source_url": source_url,
             "content_type": content_type,
-            "byte_length": len(upstream.content),
+            "byte_length": len(content),
         }
     )
-    return upstream.content, content_type
+    return content, content_type

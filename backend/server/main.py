@@ -1,13 +1,23 @@
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from server import image_browser
 from server.routes import predictions, teams, matches, ratings, players, bracket, image_proxy
 
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="World Cup Dashboard API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await image_browser.startup()
+    yield
+    await image_browser.shutdown()
+
+
+app = FastAPI(title="World Cup Dashboard API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

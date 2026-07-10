@@ -1,7 +1,7 @@
 import unittest
 import logging
 from types import SimpleNamespace
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from fastapi.testclient import TestClient
 
@@ -219,6 +219,7 @@ class TestPlayersRoutes(unittest.TestCase):
         with patch.object(players_route, "get_player_by_id", return_value=player), patch.object(
             players_route,
             "fetch_player_image_bytes",
+            new_callable=AsyncMock,
             return_value=(b"fake-image", "image/jpeg"),
         ):
             response = self.client.get("/players/7/image")
