@@ -1,5 +1,6 @@
+import asyncio
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from server.player_image import (
     build_player_image_api_path,
@@ -23,29 +24,25 @@ class TestPlayerImageHelpers(unittest.TestCase):
         source = resolve_player_image_source_url(42, None)
         self.assertEqual(source, "https://img.sofascore.com/api/v1/player/42/image")
 
-    @patch("server.player_image.requests.get")
-    def test_fetch_player_image_bytes_returns_payload(self, mock_get):
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.content = b"image-bytes"
-        mock_get.return_value.headers = {"Content-Type": "image/png"}
+    @patch("server.player_image.fetch_image_bytes", new_callable=AsyncMock)
+    def test_fetch_player_image_bytes_returns_payload(self, mock_fetch):
+        mock_fetch.return_value = (b"image-bytes", "image/png")
 
-        content, content_type = fetch_player_image_bytes(
-            "https://img.sofascore.com/api/v1/player/42/image"
+        content, content_type = asyncio.run(
+            fetch_player_image_bytes("https://img.sofascore.com/api/v1/player/42/image")
         )
 
         self.assertEqual(content, b"image-bytes")
         self.assertEqual(content_type, "image/png")
-        mock_get.assert_called_once()
-        self.assertEqual(
-            mock_get.call_args.kwargs["headers"]["Referer"],
-            "https://www.sofascore.com/",
+        mock_fetch.assert_awaited_once_with(
+            "https://img.sofascore.com/api/v1/player/42/image"
         )
 
-    @patch("server.player_image.requests.get")
-    def test_fetch_player_image_bytes_raises_for_non_success(self, mock_get):
-        mock_get.return_value.status_code = 403
-        mock_get.return_value.content = b"forbidden"
-        mock_get.return_value.headers = {"Content-Type": "application/json"}
+    @patch("server.player_image.fetch_image_bytes", new_callable=AsyncMock)
+    def test_fetch_player_image_bytes_raises_for_non_success(self, mock_fetch):
+        mock_fetch.side_effect = ValueError("upstream_status_403")
 
         with self.assertRaises(ValueError):
-            fetch_player_image_bytes("https://img.sofascore.com/api/v1/player/42/image")
+            asyncio.run(
+                fetch_player_image_bytes("https://img.sofascore.com/api/v1/player/42/image")
+            )

@@ -1,7 +1,6 @@
 import logging
 from typing import Optional, Literal
 
-import requests
 from fastapi import APIRouter, Depends, Path, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
@@ -145,7 +144,7 @@ def search_players(
 
 
 @router.get("/{player_id}/image")
-def get_player_image(
+async def get_player_image(
     player_id: int = Path(..., gt=0, description="Positive integer player ID"),
     db: Session = Depends(get_db),
 ):
@@ -161,12 +160,12 @@ def get_player_image(
 
     source_url = resolve_player_image_source_url(player_id, player.image_url)
     try:
-        image_bytes, content_type = fetch_player_image_bytes(source_url)
-    except requests.RequestException:
-        raise HTTPException(status_code=502, detail="Failed to fetch player image.") from None
+        image_bytes, content_type = await fetch_player_image_bytes(source_url)
     except ValueError as exc:
         status_code = 404 if str(exc) == "upstream_status_404" else 502
         raise HTTPException(status_code=status_code, detail="Player image unavailable.") from None
+    except Exception:
+        raise HTTPException(status_code=502, detail="Failed to fetch player image.") from None
 
     logger.info(
         {
