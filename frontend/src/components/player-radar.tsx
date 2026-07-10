@@ -20,14 +20,15 @@ import { type PlayerRow } from "@/pages/players-page"
 import { positionsToRadarRole, type Classification, type RadarRole } from "@/lib/players/player-mapping"
 import { computeRadarData } from "@/lib/players/radar-calculations"
 import { applyPercentiles } from "@/lib/players/radar-percentiles"
+import type { MetricType } from "@/lib/players/radar-metrics"
 
 
-const formatMetricValue = (key: string, val: number | null): string => {
+const formatMetricValue = (key: string, val: number | null, type?: MetricType): string => {
     if (val === null || val === undefined) return "N/A"
     if (key === "rating") return val.toFixed(2)
     if (
-        key.endsWith("_pct") || 
-        key === "pass_acc" || 
+        key.endsWith("_pct") ||
+        key === "pass_acc" ||
         key === "long_ball_acc" ||
         key === "tackle_win_pct" ||
         key === "aerial_win_pct"
@@ -36,6 +37,9 @@ const formatMetricValue = (key: string, val: number | null): string => {
     }
     if (key === "penalty_save_r" || key === "shot_acc" || key === "conversion") {
         return `${(val * 100).toFixed(1)}%`
+    }
+    if (type === "per90") {
+        return `${val.toFixed(2)}/90`
     }
     return val.toFixed(2)
 }
@@ -69,13 +73,13 @@ function normalizeAbsolute(rawValue: number | null, key: string): number {
 const CustomRadarTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload
-        const rawFormatted = formatMetricValue(data.key, data.rawValue)
+        const rawFormatted = formatMetricValue(data.key, data.rawValue, data.type)
         const suffix = (data.percentile !== null && data.percentile !== undefined)
             ? `${data.percentile}th percentile`
             : `small sample`
-            
+
         const avgDisplay = data.averageValue !== null && data.averageValue !== undefined
-            ? ` | Avg: ${formatMetricValue(data.key, data.averageValue)}`
+            ? ` | Avg: ${formatMetricValue(data.key, data.averageValue, data.type)}`
             : ''
 
         return (
@@ -139,6 +143,7 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false,
         return spokesToRender.map((spoke) => ({
             subject: spoke.label,
             key: spoke.key,
+            type: spoke.type,
             rawValue: spoke.rawValue,
             percentile: spoke.percentile,
             averageValue: spoke.averageValue,

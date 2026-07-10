@@ -1,10 +1,11 @@
 import type { RadarRole } from "./player-mapping";
 import type { PlayerStatistics } from "@/types/player-statistics";
-import { getTemplateForRole, RADAR_MINUTE_TIERS, type RadarMetric } from "./radar-metrics";
+import { getTemplateForRole, RADAR_MINUTE_TIERS, type RadarMetric, type MetricType } from "./radar-metrics";
 
 export interface RadarSpokeValue {
   key: string;
   label: string;
+  type: MetricType;
   rawValue: number | null;    // the computed per-90/percentage/rate value
   percentile: number | null;  // computed against peers
   averageValue?: number | null; // peer average
@@ -95,6 +96,7 @@ export function computeRadarData(
     return {
       key: metric.key,
       label: metric.label,
+      type: metric.type,
       rawValue,
       percentile: null,
       higherIsBetter: metric.higherIsBetter,

@@ -23,7 +23,7 @@ const fetcher = (url: string): Promise<RadarPeersListResponse> =>
 
 export function useRadarPeers(role: RadarRole | undefined) {
   const { data, error, isLoading } = useSWR<RadarPeersListResponse>(
-    role ? `${API_BASE_URL}/players/radar-peers?role=${role}&min_minutes=90` : null,
+    role ? `${API_BASE_URL}/players/radar-peers?role=${role}&min_minutes=180` : null,
     fetcher,
     {
       revalidateOnFocus: false,
