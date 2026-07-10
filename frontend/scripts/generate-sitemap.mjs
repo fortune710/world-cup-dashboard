@@ -1,11 +1,15 @@
 import { writeFileSync } from "node:fs"
 import { resolve } from "node:path"
-import { loadEnvFile } from "node:process"
+import process from "node:process"
 
-try {
-  loadEnvFile()
-} catch {
-  // Ignore if .env is missing
+// Bun (this project's build runtime) auto-loads .env files and has no
+// process.loadEnvFile; only call it when running under real Node.
+if (typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile()
+  } catch {
+    // Ignore if .env is missing
+  }
 }
 
 const LOCALHOST_ORIGINS = new Set([
