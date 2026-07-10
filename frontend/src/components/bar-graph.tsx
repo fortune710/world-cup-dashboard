@@ -248,14 +248,16 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
     const matchHistory = React.useMemo(() => {
         let groupCount = 0
         return rawMatches.map((m) => {
-            const isGroup = m.round === "Group"
+            // Backend round strings aren't consistently cased ("group" vs "Group"),
+            // so match case-insensitively rather than against one exact literal.
+            const isGroup = (m.round ?? "").toLowerCase() === "group"
             if (isGroup) groupCount += 1
             const matchName = isGroup
                 ? `M${groupCount}`
                 : (m.round ? (ROUND_ABBREVIATIONS[m.round] ?? m.round) : "Match")
             return {
                 matchName,
-                round: m.round,
+                isGroup,
                 opponent: m.opponent ?? "OPP",
                 // null (not 0) when this match's per-player stats haven't been
                 // ingested yet, so the chart shows a gap instead of a fake drop to 0.
@@ -271,10 +273,10 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
 
     const filteredData = React.useMemo(() => {
         if (stage === "group") {
-            return matchHistory.filter((m) => m.round === "Group")
+            return matchHistory.filter((m) => m.isGroup)
         }
         if (stage === "knockout") {
-            return matchHistory.filter((m) => m.round !== "Group")
+            return matchHistory.filter((m) => !m.isGroup)
         }
         return matchHistory
     }, [matchHistory, stage])
@@ -359,7 +361,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                             <SelectItem value="group" className="rounded-lg">
                                 {t("playerDetailsPage.groupStage", { defaultValue: "Group Stage" })}
                             </SelectItem>
-                            {matchHistory.some((m) => m.round !== "Group") && (
+                            {matchHistory.some((m) => !m.isGroup) && (
                                 <SelectItem value="knockout" className="rounded-lg">
                                     {t("playerDetailsPage.knockoutStage", { defaultValue: "Knockout Stage" })}
                                 </SelectItem>
