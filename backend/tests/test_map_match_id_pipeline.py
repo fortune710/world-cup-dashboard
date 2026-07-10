@@ -165,6 +165,7 @@ class TestMapMatchIdPipelineExtractFixtures(TestCase):
                 Exception("Failed to fetch /unique-tournament/16/season/58210/events/round/5: 404"),
             ]
         )
+        fake_league.cup_tree = AsyncMock(return_value={"cupTrees": []})
 
         with patch("sofascore_wrapper.api.SofascoreAPI", return_value=fake_api), patch(
             "sofascore_wrapper.league.League", return_value=fake_league
@@ -175,7 +176,72 @@ class TestMapMatchIdPipelineExtractFixtures(TestCase):
         self.assertEqual(fixtures[0]["id"], 9001)
         fake_league.rounds.assert_awaited_once()
         self.assertEqual(fake_league.league_fixtures_per_round.await_count, 2)
+        fake_league.cup_tree.assert_awaited_once()
         fake_api.close.assert_awaited_once()
+
+    def test_fetch_cup_tree_fixtures_parses_knockout_blocks(self):
+        module = load_map_match_id_pipeline_module()
+        fake_league = Mock()
+        fake_league.cup_tree = AsyncMock(return_value={
+            "cupTrees": [
+                {
+                    "rounds": [
+                        {
+                            "description": "Round of 32",
+                            "blocks": [
+                                {
+                                    "events": [12813014],
+                                    "seriesStartDateTimestamp": 1782765000,
+                                    "participants": [
+                                        {"order": 1, "team": {"id": 4711, "name": "Germany"}},
+                                        {"order": 2, "team": {"id": 4789, "name": "Paraguay"}},
+                                    ],
+                                },
+                                {
+                                    # Not yet played / no event id assigned -- should be skipped
+                                    "events": [],
+                                    "participants": [
+                                        {"order": 1, "team": {"id": 1, "name": "TBD A"}},
+                                        {"order": 2, "team": {"id": 2, "name": "TBD B"}},
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            "description": "Final",
+                            "blocks": [
+                                {
+                                    # Only one participant resolved so far -- should be skipped
+                                    "events": [],
+                                    "participants": [
+                                        {"order": 1, "team": {"id": 4711, "name": "Germany"}},
+                                    ],
+                                }
+                            ],
+                        },
+                    ]
+                }
+            ]
+        })
+
+        fixtures = module.asyncio.run(module.fetch_cup_tree_fixtures(fake_league, 58210))
+
+        self.assertEqual(len(fixtures), 1)
+        fixture = fixtures[0]
+        self.assertEqual(fixture["id"], 12813014)
+        self.assertEqual(fixture["homeTeam"]["id"], 4711)
+        self.assertEqual(fixture["awayTeam"]["id"], 4789)
+        self.assertEqual(fixture["startTimestamp"], 1782765000)
+        self.assertEqual(fixture["roundInfo"]["name"], "Round of 32")
+
+    def test_fetch_cup_tree_fixtures_returns_empty_on_error(self):
+        module = load_map_match_id_pipeline_module()
+        fake_league = Mock()
+        fake_league.cup_tree = AsyncMock(side_effect=Exception("boom"))
+
+        fixtures = module.asyncio.run(module.fetch_cup_tree_fixtures(fake_league, 58210))
+
+        self.assertEqual(fixtures, [])
 
 
 class TestMapMatchIdPipelineLoad(TestCase):
