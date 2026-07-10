@@ -30,6 +30,7 @@ import { positionsToRadarRole, type Classification, type RadarRole } from "@/lib
 import { computeRadarData } from "@/lib/players/radar-calculations"
 import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 import { cn } from "@/lib/utils"
+import { useInViewAnimation } from "@/hooks/use-in-view-animation"
 
 const COMPARE_COLORS = {
   primary: "var(--primary)",
@@ -463,14 +464,12 @@ function TournamentStatBar({
 export function PlayerTournamentCompare({
   primaryPlayer,
   comparePlayer,
-  animationKey,
 }: {
   primaryPlayer: PlayerRow
   comparePlayer: PlayerRow
-  animationKey: string
 }) {
   const { t } = useTranslation()
-  const { active, reduceMotion } = useCompareEnterAnimation(animationKey)
+  const { ref: inViewRef, active, reduceMotion } = useInViewAnimation<HTMLDivElement>()
   const isGoalkeeper =
     primaryPlayer.position === "GK" || comparePlayer.position === "GK"
 
@@ -523,6 +522,7 @@ export function PlayerTournamentCompare({
   }
 
   return (
+    <div ref={inViewRef}>
     <Card className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-bold tracking-tight">
@@ -546,6 +546,7 @@ export function PlayerTournamentCompare({
         ))}
       </CardContent>
     </Card>
+    </div>
   )
 }
 
@@ -556,6 +557,7 @@ interface ChartRadarCompareProps {
 
 export function ChartRadarCompare({ primaryPlayer, comparePlayer }: ChartRadarCompareProps) {
   const { t } = useTranslation()
+  const { ref: inViewRef, active: inView } = useInViewAnimation<HTMLDivElement>()
 
   const chartConfig = React.useMemo(
     () =>
@@ -590,6 +592,7 @@ export function ChartRadarCompare({ primaryPlayer, comparePlayer }: ChartRadarCo
   const role = resolvePlayerRole(primaryPlayer)
 
   return (
+    <div ref={inViewRef}>
     <Card className="flex h-full flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-bold tracking-tight">
@@ -623,6 +626,8 @@ export function ChartRadarCompare({ primaryPlayer, comparePlayer }: ChartRadarCo
           <p className="text-sm text-muted-foreground">
             {t("playerCompare.noStats", { defaultValue: "Stats unavailable for comparison." })}
           </p>
+        ) : !inView ? (
+          <div className="mx-auto aspect-square w-full max-w-[300px]" />
         ) : (
           <ChartContainer config={chartConfig} className="mx-auto aspect-square w-full max-w-[300px]">
             <RadarChart
@@ -694,6 +699,7 @@ export function ChartRadarCompare({ primaryPlayer, comparePlayer }: ChartRadarCo
         )}
       </CardContent>
     </Card>
+    </div>
   )
 }
 
@@ -717,7 +723,6 @@ export function PlayerCompareAnalysisGrid({
       <PlayerTournamentCompare
         primaryPlayer={primaryPlayer}
         comparePlayer={comparePlayer}
-        animationKey={animationKey}
       />
     </div>
   )

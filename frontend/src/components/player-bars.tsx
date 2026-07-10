@@ -16,6 +16,10 @@ import { positionsToRadarRole, type Classification, type RadarRole } from "@/lib
 import { computeRadarData } from "@/lib/players/radar-calculations"
 import { applyPercentiles } from "@/lib/players/radar-percentiles"
 import type { MetricType } from "@/lib/players/radar-metrics"
+import { useInViewAnimation } from "@/hooks/use-in-view-animation"
+
+const BAR_STAGGER_MS = 60
+const BAR_DURATION_MS = 700
 
 const formatMetricValue = (key: string, val: number | null, type?: MetricType): string => {
     if (val === null || val === undefined) return "N/A"
@@ -101,6 +105,7 @@ export function ChartPlayerPercentiles({
     peersLoading = false,
 }: ChartPlayerPercentilesProps) {
     const { t } = useTranslation()
+    const { ref: inViewRef, active: inView, reduceMotion } = useInViewAnimation<HTMLDivElement>()
 
     const role = React.useMemo(() => {
         return player.radarRole || positionsToRadarRole(player.positions, player.classification as Classification) || "ST"
@@ -160,6 +165,7 @@ export function ChartPlayerPercentiles({
     }, [spokesToRender])
 
     return (
+        <div ref={inViewRef}>
         <Card className="flex flex-col h-full">
             <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-bold tracking-tight flex items-center gap-2">
@@ -175,7 +181,7 @@ export function ChartPlayerPercentiles({
             </CardHeader>
             <CardContent className="flex-1 pb-4 min-h-[350px]">
                 <div className="flex w-full flex-col items-start gap-4">
-                    {rows.map((row) => (
+                    {rows.map((row, index) => (
                         <div key={row.key} className="flex w-full flex-col items-start gap-1">
                             <div className="flex w-full items-center justify-between text-xs font-medium">
                                 <span>{row.label}</span>
@@ -184,7 +190,13 @@ export function ChartPlayerPercentiles({
                             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                                 <div
                                     className="h-full rounded-full"
-                                    style={{ width: `${row.barPct}%`, backgroundColor: row.fill }}
+                                    style={{
+                                        width: inView ? `${row.barPct}%` : "0%",
+                                        backgroundColor: row.fill,
+                                        transition: reduceMotion
+                                            ? undefined
+                                            : `width ${BAR_DURATION_MS}ms ease-out ${index * BAR_STAGGER_MS}ms`,
+                                    }}
                                 />
                             </div>
                             <div className="text-[10px] text-muted-foreground">
@@ -205,5 +217,6 @@ export function ChartPlayerPercentiles({
                 )}
             </CardContent>
         </Card>
+        </div>
     )
 }

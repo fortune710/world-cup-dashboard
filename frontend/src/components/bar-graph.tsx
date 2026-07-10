@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/select"
 import { type PlayerRow } from "@/pages/players-page"
 import { usePlayerMatchHistory } from "@/hooks/use-player-match-history"
+import { useInViewAnimation } from "@/hooks/use-in-view-animation"
 
 const chartConfig = {
     rating: {
@@ -230,6 +231,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
     const { t } = useTranslation()
     const [activeChart, setActiveChart] = React.useState<string>("rating")
     const [stage, setStage] = React.useState("all")
+    const { ref: inViewRef, active: inView, reduceMotion } = useInViewAnimation<HTMLDivElement>()
 
     const { matches: rawMatches, isLoading: historyLoading, error: historyError } = usePlayerMatchHistory(player?.id)
 
@@ -336,6 +338,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
     }
 
     return (
+        <div ref={inViewRef}>
         <Card className="pt-0">
             <CardHeader className="flex flex-col items-stretch border-b p-0! lg:flex-row">
                 <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:py-6">
@@ -402,6 +405,12 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                         {t("playerDetailsPage.noMatchStatsForStage", { defaultValue: "Matches played, but stats haven't been recorded yet for this stage" })}
                     </div>
                 ) : (
+                <div
+                    style={{
+                        clipPath: inView ? "inset(0 0 0 0)" : "inset(0 100% 0 0)",
+                        transition: reduceMotion ? undefined : "clip-path 1200ms ease-out",
+                    }}
+                >
                 <ChartContainer
                     config={chartConfig}
                     className="aspect-auto h-[250px] w-full"
@@ -492,7 +501,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                         />
                         {activeChart === "rating" ? (
                             <Area
-                                key={`${bgKey}-bg`}
+                                key={`${bgKey}-bg-${stage}`}
                                 dataKey={bgKey}
                                 type="monotone"
                                 stroke={`var(--color-${bgKey})`}
@@ -501,10 +510,13 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                                 fill="none"
                                 opacity={0.3}
                                 activeDot={false}
+                                isAnimationActive
+                                animationDuration={1200}
+                                animationEasing="ease-out"
                             />
                         ) : (
                             <Area
-                                key="rating-bg"
+                                key={`rating-bg-${stage}`}
                                 dataKey="rating"
                                 type="monotone"
                                 stroke="var(--color-rating)"
@@ -513,20 +525,29 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                                 fill="none"
                                 opacity={0.3}
                                 activeDot={false}
+                                isAnimationActive
+                                animationDuration={1200}
+                                animationEasing="ease-out"
                             />
                         )}
                         <Area
+                            key={`${activeChart}-${stage}`}
                             dataKey={activeChart}
                             type="monotone"
                             fill={`url(#fill${activeChart.charAt(0).toUpperCase() + activeChart.slice(1)})`}
                             stroke={`var(--color-${activeChart})`}
                             strokeWidth={2}
                             activeDot={{ r: 6, strokeWidth: 0 }}
+                            isAnimationActive
+                            animationDuration={1200}
+                            animationEasing="ease-out"
                         />
                     </AreaChart>
                 </ChartContainer>
+                </div>
                 )}
             </CardContent>
         </Card>
+        </div>
     )
 }

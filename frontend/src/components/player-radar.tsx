@@ -21,6 +21,7 @@ import { positionsToRadarRole, type Classification, type RadarRole } from "@/lib
 import { computeRadarData } from "@/lib/players/radar-calculations"
 import { applyPercentiles } from "@/lib/players/radar-percentiles"
 import type { MetricType } from "@/lib/players/radar-metrics"
+import { useInViewAnimation } from "@/hooks/use-in-view-animation"
 
 
 const formatMetricValue = (key: string, val: number | null, type?: MetricType): string => {
@@ -102,6 +103,7 @@ interface ChartRadarGridCircleProps {
 
 export function ChartRadarGridCircle({ player, peers = [], peersLoading = false, peersError = null }: ChartRadarGridCircleProps) {
     const { t } = useTranslation()
+    const { ref: inViewRef, active: inView } = useInViewAnimation<HTMLDivElement>()
 
     const role = React.useMemo(() => {
         return player.radarRole || positionsToRadarRole(player.positions, player.classification as Classification) || "ST"
@@ -164,6 +166,7 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false,
     }
 
     return (
+        <div ref={inViewRef}>
         <Card className="flex flex-col h-full">
             <CardHeader className="pb-2">
                 <CardTitle className="text-xl font-bold tracking-tight">
@@ -179,6 +182,9 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false,
             </CardHeader>
             <CardContent className="pb-0 flex-1 flex flex-col justify-center min-h-[350px]">
                 <div className="flex-1 flex flex-col items-center justify-center">
+                    {!inView ? (
+                        <div className="mx-auto aspect-square w-full max-w-[315px]" />
+                    ) : (
                     <ChartContainer
                         config={chartConfig}
                         className="mx-auto aspect-square w-full max-w-[315px]"
@@ -213,6 +219,9 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false,
                                     strokeWidth: 1.5,
                                     fillOpacity: 1,
                                 }}
+                                isAnimationActive
+                                animationDuration={1000}
+                                animationEasing="ease-out"
                             />
                             {isPercentileReady && (
                                 <Radar
@@ -229,10 +238,14 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false,
                                         strokeWidth: 1,
                                         fillOpacity: 0.8,
                                     }}
+                                    isAnimationActive
+                                    animationDuration={1000}
+                                    animationEasing="ease-out"
                                 />
                             )}
                         </RadarChart>
                     </ChartContainer>
+                    )}
                     {radarData.tier === 'show_only' && (
                         <p className="text-xs text-muted-foreground mt-1 text-center">
                             Small sample — based on {player.statistics?.minutes_played ?? player.minutesPlayed}min played
@@ -251,5 +264,6 @@ export function ChartRadarGridCircle({ player, peers = [], peersLoading = false,
                 </div>
             </CardContent>
         </Card>
+        </div>
     )
 }
