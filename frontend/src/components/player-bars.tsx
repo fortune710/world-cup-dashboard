@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useTranslation } from "react-i18next"
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts"
 import { Trophy } from "lucide-react"
 
 import {
@@ -12,22 +11,18 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import {
-    ChartContainer,
-    ChartTooltip,
-    type ChartConfig,
-} from "@/components/ui/chart"
 import { type PlayerRow } from "@/pages/players-page"
 import { positionsToRadarRole, type Classification, type RadarRole } from "@/lib/players/player-mapping"
 import { computeRadarData } from "@/lib/players/radar-calculations"
 import { applyPercentiles } from "@/lib/players/radar-percentiles"
+import type { MetricType } from "@/lib/players/radar-metrics"
 
-const formatMetricValue = (key: string, val: number | null): string => {
+const formatMetricValue = (key: string, val: number | null, type?: MetricType): string => {
     if (val === null || val === undefined) return "N/A"
     if (key === "rating") return val.toFixed(2)
     if (
-        key.endsWith("_pct") || 
-        key === "pass_acc" || 
+        key.endsWith("_pct") ||
+        key === "pass_acc" ||
         key === "long_ball_acc" ||
         key === "tackle_win_pct" ||
         key === "aerial_win_pct"
@@ -37,12 +32,15 @@ const formatMetricValue = (key: string, val: number | null): string => {
     if (key === "penalty_save_r" || key === "shot_acc" || key === "conversion") {
         return `${(val * 100).toFixed(1)}%`
     }
+    if (type === "per90") {
+        return `${val.toFixed(2)}/90`
+    }
     return val.toFixed(2)
 }
 
 function normalizeAbsolute(rawValue: number | null, key: string): number {
     if (rawValue === null || rawValue === undefined) return 0
-    
+
     let pct = 0
     if (key.endsWith("_pct") || key === "pass_acc" || key === "long_ball_acc") {
         pct = rawValue
@@ -61,7 +59,7 @@ function normalizeAbsolute(rawValue: number | null, key: string): number {
     } else {
         pct = (rawValue / 5.0) * 100
     }
-    
+
     return Math.min(100, Math.max(0, pct))
 }
 
@@ -89,37 +87,6 @@ const getPercentileTier = (percentile: number | null) => {
         label: "Below Avg",
         hex: "#f43f5e", // Rose 500
     }
-}
-
-const CustomBarTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-        const data = payload[0].payload
-        const percentileDisplay = data.percentile !== null && data.percentile !== undefined
-            ? `${data.percentile}th percentile`
-            : `Small sample (raw value)`
-        const avgDisplay = data.averageValue !== null && data.averageValue !== undefined
-            ? ` | Peer Avg: ${data.formattedAvg}`
-            : ''
-        return (
-            <div className="rounded-xl border bg-popover p-3 text-popover-foreground shadow-md text-xs">
-                <div className="font-semibold text-foreground mb-1">
-                    {data.name}
-                </div>
-                <div className="space-y-0.5 font-mono">
-                    <div>Value: <span className="font-bold">{data.formattedValue}</span></div>
-                    <div className="text-muted-foreground text-[10px]">
-                        {percentileDisplay}{avgDisplay}
-                    </div>
-                    {data.percentile !== null && (
-                        <div className="text-[10px] font-semibold mt-1" style={{ color: data.fill }}>
-                            Tier: {data.tierLabel}
-                        </div>
-                    )}
-                </div>
-            </div>
-        )
-    }
-    return null
 }
 
 interface ChartPlayerPercentilesProps {
@@ -168,49 +135,29 @@ export function ChartPlayerPercentiles({
         ST: "Striker / Centre-forward"
     }
 
-    const chartConfig = {
-        percentileVal: {
-            label: "Percentile",
-            color: "var(--primary)",
-        }
-    } satisfies ChartConfig
-
-    const chartData = React.useMemo(() => {
+    const rows = React.useMemo(() => {
         return spokesToRender.map((spoke) => {
-            const val = spoke.percentile ?? normalizeAbsolute(spoke.rawValue, spoke.key)
+            const barPct = spoke.percentile ?? normalizeAbsolute(spoke.rawValue, spoke.key)
             const tier = getPercentileTier(spoke.percentile ?? null)
+            const formattedValue = formatMetricValue(spoke.key, spoke.rawValue, spoke.type)
+            const formattedAvg = formatMetricValue(spoke.key, spoke.averageValue ?? null, spoke.type)
+            const detailText = spoke.percentile !== null && spoke.percentile !== undefined
+                ? `${spoke.percentile}th percentile${spoke.averageValue !== null && spoke.averageValue !== undefined ? ` · Peer avg ${formattedAvg}` : ""}`
+                : "Small sample (raw value)"
+
             return {
-                name: spoke.label,
                 key: spoke.key,
-                rawValue: spoke.rawValue,
-                percentile: spoke.percentile,
-                averageValue: spoke.averageValue,
-                formattedValue: formatMetricValue(spoke.key, spoke.rawValue),
-                formattedAvg: formatMetricValue(spoke.key, spoke.averageValue ?? null),
-                percentileVal: val,
+                label: spoke.label,
+                barPct,
                 fill: tier.hex,
                 tierLabel: tier.label,
+                displayValue: spoke.percentile !== null && spoke.percentile !== undefined
+                    ? `${spoke.percentile}%`
+                    : formattedValue,
+                detailText,
             }
         })
     }, [spokesToRender])
-
-    const renderCustomBarLabel = (props: any) => {
-        const { x, y, width, payload } = props
-        if (!payload) return null
-        const labelText = payload.percentile !== null && payload.percentile !== undefined ? `${payload.percentile}%` : payload.formattedValue
-        return (
-            <text
-                x={x + width + 8}
-                y={y + 11}
-                fill="var(--foreground)"
-                fontSize={10}
-                fontWeight={600}
-                textAnchor="start"
-            >
-                {labelText}
-            </text>
-        )
-    }
 
     return (
         <Card className="flex flex-col h-full">
@@ -226,46 +173,36 @@ export function ChartPlayerPercentiles({
                     })}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-4 min-h-[350px] flex items-center justify-center">
-                <ChartContainer config={chartConfig} className="w-full h-full min-h-[320px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={chartData}
-                            layout="vertical"
-                            margin={{
-                                left: 5,
-                                right: 35,
-                                top: 5,
-                                bottom: 5,
-                            }}
-                        >
-                            <XAxis type="number" domain={[0, 100]} hide />
-                            <YAxis
-                                dataKey="name"
-                                type="category"
-                                tickLine={false}
-                                tickMargin={10}
-                                axisLine={false}
-                                tick={{ fill: "var(--color-foreground)", fontSize: 10, fontWeight: 500 }}
-                                width={110}
-                            />
-                            <ChartTooltip
-                                cursor={{ fill: "var(--muted)/20" }}
-                                content={<CustomBarTooltip />}
-                            />
-                            <Bar
-                                dataKey="percentileVal"
-                                radius={[0, 4, 4, 0]}
-                                barSize={12}
-                                label={renderCustomBarLabel}
-                            >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </ChartContainer>
+            <CardContent className="flex-1 pb-4 min-h-[350px]">
+                <div className="flex w-full flex-col items-start gap-4">
+                    {rows.map((row) => (
+                        <div key={row.key} className="flex w-full flex-col items-start gap-1">
+                            <div className="flex w-full items-center justify-between text-xs font-medium">
+                                <span>{row.label}</span>
+                                <span className="font-mono" style={{ color: row.fill }}>{row.displayValue}</span>
+                            </div>
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                <div
+                                    className="h-full rounded-full"
+                                    style={{ width: `${row.barPct}%`, backgroundColor: row.fill }}
+                                />
+                            </div>
+                            <div className="text-[10px] text-muted-foreground">
+                                {row.detailText}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                {radarData.tier === "show_only" && (
+                    <p className="text-xs text-muted-foreground mt-4 text-center">
+                        Small sample — based on {player.statistics?.minutes_played ?? player.minutesPlayed}min played
+                    </p>
+                )}
+                {!peersLoading && result.peerCountBelowThreshold && radarData.tier !== "show_only" && (
+                    <p className="text-xs text-amber-500 mt-4 text-center">
+                        {t("playerDetailsPage.fewPeers", { defaultValue: "Percentile rank hidden — fewer than 5 qualified peers" })}
+                    </p>
+                )}
             </CardContent>
         </Card>
     )
