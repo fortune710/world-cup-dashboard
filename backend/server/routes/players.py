@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from config.db import get_db
 from db.controllers.players import (
     get_player_by_id,
+    get_player_match_history,
     get_players_leaderboard,
     get_top_players_by_clean_sheets,
     get_top_players_by_assists,
@@ -24,6 +25,7 @@ from server.schemas.players import (
     PlayerClassification,
     PlayerInfoResponse,
     PlayerLeaderboardResponse,
+    PlayerMatchHistoryResponse,
     PlayerSearchResponse,
     PlayerStatisticsResponse,
     PlayerTopCleanSheetsResponse,
@@ -227,6 +229,26 @@ def get_player_statistics(
         "name": player.name,
         "statistics": stats_json,
     }
+
+
+@router.get("/{player_id}/match-history", response_model=PlayerMatchHistoryResponse)
+def get_player_match_history_route(
+    player_id: int = Path(..., gt=0, description="Positive integer player ID"),
+    db: Session = Depends(get_db)
+):
+    """
+    Real, match-by-match history for a player: completed matches only, with
+    real round/opponent/score plus any per-match stats we've ingested.
+    """
+    logger.info({"message": "Fetching player match history", "player_id": player_id})
+
+    player = get_player_by_id(db, player_id)
+    if player is None:
+        logger.warning({"message": "Player match history not found", "player_id": player_id})
+        raise HTTPException(status_code=404, detail=f"Player with id {player_id} not found.")
+
+    matches = get_player_match_history(db, player_id)
+    return {"matches": matches}
 
 
 @router.get("/top/goals", response_model=list[PlayerTopGoalsResponse])

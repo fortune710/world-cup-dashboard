@@ -70,20 +70,6 @@ import { getTeamFlagUrl } from "@/lib/teams/wc26-teams"
 import type { Classification, DisplayPosition, RadarRole } from "@/lib/players/player-mapping"
 import type { PlayerStatistics } from "@/types/player-statistics"
 
-export interface MatchPerformance {
-  matchName: string
-  opponent: string
-  rating: number
-  goals: number
-  assists: number
-  minutesPlayed: number
-  cleanSheet?: boolean
-  formScore: number
-  tackles?: number
-  interceptions?: number
-  saves?: number
-}
-
 export interface PlayerRow {
   id: number
   name: string
@@ -104,7 +90,6 @@ export interface PlayerRow {
   cleanSheets?: number
   saves?: number
   avatar?: string
-  matchHistory?: MatchPerformance[]
   classification?: Classification
   positions?: string
   displayPosition?: DisplayPosition
@@ -117,149 +102,6 @@ export interface PlayerRow {
   foot?: string | null
   clubName?: string | null
   marketValue?: number | null
-}
-
-export function getPlayerMatchHistory(player: PlayerRow): MatchPerformance[] {
-  if (player.matchHistory) return player.matchHistory
-
-  const seed = player.id
-  const numMatches = player.gamesPlayed
-  if (numMatches <= 0) return []
-
-  // Deterministic random generator seeded by player ID
-  const random = (s: number) => {
-    const x = Math.sin(s) * 10000
-    return x - Math.floor(x)
-  }
-
-  const matches: MatchPerformance[] = []
-  const opponentPool = ["ARG", "BRA", "FRA", "GER", "ESP", "POR", "ENG", "ITA", "NED", "BEL", "CRO", "URU", "SEN", "USA", "MEX", "JPN"]
-  const validOpponents = opponentPool.filter((op) => op !== player.country)
-
-  let goalsLeft = player.goals
-  let assistsLeft = player.assists
-  let savesLeft = player.saves || 0
-
-  for (let i = 0; i < numMatches; i++) {
-    const isKnockout = i >= 3
-    let matchName = `Group Match ${i + 1}`
-    if (isKnockout) {
-      if (i === 3) matchName = "Round of 16"
-      else if (i === 4) matchName = "Quarter-final"
-      else if (i === 5) matchName = "Semi-final"
-      else if (i === 6) matchName = "Final"
-    }
-
-    const opponentIndex = Math.floor(random(seed + i * 10) * validOpponents.length)
-    const opponent = validOpponents[opponentIndex] || "OPP"
-
-    const fluctuation = (random(seed + i * 20) - 0.5) * 2.4
-    const matchRating = Math.max(5.0, Math.min(10.0, player.rating + fluctuation))
-
-    let matchGoals = 0
-    if (goalsLeft > 0) {
-      const chance = random(seed + i * 30)
-      if (i === numMatches - 1) {
-        matchGoals = goalsLeft
-      } else if (chance > 0.6) {
-        matchGoals = Math.min(goalsLeft, chance > 0.9 ? 2 : 1)
-      }
-      goalsLeft -= matchGoals
-    }
-
-    let matchAssists = 0
-    if (assistsLeft > 0) {
-      const chance = random(seed + i * 40)
-      if (i === numMatches - 1) {
-        matchAssists = assistsLeft
-      } else if (chance > 0.6) {
-        matchAssists = Math.min(assistsLeft, chance > 0.9 ? 2 : 1)
-      }
-      assistsLeft -= matchAssists
-    }
-
-    const avgMinutes = player.minutesPlayed / numMatches
-    let matchMinutes = 90
-    if (avgMinutes < 80) {
-      const minsChance = random(seed + i * 50)
-      matchMinutes = minsChance > 0.5 ? 90 : Math.round(avgMinutes + (minsChance - 0.5) * 30)
-    }
-    matchMinutes = Math.max(15, Math.min(120, matchMinutes))
-
-    let matchCleanSheet: boolean | undefined = undefined
-    if (player.position === "GK" || player.position === "DEF") {
-      if (player.cleanSheets !== undefined) {
-        const csChance = random(seed + i * 60)
-        const totalCs = player.cleanSheets
-        const isCs = (csChance * numMatches) < totalCs
-        matchCleanSheet = isCs
-      } else {
-        matchCleanSheet = matchRating > 7.5
-      }
-    }
-
-    let matchTackles: number | undefined = undefined
-    let matchInterceptions: number | undefined = undefined
-    let matchSaves: number | undefined = undefined
-
-    if (player.position === "DEF") {
-      matchTackles = Math.floor(random(seed + i * 70) * 5) + 1
-      matchInterceptions = Math.floor(random(seed + i * 80) * 4) + 1
-    } else if (player.position === "GK") {
-      if (i === numMatches - 1) {
-        matchSaves = savesLeft
-      } else {
-        const avgSaves = savesLeft / (numMatches - i)
-        const chance = random(seed + i * 90)
-        matchSaves = Math.floor(avgSaves * 0.5 + chance * avgSaves)
-        matchSaves = Math.min(savesLeft, matchSaves)
-      }
-      savesLeft -= matchSaves
-    }
-
-    let formScore = matchRating
-    if (player.position === "FWD" || player.position === "MID") {
-      formScore += matchGoals * 1.2 + matchAssists * 0.8
-    } else if (player.position === "DEF") {
-      const defensiveActionCount = (matchTackles || 0) + (matchInterceptions || 0)
-      formScore += defensiveActionCount * 0.2 + (matchCleanSheet ? 1.0 : 0)
-    } else if (player.position === "GK") {
-      formScore += (matchSaves || 0) * 0.15 + (matchCleanSheet ? 1.5 : 0)
-    }
-    formScore = Math.max(0, Math.min(10.0, formScore))
-
-    matches.push({
-      matchName,
-      opponent,
-      rating: Number(matchRating.toFixed(2)),
-      goals: matchGoals,
-      assists: matchAssists,
-      minutesPlayed: matchMinutes,
-      cleanSheet: matchCleanSheet,
-      formScore: Number(formScore.toFixed(2)),
-      tackles: matchTackles,
-      interceptions: matchInterceptions,
-      saves: matchSaves,
-    })
-  }
-
-  const currentAverage = matches.reduce((acc, m) => acc + m.rating, 0) / numMatches
-  const difference = player.rating - currentAverage
-  matches.forEach((m) => {
-    m.rating = Number(Math.max(3.0, Math.min(10.0, m.rating + difference)).toFixed(2))
-    let fScore = m.rating
-    if (player.position === "FWD" || player.position === "MID") {
-      fScore += m.goals * 1.2 + m.assists * 0.8
-    } else if (player.position === "DEF") {
-      const defensiveActionCount = (m.tackles || 0) + (m.interceptions || 0)
-      fScore += defensiveActionCount * 0.2 + (m.cleanSheet ? 1.0 : 0)
-    } else if (player.position === "GK") {
-      fScore += (m.saves || 0) * 0.15 + (m.cleanSheet ? 1.5 : 0)
-    }
-    m.formScore = Number(Math.max(0, Math.min(10.0, fScore)).toFixed(2))
-  })
-
-  return matches
 }
 
 function getPlayerHref(id: number): string {

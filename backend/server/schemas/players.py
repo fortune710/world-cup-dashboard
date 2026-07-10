@@ -141,3 +141,29 @@ class RadarPeersListResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class PlayerMatchHistoryEntry(BaseModel):
+    match_id: int
+    round: Optional[str] = None
+    phase: Optional[str] = None
+    kickoff_utc: Optional[str] = None
+    opponent: Optional[str] = None
+    team_score: Optional[int] = None
+    opponent_score: Optional[int] = None
+    clean_sheet: Optional[bool] = None
+    rating: Optional[float] = None
+    minutes_played: Optional[float] = None
+    goal_contributions: Optional[float] = None
+    tackles: Optional[float] = None
+    interceptions: Optional[float] = None
+    pass_accuracy: Optional[float] = None
+    has_player_stats: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PlayerMatchHistoryResponse(BaseModel):
+    matches: list[PlayerMatchHistoryEntry]
+
+    model_config = ConfigDict(from_attributes=True)
+
