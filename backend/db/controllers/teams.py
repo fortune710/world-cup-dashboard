@@ -294,6 +294,7 @@ def mark_team_as_indexed(db: Session, team_code: str):
 def recalculate_team_standings(db: Session):
     logger.info({"message": "Starting recalculation of team standings from completed matches"})
     from db.models.matches import Match
+    from db.controllers.matches import BRACKET_KNOCKOUT_ROUNDS
     try:
         # Reset standings metrics for all teams
         db.query(Team).update({
@@ -306,8 +307,16 @@ def recalculate_team_standings(db: Session):
             Team.points: 0,
         }, synchronize_session=False)
 
-        # Get all completed matches
-        completed_matches = db.query(Match).filter(Match.status == "completed").all()
+        # Get all completed group-stage matches (exclude knockout rounds so
+        # group standings only reflect the group stage)
+        completed_matches = (
+            db.query(Match)
+            .filter(
+                Match.status == "completed",
+                Match.round.notin_(BRACKET_KNOCKOUT_ROUNDS),
+            )
+            .all()
+        )
         logger.info({
             "message": "Fetched completed matches for standings recalculation",
             "count": len(completed_matches)
