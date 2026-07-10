@@ -1,4 +1,5 @@
 import { logger } from "@/lib/logger"
+import { API_BASE_URL } from "@/lib/api-config"
 
 /** Player photos load through the backend image proxy using the backend image URL. */
 const avatarCache = new Map<number | string, string>();
@@ -33,7 +34,10 @@ export function getPlayerAvatarUrl(
     return undefined
   }
 
-  const proxiedUrl = `/api/image-proxy?url=${encodeURIComponent(resolvedUrl)}`
+  // Already a backend-relative path (e.g. from the players API) — just point it at the backend.
+  const proxiedUrl = resolvedUrl.startsWith("/")
+    ? `${API_BASE_URL}${resolvedUrl}`
+    : `${API_BASE_URL}/image-proxy?url=${encodeURIComponent(resolvedUrl)}`
   logger.info({
     message: "Built player avatar proxy url",
     image_url: resolvedUrl,

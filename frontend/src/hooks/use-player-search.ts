@@ -17,12 +17,12 @@ export interface PlayerSearchParams {
 }
 
 function resolvePlayerImageUrl(imageUrl: string, playerId: number): string {
-  if (imageUrl.startsWith("/players/")) {
+  if (imageUrl.startsWith("/")) {
     return `${API_BASE_URL}${imageUrl}`;
   }
 
   if (imageUrl.startsWith("http")) {
-    return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+    return `${API_BASE_URL}/image-proxy?url=${encodeURIComponent(imageUrl)}`;
   }
 
   return `${API_BASE_URL}/players/${playerId}/image`;

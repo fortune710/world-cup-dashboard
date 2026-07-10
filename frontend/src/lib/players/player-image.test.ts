@@ -1,13 +1,20 @@
 import { describe, expect, it } from "bun:test"
 
 import { getPlayerAvatarUrl } from "./player-image"
+import { API_BASE_URL } from "@/lib/api-config"
 
 describe("player image helper", () => {
-  it("proxies backend image urls through the frontend api path", () => {
+  it("proxies raw image urls through the backend image-proxy endpoint", () => {
     const imageUrl = "https://img.example.com/player.jpg"
 
     expect(getPlayerAvatarUrl(imageUrl)).toBe(
-      `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`
+      `${API_BASE_URL}/image-proxy?url=${encodeURIComponent(imageUrl)}`
+    )
+  })
+
+  it("points backend-relative image urls straight at the backend", () => {
+    expect(getPlayerAvatarUrl("/players/42/image")).toBe(
+      `${API_BASE_URL}/players/42/image`
     )
   })
 
@@ -15,7 +22,7 @@ describe("player image helper", () => {
     const playerId = 12345
     const expectedFallbackUrl = `https://img.sofascore.com/api/v1/player/${playerId}/image`
     expect(getPlayerAvatarUrl(null, playerId)).toBe(
-      `/api/image-proxy?url=${encodeURIComponent(expectedFallbackUrl)}`
+      `${API_BASE_URL}/image-proxy?url=${encodeURIComponent(expectedFallbackUrl)}`
     )
   })
 
