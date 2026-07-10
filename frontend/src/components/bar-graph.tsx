@@ -250,14 +250,19 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
         return rawMatches.map((m) => {
             const isGroup = m.round === "Group"
             if (isGroup) groupCount += 1
+            const matchName = isGroup
+                ? `M${groupCount}`
+                : (m.round ? (ROUND_ABBREVIATIONS[m.round] ?? m.round) : "Match")
             return {
-                matchName: isGroup ? `Group Match ${groupCount}` : (m.round ?? "Match"),
+                matchName,
                 round: m.round,
                 opponent: m.opponent ?? "OPP",
-                rating: m.rating ?? 0,
-                ga: m.goal_contributions ?? 0,
-                tackles: m.tackles ?? 0,
-                interceptions: m.interceptions ?? 0,
+                // null (not 0) when this match's per-player stats haven't been
+                // ingested yet, so the chart shows a gap instead of a fake drop to 0.
+                rating: m.rating,
+                ga: m.goal_contributions,
+                tackles: m.tackles,
+                interceptions: m.interceptions,
                 cleanSheet: m.clean_sheet === null ? undefined : (m.clean_sheet ? 1 : 0),
                 hasStats: m.has_player_stats,
             }
@@ -280,7 +285,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
         const withStats = chartData.filter((m) => m.hasStats)
         if (!player || !withStats.length) return "0"
         if (stat.key === "rating") {
-            const total = withStats.reduce((acc, curr) => acc + curr.rating, 0)
+            const total = withStats.reduce((acc, curr) => acc + (curr.rating ?? 0), 0)
             return (total / withStats.length).toFixed(2)
         }
         if (stat.key === "cleanSheet") {
@@ -390,6 +395,10 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                     <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
                         {t("playerDetailsPage.noMatchHistory", { defaultValue: "No completed matches yet" })}
                     </div>
+                ) : chartData.every((m) => !m.hasStats) ? (
+                    <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
+                        {t("playerDetailsPage.noMatchStatsForStage", { defaultValue: "Matches played, but stats haven't been recorded yet for this stage" })}
+                    </div>
                 ) : (
                 <ChartContainer
                     config={chartConfig}
@@ -473,12 +482,7 @@ export function ChartAreaInteractive({ player }: { player?: PlayerRow }) {
                             axisLine={false}
                             tickMargin={8}
                             minTickGap={10}
-                            tickFormatter={(value) => {
-                                if (value.startsWith("Group Match ")) {
-                                    return `M${value.replace("Group Match ", "")}`
-                                }
-                                return ROUND_ABBREVIATIONS[value] ?? value
-                            }}
+                            tickFormatter={(value) => ROUND_ABBREVIATIONS[value] ?? value}
                         />
                         <ChartTooltip
                             cursor={{ stroke: "var(--border)", strokeWidth: 1, strokeDasharray: "4 4" }}

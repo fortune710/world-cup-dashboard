@@ -54,6 +54,58 @@ def extract_teams(**context):
         db.close()
 
 
+async def fetch_cup_tree_fixtures(league, season_id):
+    """
+    Group-stage fixtures come from the round-robin `/events/round/{n}` endpoint,
+    but Sofascore serves knockout-stage fixtures (Round of 32 onward) through a
+    separate cup-tree/bracket structure instead -- `/events/round/{n}` 404s for
+    those round numbers even though `league.rounds()` lists them. Pull knockout
+    fixtures from the cup tree and normalize them into the same fixture-dict
+    shape `transform_match_ids` already expects.
+    """
+    fixtures = []
+    try:
+        cup_payload = await league.cup_tree(season_id)
+    except Exception as exc:
+        logger.warning({
+            "message": "Failed to fetch Sofascore cup tree for knockout fixtures",
+            "error": {"message": str(exc), "type": type(exc).__name__},
+        })
+        return fixtures
+
+    for tree in cup_payload.get("cupTrees", []):
+        for round_data in tree.get("rounds", []):
+            round_description = round_data.get("description")
+            for block in round_data.get("blocks", []):
+                event_ids = block.get("events") or []
+                if not event_ids:
+                    continue
+
+                participants = sorted(
+                    block.get("participants", []),
+                    key=lambda p: p.get("order", 0),
+                )
+                if len(participants) < 2:
+                    continue
+
+                home_team = participants[0].get("team") or {}
+                away_team = participants[1].get("team") or {}
+
+                fixtures.append({
+                    "id": event_ids[0],
+                    "homeTeam": {"id": home_team.get("id")},
+                    "awayTeam": {"id": away_team.get("id")},
+                    "startTimestamp": block.get("seriesStartDateTimestamp"),
+                    "roundInfo": {"round": None, "name": round_description},
+                })
+
+    logger.info({
+        "message": "Successfully extracted Sofascore cup-tree fixtures for match id mapping",
+        "fixtures_count": len(fixtures),
+    })
+    return fixtures
+
+
 async def fetch_2026_wc_fixtures():
     ## Move this into separate source class
     logger.info({"message": "Starting Sofascore fixture extraction for match id mapping"})
@@ -104,6 +156,8 @@ async def fetch_2026_wc_fixtures():
                 raise
 
             fixtures.extend(round_payload.get("events", []))
+
+        fixtures.extend(await fetch_cup_tree_fixtures(league, settings.WC_SEASON_ID_2026))
 
         fixtures = sorted(
             fixtures,

@@ -301,9 +301,32 @@ def get_match_by_fixture_identity(db: Session, match_identity: dict):
                     "kickoff_utc": kickoff_utc,
                 }
             )
-            query = query.filter(Match.kickoff_utc == kickoff_utc)
+            db_match = query.filter(Match.kickoff_utc == kickoff_utc).first()
+        else:
+            db_match = query.first()
 
-        db_match = query.first()
+        if db_match is None and kickoff_utc is not None:
+            # Some fixture sources (e.g. Sofascore's cup-tree endpoint for
+            # knockout rounds) report a "series start" timestamp that doesn't
+            # line up exactly with the kickoff_utc our own ingestion stored.
+            # Fall back to team-pair matching alone, as long as it's unambiguous.
+            candidates = query.all()
+            if len(candidates) == 1:
+                db_match = candidates[0]
+                logger.info({
+                    "message": "Resolved match by team pair after exact kickoff_utc match failed",
+                    "match_id": db_match.id,
+                    "home_team_code": db_match.home_team_code,
+                    "away_team_code": db_match.away_team_code,
+                })
+            elif len(candidates) > 1:
+                logger.warning({
+                    "message": "Ambiguous team-pair match fallback, skipping",
+                    "home_team_code": match_identity.get("home_team_code"),
+                    "away_team_code": match_identity.get("away_team_code"),
+                    "candidate_count": len(candidates),
+                })
+
         if db_match:
             logger.info({
                 "message": "Resolved match by fixture identity",
